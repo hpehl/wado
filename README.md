@@ -109,6 +109,12 @@ waco start 26.1,28..30,2x32,3x35
 
 Currently, the following commands are supported:
 
+> [!IMPORTANT]  
+> Most commands require `podman` to be present.
+> Docker is not yet supported!
+> The `console` command opens the default web
+> browser and the `cli` command requires a JVM. 
+
 ```shell
 Command line tool to build and run WildFly containers in different versions and operation modes.
 
@@ -411,7 +417,7 @@ waco hc stop --all
 > [!WARNING]  
 > The topology commands are not yet implemented.
 > You can work around with the `dc` and `hc` commands though:
-> 
+>
 > ```shell
 > waco dc start 35 -n dc -s s1,s2,s3,s4:osg,s5:osg
 > waco hc start 32,33,2x35 -d dc -s s1,s2,s3:osg
@@ -534,6 +540,9 @@ waco console 34 --management 9990
 ```
 
 ### CLI
+
+If not already present, this command downloads the `wildfly-cli-client.jar` and `jboss-cli.xml` of the specified version
+to the `$TMPDIR`.
 
 ```shell
 Connect to the CLI
