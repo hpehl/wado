@@ -131,8 +131,6 @@ Arguments:
 Options:
   -u, --username <username>  The username of the management user [default: admin]
   -p, --password <password>  The password of the management user [default: admin]
-  -l, --latest               Mark the version as the latest version. If used with a version range,
-                             the latest tag is applied to the largest version in the range.
       --standalone           Build standalone images only
       --domain               Build domain controller and host controller images only
       --chunks <chunks>      Build the images in chunks of this size. If not specified, the images are built in one go.
@@ -145,11 +143,10 @@ Options:
 ```shell
 waco build 34
 waco build 34 --username alice --password "Admin#70365"
-waco build 34 --latest
 waco build 10,23,34
 waco build 20..29
 waco build 10,20..29,34
-waco build .. --latest --chuncks 5
+waco build .. --chuncks 5
 ```
 
 ### Standalone Start
