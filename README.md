@@ -91,6 +91,7 @@ based on the WildFly version:
 - 9900 → 9`<major><minor>`
 
 So for WildFly 34, the port mappings are 8340 and 9340, and for WildFly 26.1, the port mappings are 8261 and 9261.
+If multiple containers of the same version are used, the port is increased by one.
 
 ## Commands
 
@@ -265,7 +266,7 @@ waco dc start 34 --http 8080 --management 9990
 waco dc start 34 --server s1
 waco dc start 35 --server s1,s2,s3,s4:osg,s5:osg
 waco dc start 34 --server s1,s2,s3 --server s4:osg,s5:osg,s6:osg
-waco dc start 34 --name dc \ 
+waco dc start 34 --name dc \
   --server server-one:main-server-group:start \
   --server server-two:main-server-group:10 \
   --server server-three:other-server-group:20
@@ -351,7 +352,7 @@ waco hc start 30..35 --domain-controller dc
 waco hc start 34 --name foo --username alice --password "Admin#70365"
 waco hc start 34 --server s1
 waco hc start 3x34 --server s1,s2,s3:osg
-waco hc start 35 --name hc \ 
+waco hc start 35 --name hc \
   --server server-one:main-server-group:start \
   --server server-two:main-server-group:10 \
   --server server-three:other-server-group:20
@@ -428,7 +429,7 @@ Options:
   -V, --version  Print version
 ```
 
-The topology setup is a YAML file like this:  
+The topology setup is a YAML file like this:
 
 ```yaml
 version: 34
