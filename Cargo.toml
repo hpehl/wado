@@ -1,0 +1,42 @@
+[package]
+name = "waco"
+version = "0.0.6"
+authors = ["Harald Pehl <harald.pehl@gmail.com>"]
+edition = "2024"
+description = "Command line tool to manage WildFly containers."
+readme = "README.md"
+homepage = "https://github.com/hpehl/waco"
+repository = "https://github.com/hpehl/waco"
+license = "Apache-2.0"
+keywords = ["cli", "WildFly", "container"]
+categories = ["command-line-utilities"]
+
+[dependencies]
+anyhow = "1.0.97"
+clap = { version = "4.5.32", features = ["cargo"] }
+comfy-table = "7.1.4"
+console = "0.15.11"
+futures = "0.3.31"
+handlebars = "6.3.2"
+indicatif = { version = "0.17.11", features = ["rayon"] }
+lazy_static = "1.5.0"
+regex = "1.11.1"
+reqwest = "0.12.15"
+semver = "1.0.26"
+tempfile = "3.19.1"
+tokio = { version = "1.44.1", features = ["full"] }
+webbrowser = "1.0.4"
+which = "7.0.2"
+wildfly_container_versions = "0.1.5"
+
+[build-dependencies]
+anyhow = "1.0.97"
+clap = { version = "4.5.32", features = ["cargo"] }
+clap_complete = "4.5.47"
+
+# use LTO for smaller binaries (that take longer to build)
+[profile.release]
+lto = true
+
+[[bin]]
+name = "waco"
