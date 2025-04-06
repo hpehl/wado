@@ -12,22 +12,22 @@ images but are intended more for the development and testing of WildFly and its 
 - [Commands](#commands)
     - [Build](#build)
     - Standalone
-      - [Start](#standalone-start)
-      - [Stop](#standalone-stop)
+        - [Start](#standalone-start)
+        - [Stop](#standalone-stop)
     - Domain
-      - Domain Controller
-        - [Start](#domain-controller-start)
-        - [Stop](#domain-controller-stop)
-      - Host Controller
-        - [Host Controller Start](#host-controller-start)
-        - [Host Controller Stop](#host-controller-stop)
-      - Topology
-        - [Start](#topology-start)
-        - [Stop](#topology-stop)
+        - Domain Controller
+            - [Start](#domain-controller-start)
+            - [Stop](#domain-controller-stop)
+        - Host Controller
+            - [Host Controller Start](#host-controller-start)
+            - [Host Controller Stop](#host-controller-stop)
+        - Topology
+            - [Start](#topology-start)
+            - [Stop](#topology-stop)
     - [PS](#ps)
     - Management Clients
-      - [Console](#management-console)
-      - [CLI](#cli)
+        - [Console](#management-console)
+        - [CLI](#cli)
 
 ## Versions
 
@@ -91,7 +91,23 @@ based on the WildFly version:
 - 9900 → 9`<major><minor>`
 
 So for WildFly 34, the port mappings are 8340 and 9340, and for WildFly 26.1, the port mappings are 8261 and 9261.
-If multiple containers of the same version are used, the port is increased by one.
+If multiple containers of the same version are used, the port is increased by one from the second container onwards.
+
+```shell
+waco start 26.1,28..30,2x32,3x35
+```
+
+| Version | Name          | HTTP | Management |
+|---------|---------------|------|------------|
+| 26.1    | waco-261-sa   | 8261 | 9261       |
+| 28      | waco-280-sa   | 8280 | 9280       |
+| 29      | waco-290-sa   | 8290 | 9290       |
+| 30      | waco-300-sa   | 8300 | 9300       |
+| 32      | waco-320-sa-0 | 8320 | 9320       |
+| 32      | waco-320-sa-1 | 8321 | 9321       |
+| 35      | waco-350-sa-0 | 8350 | 9350       |
+| 35      | waco-350-sa-1 | 8351 | 9351       |
+| 35      | waco-350-sa-2 | 8352 | 9352       |
 
 ## Commands
 
