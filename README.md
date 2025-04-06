@@ -1,35 +1,31 @@
-# WildFly Admin Containers
-
 `waco` (**W**ildFly **a**dmin **co**ntainers) is a command line tool to build and run WildFly containers of different
 versions in different operation modes (domain and standalone). The container images are based on the official WildFly
 images but are intended more for the development and testing of WildFly and its management tools (CLI and console).
-
-## Table of Contents
 
 - [Versions](#versions)
 - [Images](#images)
 - [Containers](#containers)
 - [Commands](#commands)
     - [Build](#build)
-    - Standalone
-        - [Start](#standalone-start)
-        - [Stop](#standalone-stop)
-    - Domain
-        - Domain Controller
-            - [Start](#domain-controller-start)
-            - [Stop](#domain-controller-stop)
-        - Host Controller
-            - [Host Controller Start](#host-controller-start)
-            - [Host Controller Stop](#host-controller-stop)
-        - Topology
-            - [Start](#topology-start)
-            - [Stop](#topology-stop)
+    - [Standalone](#standalone)
+        - [Start](#start)
+        - [Stop](#stop)
+    - [Domain](#domain)
+        - [Domain Controller](#domain-controller)
+            - [Start](#start-1)
+            - [Stop](#stop-1)
+        - [Host Controller](#host-controller)
+            - [Start](#start-2)
+            - [Stop](#stop-2)
+        - [Topology](#topology)
+            - [Start](#start-3)
+            - [Stop](#stop-3)
     - [PS](#ps)
-    - Management Clients
-        - [Console](#management-console)
+    - [Management Clients](#management-clients)
+        - [Console](#console)
         - [CLI](#cli)
 
-## Versions
+# Versions
 
 Most commands require a
 WildFly [version expression](https://crates.io/crates/wildfly_container_versions#version-expressions). This could be a
@@ -47,7 +43,7 @@ single version, multiplier, range, enumeration, or a combination of all.
 
 All supported versions are listed [here](https://crates.io/crates/wildfly_container_versions#supported-versions).
 
-## Images
+# Images
 
 The images are based on the official WildFly images, are hosted at https://quay.io/organization/waco, and come in three
 variants:
@@ -59,7 +55,7 @@ variants:
 Each image contains tags for
 all [supported versions](https://crates.io/crates/wildfly_container_versions#supported-versions).
 
-### Image Modifications
+## Image Modifications
 
 The images are based on the default configuration (subsystems, profiles, server groups, socket bindings et al.) of the
 corresponding version. All images add a management user `admin:admin`
@@ -74,7 +70,7 @@ for
 
 Domain and host controller images are changed so that no servers are configured.
 
-## Containers
+# Containers
 
 The default name for containers is `waco-<version>-<type>[-index]`
 
@@ -82,7 +78,7 @@ The default name for containers is `waco-<version>-<type>[-index]`
 - Type: `sa|dc|hc` - standalone, domain or host controller
 - Index: If multiple containers of the same version and type are used, a zero-based index is added to the name.
 
-### Port Mappings
+## Port Mappings
 
 If not specified otherwise, the standalone and domain controller containers publish their HTTP and management ports
 based on the WildFly version:
@@ -109,7 +105,7 @@ waco start 26.1,28..30,2x32,3x35
 | 35      | waco-350-sa-1 | 8351 | 9351       |
 | 35      | waco-350-sa-2 | 8352 | 9352       |
 
-## Commands
+# Commands
 
 Currently, the following commands are supported:
 
@@ -135,7 +131,7 @@ Options:
   -V, --version  Print version
 ```
 
-### Build
+## Build
 
 ```shell
 Build WildFly images
@@ -160,13 +156,15 @@ Options:
 ```shell
 waco build 34
 waco build 34 --username alice --password "Admin#70365"
-waco build 10,23,34
-waco build 20..29
+waco build 10,23,34 --standalone
+waco build 20..29 --domain
 waco build 10,20..29,34
 waco build .. --chuncks 5
 ```
 
-### Standalone Start
+## Standalone
+
+### Start
 
 ```shell
 Start a standalone server
@@ -206,7 +204,7 @@ waco start 34 --operations "/subsystem=logging/console-handler=CONSOLE:write-att
 waco start 34 --offset 100 -- --server-config=standalone-microprofile.xml
 ```
 
-### Standalone Stop
+### Stop
 
 ```shell
 Stop a standalone server
@@ -234,7 +232,11 @@ waco stop 34 --all
 waco stop --all
 ```
 
-### Domain Controller Start
+## Domain
+
+### Domain Controller
+
+#### Start
 
 ```shell
 Start a domain controller
@@ -279,16 +281,16 @@ waco dc start 30..35
 waco dc start 34 --name foo
 waco dc start 34 --name bar --offset 100
 waco dc start 34 --http 8080 --management 9990
-waco dc start 34 --server s1
+waco dc start 34 --server s1:start
 waco dc start 35 --server s1,s2,s3,s4:osg,s5:osg
-waco dc start 34 --server s1,s2,s3 --server s4:osg,s5:osg,s6:osg
+waco dc start 34 --server s1:start,s2,s3 --server s4:osg:start,s5:osg,s6:osg
 waco dc start 34 --name dc \
   --server server-one:main-server-group:start \
   --server server-two:main-server-group:10 \
   --server server-three:other-server-group:20
 ```
 
-### Domain Controller Stop
+#### Stop
 
 ```shell
 Stop a domain controller
@@ -316,7 +318,9 @@ waco dc stop 34 --all
 waco dc stop --all
 ```
 
-### Host Controller Start
+### Host Controller
+
+#### Start
 
 ```shell
 Start a host controller
@@ -365,7 +369,7 @@ Options:
 waco hc start 34
 waco hc start 3x34
 waco hc start 30..35 --domain-controller dc
-waco hc start 34 --name foo --username alice --password "Admin#70365"
+waco hc start 34 -n foo -d dc -u alice -p "Admin#70365"
 waco hc start 34 --server s1
 waco hc start 3x34 --server s1,s2,s3:osg
 waco hc start 35 --name hc \
@@ -374,7 +378,7 @@ waco hc start 35 --name hc \
   --server server-three:other-server-group:20
 ```
 
-### Host Controller Stop
+#### Stop
 
 ```shell
 Stop a host controller
@@ -402,20 +406,20 @@ waco hc stop 34 --all
 waco hc stop --all
 ```
 
-### Topology Start
+### Topology
 
-> **Warning**
+> [!WARNING]  
 > The topology commands are not yet implemented.
+> You can work around with the `dc` and `hc` commands though:
+> 
+> ```shell
+> waco dc start 35 -n dc -s s1,s2,s3,s4:osg,s5:osg
+> waco hc start 32,33,2x35 -d dc -s s1,s2,s3:osg
+> waco console 35
+> ```
+> Open http://localhost:9350/console/index.html#runtime;path=domain-browse-by~topology
 
-You can work around with the `dc` and `hc` commands though:
-
-```shell
-waco dc start 35 -n dc -s s1,s2,s3,s4:osg,s5:osg
-waco hc start 32,33,2x35 -d dc -s s1,s2,s3:osg
-waco console 35
-```
-
-Open http://localhost:9350/console/index.html#runtime;path=domain-browse-by~topology
+#### Start
 
 ```shell
 Start a topology
@@ -430,7 +434,7 @@ Options:
   -V, --version  Print version
 ```
 
-### Topology Stop
+#### Stop
 
 ```shell
 Stop a topology
@@ -489,7 +493,7 @@ hosts:
         offset: 200
 ```
 
-### PS
+## PS
 
 ```shell
 List running standalone, domain and host controller containers
@@ -501,7 +505,9 @@ Options:
   -V, --version  Print version
 ```
 
-### Management Console
+## Management Clients
+
+### Console
 
 ```shell
 Open the management console
