@@ -107,13 +107,13 @@ waco start 26.1,28..30,2x32,3x35
 
 # Commands
 
-Currently, the following commands are supported:
-
 > [!IMPORTANT]  
 > Most commands require `podman` to be present.
 > Docker is not yet supported!
 > The `console` command opens the default web
 > browser and the `cli` command requires a JVM. 
+
+Currently, the following commands are supported:
 
 ```shell
 Command line tool to build and run WildFly containers in different versions and operation modes.
