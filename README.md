@@ -72,13 +72,15 @@ Domain and host controller images are changed so that no servers are configured.
 
 # Containers
 
+## Naming
+
 The default name for containers is `waco-<version>-<type>[-index]`
 
 - Version: `<major><minor>`
 - Type: `sa|dc|hc` - standalone, domain or host controller
 - Index: If multiple containers of the same version and type are used, a zero-based index is added to the name.
 
-## Port Mappings
+## Ports
 
 If not specified otherwise, the standalone and domain controller containers publish their HTTP and management ports
 based on the WildFly version:
