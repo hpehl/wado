@@ -2185,9 +2185,9 @@ dependencies = [
 
 [[package]]
 name = "wildfly_container_versions"
-version = "0.1.5"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7db7ec21da80ad9cbf6fba6a8a40e40e2f6db0e93b62f74a7da17ea0475754cf"
+checksum = "c4e305c7b32a3a6d9856ab3ad5ea322b3c5248fe587419f4a8c81a6a05b5c410"
 dependencies = [
  "anyhow",
  "lazy_static",

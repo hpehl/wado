@@ -20,7 +20,6 @@
 #
 # Creates a new release:
 #   - bump to release version
-#   - update changelog
 #   - commit & push changes
 #   - create & push tag (trigger GitHub release workflow)
 #   - bump to next version
@@ -42,7 +41,7 @@ cd "${script_dir}"
 usage() {
   cat <<EOF
 USAGE:
-    $(basename "${BASH_SOURCE[0]}") [FLAGS] <release-version> <next-version>
+    $(basename "${BASH_SOURCE[0]}") [FLAGS] <release-version>
 
 FLAGS:
     -h, --help          Prints help information
@@ -51,7 +50,6 @@ FLAGS:
 
 ARGS:
     <release-version>   The release version (as semver)
-    <next-snapshot>     The next snapshot version  (as semver)
 EOF
   exit
 }
@@ -98,9 +96,8 @@ parse_params() {
   done
 
   ARGS=("$@")
-  [[ ${#ARGS[@]} -eq 2 ]] || die "Missing release and/or snapshot version"
+  [[ ${#ARGS[@]} -eq 1 ]] || die "Missing release version"
   RELEASE_VERSION=${ARGS[0]}
-  NEXT_VERSION=${ARGS[1]}
   return 0
 }
 
@@ -112,17 +109,12 @@ is_semver() {
     fi
 }
 
-version_gt() { test "$(echo "$@" | tr " " "\n" | sort -V | head -n 1)" != "$1"; }
-
 parse_params "$@"
 setup_colors
 
-FINAL_VERSION="${RELEASE_VERSION}"
 TAG="v${RELEASE_VERSION}"
 
 is_semver "${RELEASE_VERSION}" || die "Release version is not a semantic version"
-is_semver "${NEXT_VERSION}" || die "Next version is not a semantic version"
-version_gt "${NEXT_VERSION}" "${RELEASE_VERSION}" || die "Next version must be greater than release version"
 git diff-index --quiet HEAD || die "You have uncommitted changes"
 [[ $(git tag -l "${TAG}") ]] && die "Tag ${TAG} already defined"
 
@@ -131,12 +123,9 @@ msg "Codebase is ready to be released."
 msg ""
 msg "If you decide to continue, this script will "
 msg ""
-msg "   1. Bump the version to ${CYAN}${FINAL_VERSION}${NOFORMAT}"
-msg "   2. Update the ${CYAN}changelog${NOFORMAT} (there should already be entries in the ${CYAN}Unreleased${NOFORMAT} section!)"
-msg "   3. Create a tag for ${CYAN}${TAG}${NOFORMAT}"
-msg "   4. ${CYAN}Commit${NOFORMAT} and ${CYAN}push${NOFORMAT} to origin (which will trigger the ${CYAN}release workflow${NOFORMAT} at GitHub)"
-msg "   5. Bump the version to ${CYAN}${NEXT_VERSION}${NOFORMAT}"
-msg "   6. ${CYAN}Commit${NOFORMAT} and ${CYAN}push${NOFORMAT} to origin"
+msg "   1. Bump the version to ${CYAN}${RELEASE_VERSION}${NOFORMAT}"
+msg "   2. Create a tag for ${CYAN}${TAG}${NOFORMAT}"
+msg "   3. ${CYAN}Commit${NOFORMAT} and ${CYAN}push${NOFORMAT} to origin (which will trigger the ${CYAN}release workflow${NOFORMAT} at GitHub)"
 msg ""
 echo "Do you wish to continue?"
 select yn in "Yes" "No"; do
@@ -147,17 +136,12 @@ select yn in "Yes" "No"; do
 done
 
 msg ""
-./versionBump.sh "${FINAL_VERSION}"
-msg "Update changelog"
-# TODO Update changelog
+msg "Bump version"
+cargo bump "${RELEASE_VERSION}"
 msg "Push changes"
 git commit --quiet -am "Release ${RELEASE_VERSION}"
 git push --quiet origin main &> /dev/null
 msg "Push tag"
 git tag "${TAG}"
 git push --quiet --tags origin main &> /dev/null
-# TODO Bump to next version
-msg "Push changes"
-git commit --quiet -am "Next is ${NEXT_VERSION}"
-git push --quiet origin main &> /dev/null
 msg "Done. Watch the release workflow at https://github.com/hpehl/waco/actions/workflows/release.yml"
