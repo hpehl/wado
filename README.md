@@ -1,7 +1,10 @@
+# WildFly Admin Containers
+
 `waco` (**W**ildFly **a**dmin **co**ntainers) is a command line tool to build and run WildFly containers of different
 versions in different operation modes (domain and standalone). The container images are based on the official WildFly
 images but are intended more for the development and testing of WildFly and its management tools (CLI and console).
 
+- [Install](#install)
 - [Versions](#versions)
 - [Images](#images)
 - [Containers](#containers)
@@ -42,7 +45,7 @@ brew tap hpehl/tap
 brew install waco
 ```
 
-### Shell Completion
+## Shell Completion
 
 The repository contains shell completion files for bash, fish, zsh, elvish, and PowerShell. To install them:
 
