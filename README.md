@@ -25,6 +25,33 @@ images but are intended more for the development and testing of WildFly and its 
         - [Console](#console)
         - [CLI](#cli)
 
+# Install
+
+[Precompiled binaries](https://github.com/hpehl/waco/releases) are available for macOS and Linux.
+
+## Cargo
+
+```shell
+cargo install waco
+```
+
+## Brew
+
+```shell
+brew tap hpehl/tap
+brew install waco
+```
+
+### Shell Completion
+
+The repository contains shell completion files for bash, fish, zsh, elvish, and PowerShell. To install them:
+
+* for bash, copy `completions/mcup.bash` to `$XDG_CONFIG_HOME/bash_completion` or `/etc/bash_completion.d/`.
+* for fish, copy `completions/mcup.fish` to `~/.config/fish/completions/`.
+* for zsh, copy `completions/_mcup` to one of your `$fpath` directories.
+* for elvish, install `completions/mcup.elv` with [epm](https://elv.sh/ref/epm.html)
+* for PowerShell, add `completions/_mcup.ps1` to your PowerShell profile.
+
 # Versions
 
 Most commands require a
@@ -113,7 +140,7 @@ waco start 26.1,28..30,2x32,3x35
 > Most commands require `podman` to be present.
 > Docker is not yet supported!
 > The `console` command opens the default web
-> browser and the `cli` command requires a JVM. 
+> browser and the `cli` command requires a JVM.
 
 Currently, the following commands are supported:
 
