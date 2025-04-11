@@ -7,3 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- First release 🎉
+
+[Unreleased]: https://github.com/hpehl/waco/releases/tag/vUnreleased

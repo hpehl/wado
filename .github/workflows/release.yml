@@ -1,19 +1,41 @@
 name: Release
 
+permissions:
+  # TODO: once `releases: write` is supported, use it instead.
+  contents: write
+
 on:
   push:
     tags:
       - 'v*'
 
 env:
+  CARGO_INCREMENTAL: 0
+  CARGO_NET_RETRY: 10
   CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: full
+  RUSTFLAGS: -D warnings
+  RUSTUP_MAX_RETRIES: 10
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
-  release:
+  create-release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - run: cargo publish --token ${CRATES_TOKEN}
-        env:
-          CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
+      - uses: taiki-e/create-gh-release-action@v1.9.1
+        with:
+          changelog: CHANGELOG.md
+          token: ${{ secrets.GITHUB_TOKEN }}
+  upload-assets:
+    needs: create-release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: taiki-e/upload-rust-binary-action@v1
+        with:
+          bin: ...
+          token: ${{ secrets.GITHUB_TOKEN }}

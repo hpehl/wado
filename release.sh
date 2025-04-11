@@ -138,6 +138,8 @@ done
 msg ""
 msg "Bump version"
 cargo bump "${RELEASE_VERSION}"
+msg "Update changelog"
+changelog release "${RELEASE_VERSION}"
 msg "Push changes"
 git commit --quiet -am "Release ${RELEASE_VERSION}"
 git push --quiet origin main &> /dev/null
