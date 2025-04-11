@@ -37,5 +37,5 @@ jobs:
       - uses: actions/checkout@v4
       - uses: taiki-e/upload-rust-binary-action@v1
         with:
-          bin: ...
+          bin: waco
           token: ${{ secrets.GITHUB_TOKEN }}
