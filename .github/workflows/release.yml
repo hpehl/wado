@@ -7,7 +7,7 @@ permissions:
 on:
   push:
     tags:
-      - 'v*'
+      - v[0-9]+.*
 
 env:
   CARGO_INCREMENTAL: 0
@@ -19,18 +19,22 @@ env:
 
 defaults:
   run:
-    shell: bash
+    shell: bash --noprofile --norc -CeEuxo pipefail {0}
 
 jobs:
   create-release:
+    if: github.repository_owner == 'hpehl'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: taiki-e/create-gh-release-action@v1.9.1
         with:
+          title: '$version'
           changelog: CHANGELOG.md
           token: ${{ secrets.GITHUB_TOKEN }}
   upload-assets:
+    if: github.repository_owner == 'hpehl'
+    name: ${{ matrix.target }}
     needs: create-release
     strategy:
       matrix:
@@ -46,6 +50,6 @@ jobs:
         with:
           bin: waco
           target: ${{ matrix.target }}
-          tar: unix
+          tar: all
           zip: windows
           token: ${{ secrets.GITHUB_TOKEN }}
