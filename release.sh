@@ -140,6 +140,8 @@ msg "Bump version"
 cargo bump "${RELEASE_VERSION}"
 msg "Update changelog"
 changelog release "${RELEASE_VERSION}"
+msg "Format & build"
+cargo fmt && cargo build
 msg "Push changes"
 git commit --quiet -am "Release ${RELEASE_VERSION}"
 git push --quiet origin main &> /dev/null

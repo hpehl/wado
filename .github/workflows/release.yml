@@ -67,14 +67,24 @@ jobs:
           target: ${{ matrix.target }}
           checksum: sha256
           token: ${{ secrets.GITHUB_TOKEN }}
+  update-formula:
+    if: github.repository_owner == 'hpehl'
+    needs: upload-assets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: get-version
+        uses: battila7/get-version-action@v2.3.0
+      - id: checksum
+        run: |
+          echo ::set-output name=sha::"$(wget -qO- https://github.com/hpehl/waco/releases/download/${{steps.get-version.outputs.version}}/waco-x86_64-apple-darwin.tar.gz | shasum -a 256)"
       - uses: naijabx/update-formula-homebrew-action@v1.1
-        if: matrix.target == 'x86_64-apple-darwin'
         with:
           repo: hpehl/homebrew-tap
           tap: hpehl/tap
           formula: Formula/waco.rb
-          download-url: https://github.com/hpehl/waco/releases/download/${{steps.get-version.outputs.version}}/${{steps.upload-binary.archive}}.tar.gz
-          sha256: ${{steps.upload-binary.sha256}}
+          download-url: https://github.com/hpehl/waco/releases/download/${{steps.get-version.outputs.version}}/waco-x86_64-apple-darwin.tar.gz
+          sha256: ${{steps.checksum.outputs.sha}}
           commit-message: 'Update formula for waco ${{steps.get-version.outputs.version}}'
         env:
           COMMIT_TOKEN: ${{ secrets.FORMULA_TOKEN }}
