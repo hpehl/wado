@@ -1,10 +1,9 @@
 use crate::args::{admin_containers_argument, username_password_argument};
-use crate::command::{CommandStatus, summary};
 use crate::constants::{
     ADD_USER, ALLOWED_ORIGINS, ENTRYPOINT, LABEL_NAME, NO_AUTH, WILDFLY_ADMIN_CONTAINER,
 };
-use crate::podman::verify_podman;
-use crate::progress::{Progress, stdout_reader};
+use crate::container::{container_command, container_command_name, verify_container_command};
+use crate::progress::{CommandStatus, Progress, stdout_reader, summary};
 use crate::resources::{
     DOMAIN_CONTROLLER_DOCKERFILE, DOMAIN_CONTROLLER_ENTRYPOINT_SH, HOST_CONTROLLER_DOCKERFILE,
     HOST_CONTROLLER_ENTRYPOINT_SH, STANDALONE_DOCKERFILE, STANDALONE_ENTRYPOINT_SH,
@@ -14,9 +13,10 @@ use clap::ArgMatches;
 use futures::executor::block_on;
 use indicatif::MultiProgress;
 use std::collections::HashMap;
+use std::env;
 use std::fs::File;
 use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Stdio;
 use tempfile::tempdir;
 use tokio::process::Command;
@@ -24,7 +24,7 @@ use tokio::task::JoinSet;
 use tokio::time::Instant;
 
 pub fn build(matches: &ArgMatches) -> anyhow::Result<()> {
-    verify_podman()?;
+    verify_container_command()?;
 
     let temp_dir = tempdir()?;
     let (username, password) = username_password_argument(matches);
@@ -55,8 +55,8 @@ pub fn build(matches: &ArgMatches) -> anyhow::Result<()> {
 
 fn build_chunks(
     admin_containers: &[AdminContainer],
-    username_path: &PathBuf,
-    password_path: &PathBuf,
+    username_path: &Path,
+    password_path: &Path,
     chunk_size: u16,
 ) -> anyhow::Result<()> {
     let count = admin_containers.len();
@@ -80,8 +80,8 @@ fn build_chunks(
 
 fn build_all(
     admin_containers: &[AdminContainer],
-    username_path: &PathBuf,
-    password_path: &PathBuf,
+    username_path: &Path,
+    password_path: &Path,
 ) -> anyhow::Result<()> {
     let count = admin_containers.len();
     let instant = Instant::now();
@@ -96,8 +96,8 @@ fn build_all(
 
 async fn start_builds(
     admin_containers: Vec<AdminContainer>,
-    username_path: &PathBuf,
-    password_path: &PathBuf,
+    username_path: &Path,
+    password_path: &Path,
 ) -> anyhow::Result<Vec<CommandStatus>> {
     let multi_progress = MultiProgress::new();
     let mut commands = JoinSet::new();
@@ -117,7 +117,7 @@ async fn start_builds(
         let temp_dir = tempdir()?;
         let mut child = podman_build(
             &admin_container,
-            &temp_dir.as_ref(),
+            temp_dir.as_ref(),
             username_path,
             password_path,
         )?
@@ -148,8 +148,8 @@ async fn start_builds(
 fn podman_build(
     admin_container: &AdminContainer,
     context_dir: &Path,
-    username_path: &PathBuf,
-    password_path: &PathBuf,
+    username_path: &Path,
+    password_path: &Path,
 ) -> anyhow::Result<Command> {
     let entrypoint_path = context_dir.join(format!("{}-entrypoint.sh", WILDFLY_ADMIN_CONTAINER));
     let mut entrypoint_file = File::create(entrypoint_path)?;
@@ -190,7 +190,7 @@ fn podman_build(
     hbs.render_template_to_write(dockerfile, &data, dockerfile_file)?;
 
     let command = if admin_container.wildfly_container.platforms.is_empty() {
-        let mut command = Command::new("podman");
+        let mut command = container_command()?;
         command
             .arg("build")
             .arg("--secret")
@@ -202,13 +202,24 @@ fn podman_build(
             .arg(context_dir.as_os_str().to_str().unwrap());
         command
     } else {
-        let mut command = Command::new("sh"); // TODO Does not work on windows
-        command.arg("-c").arg(format!(
-            "podman manifest create --amend {image} && \
-             podman build --platform {platforms} \
+        let shell = if env::consts::OS == "windows" {
+            "cmd"
+        } else {
+            "sh"
+        };
+        let commands = if env::consts::OS == "windows" {
+            "/C"
+        } else {
+            "-c"
+        };
+        let mut command = Command::new(shell);
+        command.arg(commands).arg(format!(
+            "{command_name} manifest create --amend {image} && \
+             {command_name} build --platform {platforms} \
                  --secret id=username,src={username} \
                  --secret id=password,src={password} \
                  --manifest {image} {context}",
+            command_name = container_command_name()?,
             image = admin_container.image_name(),
             platforms = admin_container.wildfly_container.platforms.join(","),
             username = username_path.display(),

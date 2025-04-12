@@ -1,12 +1,12 @@
 use crate::args::{
     name_argument, operations_argument, parameters_argument, port_argument, versions_argument,
 };
-use crate::command::summary;
-use crate::podman::{create_network, podman_run, verify_podman};
-use crate::progress::{Progress, stderr_reader};
-use crate::wildfly::{
-    AdminContainer, Ports, ServerType, StandaloneInstance, ensure_unique_names, stop_instances,
+use crate::container::{
+    container_network, container_run, ensure_unique_names, stop_instances, verify_container_command,
 };
+use crate::progress::summary;
+use crate::progress::{Progress, stderr_reader};
+use crate::wildfly::{AdminContainer, Ports, ServerType, StandaloneInstance};
 use anyhow::bail;
 use clap::ArgMatches;
 use futures::executor::block_on;
@@ -19,7 +19,7 @@ use wildfly_container_versions::WildFlyContainer;
 // ------------------------------------------------------ start
 
 pub fn standalone_start(matches: &ArgMatches) -> anyhow::Result<()> {
-    verify_podman()?;
+    verify_container_command()?;
 
     let wildfly_containers = versions_argument(matches);
     let instances = if wildfly_containers.len() == 1 {
@@ -75,14 +75,14 @@ async fn start_instances(
     let multi_progress = MultiProgress::new();
     let mut commands = JoinSet::new();
 
-    create_network().await?;
+    container_network().await?;
     for instance in instances {
         let progress = Progress::new(
             &instance.admin_container.wildfly_container.short_version,
             &instance.admin_container.image_name(),
         );
         multi_progress.add(progress.bar.clone());
-        let mut command = podman_run(
+        let mut command = container_run(
             instance.name.as_str(),
             Some(&instance.ports),
             operations.clone(),
@@ -115,7 +115,7 @@ async fn start_instances(
 // ------------------------------------------------------ stop
 
 pub fn standalone_stop(matches: &ArgMatches) -> anyhow::Result<()> {
-    verify_podman()?;
+    verify_container_command()?;
     let wildfly_containers = matches.get_one::<Vec<WildFlyContainer>>("wildfly-version");
     let name = matches.get_one::<String>("name").map(|s| s.as_str());
     block_on(stop_instances(

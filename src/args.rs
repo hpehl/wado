@@ -65,7 +65,7 @@ pub fn parameters_argument(matches: &ArgMatches) -> Vec<String> {
     matches
         .get_many::<String>("wildfly-parameters")
         .unwrap_or_default()
-        .map(|p| p.clone())
+        .cloned()
         .collect::<Vec<_>>()
 }
 

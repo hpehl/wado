@@ -2,14 +2,14 @@ use crate::args::{
     name_argument, operations_argument, parameters_argument, port_argument, server_argument,
     versions_argument,
 };
-use crate::command::summary;
 use crate::constants::{HOSTNAME_VARIABLE, WILDFLY_ADMIN_CONTAINER};
-use crate::podman::{add_servers, create_network, podman_run, verify_podman};
-use crate::progress::{Progress, stderr_reader};
-use crate::wildfly::{
-    AdminContainer, DomainController, Ports, Server, ServerType, ensure_unique_names,
-    stop_instances,
+use crate::container::{
+    add_servers, container_network, container_run, ensure_unique_names, stop_instances,
+    verify_container_command,
 };
+use crate::progress::summary;
+use crate::progress::{Progress, stderr_reader};
+use crate::wildfly::{AdminContainer, DomainController, Ports, Server, ServerType};
 use anyhow::bail;
 use clap::ArgMatches;
 use futures::executor::block_on;
@@ -22,7 +22,7 @@ use wildfly_container_versions::WildFlyContainer;
 // ------------------------------------------------------ start
 
 pub fn dc_start(matches: &ArgMatches) -> anyhow::Result<()> {
-    verify_podman()?;
+    verify_container_command()?;
 
     let wildfly_containers = versions_argument(matches);
     let instances = if wildfly_containers.len() == 1 {
@@ -80,7 +80,7 @@ async fn start_instances(
     let multi_progress = MultiProgress::new();
     let mut commands = JoinSet::new();
 
-    create_network().await?;
+    container_network().await?;
     for instance in instances {
         let progress = Progress::new(
             &instance.admin_container.wildfly_container.short_version,
@@ -88,7 +88,7 @@ async fn start_instances(
         );
         multi_progress.add(progress.bar.clone());
 
-        let mut command = podman_run(&instance.name, Some(&instance.ports), operations.clone());
+        let mut command = container_run(&instance.name, Some(&instance.ports), operations.clone());
         command
             .arg("--network")
             .arg(WILDFLY_ADMIN_CONTAINER)
@@ -123,7 +123,7 @@ async fn start_instances(
 // ------------------------------------------------------ stop
 
 pub fn dc_stop(matches: &ArgMatches) -> anyhow::Result<()> {
-    verify_podman()?;
+    verify_container_command()?;
     let wildfly_containers = matches.get_one::<Vec<WildFlyContainer>>("wildfly-version");
     let name = matches.get_one::<String>("name").map(|s| s.as_str());
     block_on(stop_instances(

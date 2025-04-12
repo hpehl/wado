@@ -2,16 +2,17 @@ use crate::args::{
     name_argument, operations_argument, parameters_argument, server_argument,
     username_password_argument, versions_argument,
 };
-use crate::command::summary;
 use crate::constants::{
     DOMAIN_CONTROLLER_VARIABLE, HOSTNAME_VARIABLE, PASSWORD_VARIABLE, USERNAME_VARIABLE,
     WILDFLY_ADMIN_CONTAINER,
 };
-use crate::podman::{add_servers, create_network, podman_run, verify_podman};
-use crate::progress::{Progress, stderr_reader};
-use crate::wildfly::{
-    AdminContainer, HostController, Server, ServerType, ensure_unique_names, stop_instances,
+use crate::container::{
+    add_servers, container_command, container_network, container_run, ensure_unique_names,
+    stop_instances, verify_container_command,
 };
+use crate::progress::summary;
+use crate::progress::{Progress, stderr_reader};
+use crate::wildfly::{AdminContainer, HostController, Server, ServerType};
 use anyhow::bail;
 use clap::ArgMatches;
 use futures::executor::block_on;
@@ -26,7 +27,7 @@ use wildfly_container_versions::WildFlyContainer;
 // ------------------------------------------------------ start
 
 pub fn hc_start(matches: &ArgMatches) -> anyhow::Result<()> {
-    verify_podman()?;
+    verify_container_command()?;
 
     let wildfly_containers = versions_argument(matches);
     let wildfly_container = wildfly_containers[0].clone();
@@ -45,8 +46,7 @@ pub fn hc_start(matches: &ArgMatches) -> anyhow::Result<()> {
         if matches.contains_id("name") {
             bail!("Option <name> is not allowed when multiple <wildfly-version> are specified!");
         }
-        if !(same_versions(wildfly_containers.as_slice())
-            && !matches.contains_id("domain-controller"))
+        if !same_versions(wildfly_containers.as_slice()) || matches.contains_id("domain-controller")
         {
             bail!(
                 "Option <domain-controller> is required when multiple <wildfly-version> are specified!"
@@ -100,7 +100,7 @@ async fn start_instances(
     let mut commands = JoinSet::new();
 
     try_join!(
-        create_network(),
+        container_network(),
         create_secret("username", username),
         create_secret("password", password)
     )?;
@@ -111,7 +111,7 @@ async fn start_instances(
         );
         multi_progress.add(progress.bar.clone());
 
-        let mut command = podman_run(&hc.name, None, operations.clone());
+        let mut command = container_run(&hc.name, None, operations.clone());
         command
             .arg(format!(
                 "--secret=username,type=env,target={}",
@@ -170,7 +170,7 @@ async fn create_secret(secret_name: &str, secret_value: &str) -> anyhow::Result<
         .unwrap()
         .try_into()
         .expect("Failed to convert to stdio");
-    let mut podman_secret = Command::new("podman")
+    let mut podman_secret = container_command()?
         .arg("secret")
         .arg("create")
         .arg("--replace")
@@ -189,7 +189,7 @@ async fn create_secret(secret_name: &str, secret_value: &str) -> anyhow::Result<
 // ------------------------------------------------------ stop
 
 pub fn hc_stop(matches: &ArgMatches) -> anyhow::Result<()> {
-    verify_podman()?;
+    verify_container_command()?;
     let wildfly_containers = matches.get_one::<Vec<WildFlyContainer>>("wildfly-version");
     let name = matches.get_one::<String>("name").map(|s| s.as_str());
     block_on(stop_instances(

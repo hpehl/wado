@@ -1,5 +1,5 @@
 use crate::args::versions_argument;
-use crate::podman::get_instance;
+use crate::container::get_instance;
 use crate::wildfly::ManagementClient;
 use anyhow::bail;
 use clap::ArgMatches;

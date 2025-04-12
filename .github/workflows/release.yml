@@ -51,15 +51,32 @@ jobs:
         include:
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
+            features: systemd,io_uring
           - target: x86_64-apple-darwin
             os: macos-latest
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - uses: taiki-e/upload-rust-binary-action@v1
+      - id: get-version
+        uses: battila7/get-version-action@v2.3.0
+      - id: upload-binary
+        uses: taiki-e/upload-rust-binary-action@v1
         with:
           bin: waco
           target: ${{ matrix.target }}
-          tar: all
-          zip: windows
+          features: ${{ matrix.features || '' }}
+          checksum: sha256
           token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: naijabx/update-formula-homebrew-action@v1.1
+        if: matrix.target == 'x86_64-apple-darwin'
+        with:
+          repo: hpehl/homebrew-tap
+          tap: hpehl/tap
+          formula: Formula/waco.rb
+          download-url: https://github.com/hpehl/waco/releases/download/${{steps.get-version.outputs.version}}/${{steps.upload-binary.archive}}.tar.gz
+          sha256: ${{steps.upload-binary.sha256}}
+          commit-message: 'Update formula for waco ${{steps.get-version.outputs.version}}'
+        env:
+          COMMIT_TOKEN: ${{ secrets.FORMULA_TOKEN }}

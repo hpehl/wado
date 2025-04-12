@@ -1,18 +1,16 @@
 use crate::args::admin_containers_argument;
-use crate::command::{CommandStatus, summary};
-use crate::podman::verify_podman;
-use crate::progress::{Progress, stderr_reader};
+use crate::container::{container_command, verify_container_command};
+use crate::progress::{CommandStatus, Progress, stderr_reader, summary};
 use crate::wildfly::AdminContainer;
 use clap::ArgMatches;
 use futures::executor::block_on;
 use indicatif::MultiProgress;
 use std::process::Stdio;
-use tokio::process::Command;
 use tokio::task::JoinSet;
 use tokio::time::Instant;
 
 pub fn push(matches: &ArgMatches) -> anyhow::Result<()> {
-    verify_podman()?;
+    verify_container_command()?;
 
     let admin_containers = admin_containers_argument(matches);
     let chunk_size = *matches.get_one::<u16>("chunks").unwrap_or(&0);
@@ -68,11 +66,11 @@ async fn start_push(admin_containers: Vec<AdminContainer>) -> anyhow::Result<Vec
             &admin_container.image_name(),
         );
 
-        let mut command = Command::new("podman");
+        let mut command = container_command()?;
         if !admin_container.wildfly_container.platforms.is_empty() {
             command.arg("manifest");
         }
-        command.arg("push").arg(&admin_container.image_name());
+        command.arg("push").arg(admin_container.image_name());
 
         let mut child = command
             .stdout(Stdio::piped())
@@ -84,8 +82,7 @@ async fn start_push(admin_containers: Vec<AdminContainer>) -> anyhow::Result<Vec
         let progress_clone = progress.clone();
         commands.spawn(async move {
             let output = child.wait_with_output().await;
-            let status = progress.finish(output, None);
-            status
+            progress.finish(output, None)
         });
         tokio::spawn(async move {
             progress_clone.trace_progress(stderr).await;

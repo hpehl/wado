@@ -1,10 +1,73 @@
-use crate::command::CommandStatus;
 use console::{style, truncate_str};
-use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
+use indicatif::{HumanDuration, MultiProgress, ProgressBar, ProgressStyle};
 use std::process::Output;
 use std::time::Duration;
 use tokio::io::{AsyncBufReadExt, BufReader, Lines};
 use tokio::process::{Child, ChildStderr, ChildStdout};
+use tokio::time::Instant;
+
+// ------------------------------------------------------ command status
+
+#[derive(Clone)]
+pub struct CommandStatus {
+    pub identifier: String,
+    pub success: bool,
+    pub error_message: String,
+}
+
+impl CommandStatus {
+    pub fn success(identifier: &str) -> Self {
+        CommandStatus {
+            identifier: identifier.to_string(),
+            success: true,
+            error_message: "".to_string(),
+        }
+    }
+
+    pub fn error(identifier: &str, error_message: &str) -> Self {
+        CommandStatus {
+            identifier: identifier.to_string(),
+            success: false,
+            error_message: error_message.to_string(),
+        }
+    }
+}
+
+pub fn summary(verb: &str, noun: &str, count: usize, instant: Instant, status: Vec<CommandStatus>) {
+    let successful = status.iter().filter(|&bs| bs.success).count();
+    let failed = status.iter().filter(|&bs| !bs.success).count();
+    println!("\n");
+    if failed > 0 {
+        println!(
+            "{} {} of {} {} in {}. {} container failed:",
+            verb,
+            style(successful).green(),
+            style(count).cyan(),
+            noun,
+            style(HumanDuration(instant.elapsed())).cyan(),
+            style(failed).red()
+        );
+        for cs in status {
+            if !cs.success {
+                println!(
+                    "{}: {}",
+                    style(cs.identifier).cyan(),
+                    style(cs.error_message).red()
+                );
+            }
+        }
+    } else {
+        println!(
+            "{} {} {} in {}.",
+            verb,
+            style(successful).cyan(),
+            noun,
+            style(HumanDuration(instant.elapsed())).cyan()
+        );
+    }
+}
+
+// ------------------------------------------------------ progress
 
 #[derive(Clone)]
 pub struct Progress {
@@ -137,8 +200,7 @@ pub fn stdout_reader(child: &mut Child) -> Lines<BufReader<ChildStdout>> {
         .stdout
         .take()
         .expect("Command did not have a handle to stdout.");
-    let stdout_reader = BufReader::new(stdout).lines();
-    stdout_reader
+    BufReader::new(stdout).lines()
 }
 
 pub fn stderr_reader(child: &mut Child) -> Lines<BufReader<ChildStderr>> {
@@ -146,6 +208,5 @@ pub fn stderr_reader(child: &mut Child) -> Lines<BufReader<ChildStderr>> {
         .stderr
         .take()
         .expect("Command did not have a handle to stderr.");
-    let stderr_reader = BufReader::new(stderr).lines();
-    stderr_reader
+    BufReader::new(stderr).lines()
 }

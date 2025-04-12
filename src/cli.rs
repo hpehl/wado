@@ -1,22 +1,22 @@
 use crate::args::{username_password_argument, version_argument};
 use crate::constants::WILDFLY_ADMIN_CONTAINER;
-use crate::podman::get_instance;
+use crate::container::get_instance;
 use crate::progress::Progress;
 use crate::wildfly::ManagementClient;
-use anyhow::{Context, anyhow};
+use anyhow::{anyhow, Context};
 use clap::ArgMatches;
-use fs::{File, create_dir_all};
+use fs::{create_dir_all, File};
 use futures::executor::block_on;
 use std::env::temp_dir;
 use std::fs;
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tokio::process::Command;
 use which::which;
 use wildfly_container_versions::WildFlyContainer;
 
 pub fn cli(matches: &ArgMatches) -> anyhow::Result<()> {
-    which("java").with_context(|| "podman not found")?;
+    which("java").with_context(|| "java not found")?;
 
     let management_client = if let Some(name) = matches.get_one::<String>("name") {
         let mut v = vec![];
@@ -43,7 +43,7 @@ pub fn cli(matches: &ArgMatches) -> anyhow::Result<()> {
     let parameters = matches
         .get_many::<String>("cli-parameters")
         .unwrap_or_default()
-        .map(|p| p.clone())
+        .cloned()
         .collect::<Vec<_>>();
     let temp_dir = temp_dir().join(format!(
         "{}-cli-{}",
@@ -62,7 +62,7 @@ pub fn cli(matches: &ArgMatches) -> anyhow::Result<()> {
 
 async fn connect_to_cli(
     management_client: &ManagementClient,
-    cli_dir: &PathBuf,
+    cli_dir: &Path,
     username: &str,
     password: &str,
     parameters: Vec<String>,
@@ -117,7 +117,7 @@ async fn download_file(url: &str, path: &PathBuf) -> anyhow::Result<()> {
     } else {
         let response = reqwest::get(url).await?;
         if response.status().is_success() {
-            let mut file = File::create(&path)?;
+            let mut file = File::create(path)?;
             let content = response.bytes().await?;
             file.write_all(&content)?;
             Ok(())

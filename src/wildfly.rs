@@ -1,16 +1,9 @@
-use crate::command::summary;
 use crate::constants::{WILDFLY_ADMIN_CONTAINER, WILDFLY_ADMIN_CONTAINER_REPOSITORY};
-use crate::podman::{podman_ps, podman_stop};
-use crate::progress::Progress;
 use anyhow::bail;
-use indicatif::MultiProgress;
 use semver::Version;
 use std::cmp::Ordering;
 use std::fmt::{Debug, Display};
-use std::process::Stdio;
 use std::str::FromStr;
-use tokio::task::JoinSet;
-use tokio::time::Instant;
 use wildfly_container_versions::WildFlyContainer;
 
 // ------------------------------------------------------ traits
@@ -542,63 +535,6 @@ impl ManagementClient {
             ),
         )
     }
-}
-
-// ------------------------------------------------------ functions
-
-pub fn ensure_unique_names<T>(items: &Vec<T>, copy_fn: fn(&T, u16) -> T) -> Vec<T>
-where
-    T: Clone,
-    T: HasWildFlyContainer,
-{
-    let chunks =
-        items.chunk_by(|a, b| a.wildfly_container().identifier == b.wildfly_container().identifier);
-    let mut unique_names = vec![];
-    for chunk in chunks {
-        if chunk.len() > 1 {
-            for (index, item) in chunk.iter().enumerate() {
-                unique_names.push(copy_fn(item, index as u16));
-            }
-        } else {
-            unique_names.push(chunk[0].clone());
-        }
-    }
-    unique_names
-}
-
-pub async fn stop_instances(
-    server_type: ServerType,
-    wildfly_containers: Option<&Vec<WildFlyContainer>>,
-    name: Option<&str>,
-) -> anyhow::Result<()> {
-    let instances = podman_ps(vec![server_type], wildfly_containers, name, false).await?;
-    let count = instances.len();
-    let instant = Instant::now();
-    let multi_progress = MultiProgress::new();
-    let mut commands = JoinSet::new();
-
-    for instance in instances {
-        let progress = Progress::new(
-            &instance.admin_container.wildfly_container.short_version,
-            &instance.admin_container.image_name(),
-        );
-        multi_progress.add(progress.bar.clone());
-        let mut command = podman_stop(&instance.name);
-        let child = command
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-            .expect("Unable to run podman-stop.");
-
-        commands.spawn(async move {
-            let output = child.wait_with_output().await;
-            progress.finish(output, Some(&instance.name))
-        });
-    }
-
-    let status = commands.join_all().await;
-    summary("Stopped", "container", count, instant, status);
-    Ok(())
 }
 
 // ------------------------------------------------------ tests

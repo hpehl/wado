@@ -1,11 +1,11 @@
-use crate::podman::podman_ps;
+use crate::container::container_ps;
 use crate::wildfly::ServerType::{DomainController, HostController, Standalone};
 use comfy_table::presets::UTF8_BORDERS_ONLY;
 use comfy_table::{Cell, Color, ContentArrangement, Table};
 use futures::executor::block_on;
 
 pub fn ps() -> anyhow::Result<()> {
-    let mut instances = block_on(podman_ps(
+    let mut instances = block_on(container_ps(
         vec![Standalone, DomainController, HostController],
         None,
         None,
@@ -23,7 +23,7 @@ pub fn ps() -> anyhow::Result<()> {
         table.add_row(vec![
             Cell::new(instance.container_id),
             Cell::new(&instance.admin_container.wildfly_container.version).fg(Color::DarkMagenta),
-            Cell::new(&instance.admin_container.server_type.short_name()).fg(Color::DarkCyan),
+            Cell::new(instance.admin_container.server_type.short_name()).fg(Color::DarkCyan),
             Cell::new(instance.name).fg(Color::DarkYellow),
             if let Some(ports) = instance.ports {
                 Cell::new(format!("{}/{}", ports.http, ports.management)).fg(Color::Green)
