@@ -76,7 +76,7 @@ jobs:
         uses: battila7/get-version-action@v2.3.0
       - id: checksum
         run: |
-          echo ::set-output name=sha::"$(wget -qO- https://github.com/hpehl/waco/releases/download/${{steps.get-version.outputs.version}}/waco-x86_64-apple-darwin.tar.gz | shasum -a 256)"
+          echo ::set-output name=sha::"$(wget -qO- https://github.com/hpehl/waco/releases/download/${{steps.get-version.outputs.version}}/waco-x86_64-apple-darwin.tar.gz | shasum -a 256 | head -c 64)"
       - name: Set up Git identity
         run: |
           git config --global user.name "github-actions[bot]"
