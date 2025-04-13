@@ -78,13 +78,28 @@ jobs:
       - id: checksum
         run: |
           echo ::set-output name=sha::"$(wget -qO- https://github.com/hpehl/waco/releases/download/${{steps.get-version.outputs.version}}/waco-x86_64-apple-darwin.tar.gz | shasum -a 256)"
-      - uses: naijabx/update-formula-homebrew-action@v1.1
-        with:
-          repo: hpehl/homebrew-tap
-          tap: hpehl/tap
-          formula: Formula/waco.rb
-          download-url: https://github.com/hpehl/waco/releases/download/${{steps.get-version.outputs.version}}/waco-x86_64-apple-darwin.tar.gz
-          sha256: ${{steps.checksum.outputs.sha}}
-          commit-message: 'Update formula for waco ${{steps.get-version.outputs.version}}'
+      - name: Set up Git identity
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+      - name: Clone homebrew-tap
         env:
-          COMMIT_TOKEN: ${{ secrets.FORMULA_TOKEN }}
+          TOKEN: ${{ secrets.FORMULA_TOKEN }}
+        run: |
+          git clone https://$TOKEN@github.com/hpehl/homebrew-tap.git
+          cd homebrew-tap
+          git checkout main
+      - name: Update formula
+        run: |
+          cd homebrew-tap
+          sed -i 's|url ".*"|url "https://github.com/hpehl/waco/releases/download/${{steps.get-version.outputs.version}}/waco-x86_64-apple-darwin.tar.gz"|' Formula/waco.rb
+          sed -i 's|sha256 ".*"|sha256 "${{steps.checksum.outputs.sha}}"|' Formula/waco.rb
+          sed -i 's|version ".*"|version "${{steps.get-version.outputs.version-without-v}}"|' Formula/waco.rb
+      - name: Commit and push changes
+        env:
+          TOKEN: ${{ secrets.FORMULA_TOKEN }}
+        run: |
+          cd homebrew-tap
+          git add Formula/waco.rb
+          git commit -m "Update waco formula: version ${{steps.get-version.outputs.version-without-v}}"
+          git push origin main
