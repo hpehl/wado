@@ -1,6 +1,6 @@
 [package]
 name = "waco"
-version = "0.0.4"
+version = "0.0.5"
 authors = ["Harald Pehl <harald.pehl@gmail.com>"]
 edition = "2024"
 description = "Command line tool to manage WildFly containers."
