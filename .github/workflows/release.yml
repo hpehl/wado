@@ -65,7 +65,6 @@ jobs:
         with:
           bin: waco
           target: ${{ matrix.target }}
-          checksum: sha256
           token: ${{ secrets.GITHUB_TOKEN }}
   update-formula:
     if: github.repository_owner == 'hpehl'
