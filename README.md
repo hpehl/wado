@@ -35,12 +35,6 @@ images but are intended more for the development and testing of WildFly and its 
 
 [Precompiled binaries](https://github.com/hpehl/waco/releases) are available for macOS, Linux, and Windows.
 
-## Cargo
-
-```shell
-cargo install waco
-```
-
 ## Brew
 
 ```shell
@@ -48,9 +42,16 @@ brew tap hpehl/tap
 brew install waco
 ```
 
+## Cargo
+
+```shell
+cargo install waco
+```
+
 ## Shell Completion
 
-The repository contains shell completion files for bash, fish, zsh, elvish, and PowerShell. To install them:
+The repository contains shell completion files for bash, fish, zsh, elvish, and PowerShell.
+They're installed automatically by brew. To install them manually:
 
 * for bash, copy `completions/waco.bash` to `$XDG_CONFIG_HOME/bash_completion` or `/etc/bash_completion.d/`.
 * for fish, copy `completions/waco.fish` to `~/.config/fish/completions/`.
