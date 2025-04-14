@@ -1,4 +1,4 @@
-[![Build status](https://github.com/hpehl/waco/workflows/verify/badge.svg)](https://github.com/hpehl/waco/actions)
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/hpehl/waco/verify.yml)
 [![Crates.io](https://img.shields.io/crates/v/waco.svg)](https://crates.io/crates/waco)
 
 # WildFly Admin Containers
