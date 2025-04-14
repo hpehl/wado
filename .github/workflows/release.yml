@@ -61,7 +61,7 @@ jobs:
       - uses: taiki-e/upload-rust-binary-action@v1
         with:
           bin: waco
-          include: completions/_waco,completions/waco.bash,completions/waco.fish,
+          include: completions/_waco,completions/waco.bash,completions/waco.fish
           target: ${{ matrix.target }}
           token: ${{ secrets.GITHUB_TOKEN }}
   update-formula:
