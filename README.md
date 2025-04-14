@@ -1,3 +1,6 @@
+[![Build status](https://github.com/hpehl/waco/workflows/verify/badge.svg)](https://github.com/hpehl/waco/actions)
+[![Crates.io](https://img.shields.io/crates/v/waco.svg)](https://crates.io/crates/waco)
+
 # WildFly Admin Containers
 
 `waco` (**W**ildFly **a**dmin **co**ntainers) is a command line tool to build and run WildFly containers of different
@@ -49,11 +52,11 @@ brew install waco
 
 The repository contains shell completion files for bash, fish, zsh, elvish, and PowerShell. To install them:
 
-* for bash, copy `completions/mcup.bash` to `$XDG_CONFIG_HOME/bash_completion` or `/etc/bash_completion.d/`.
-* for fish, copy `completions/mcup.fish` to `~/.config/fish/completions/`.
-* for zsh, copy `completions/_mcup` to one of your `$fpath` directories.
-* for elvish, install `completions/mcup.elv` with [epm](https://elv.sh/ref/epm.html)
-* for PowerShell, add `completions/_mcup.ps1` to your PowerShell profile.
+* for bash, copy `completions/waco.bash` to `$XDG_CONFIG_HOME/bash_completion` or `/etc/bash_completion.d/`.
+* for fish, copy `completions/waco.fish` to `~/.config/fish/completions/`.
+* for zsh, copy `completions/_waco` to one of your `$fpath` directories.
+* for elvish, install `completions/waco.elv` with [epm](https://elv.sh/ref/epm.html)
+* for PowerShell, add `completions/_waco.ps1` to your PowerShell profile.
 
 # Versions
 
