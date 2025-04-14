@@ -4,7 +4,7 @@
 versions in different operation modes (domain and standalone). The container images are based on the official WildFly
 images but are intended more for the development and testing of WildFly and its management tools (CLI and console).
 
-- [Install](#install)
+- [Installation](#installation)
 - [Versions](#versions)
 - [Images](#images)
 - [Containers](#containers)
@@ -28,9 +28,9 @@ images but are intended more for the development and testing of WildFly and its 
         - [Console](#console)
         - [CLI](#cli)
 
-# Install
+# Installation
 
-[Precompiled binaries](https://github.com/hpehl/waco/releases) are available for macOS and Linux.
+[Precompiled binaries](https://github.com/hpehl/waco/releases) are available for macOS, Linux, and Windows.
 
 ## Cargo
 
@@ -140,10 +140,8 @@ waco start 26.1,28..30,2x32,3x35
 # Commands
 
 > [!IMPORTANT]  
-> Most commands require `podman` to be present.
-> Docker is not yet supported!
-> The `console` command opens the default web
-> browser and the `cli` command requires a JVM.
+> Most commands require `podman` to be present with `docker as a fallback. 
+> The `console` command opens the default web browser and the `cli` command requires a JVM.
 
 Currently, the following commands are supported:
 
