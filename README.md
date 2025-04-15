@@ -8,30 +8,6 @@ versions in different operation modes (domain and standalone). The container ima
 images but are intended more for the development and testing of WildFly and its management tools (CLI and console).
 The container names and published ports follow default values based on the WildFly version.
 
-- [Installation](#installation)
-- [Versions](#versions)
-- [Images](#images)
-- [Containers](#containers)
-- [Commands](#commands)
-    - [Build](#build)
-    - [Standalone](#standalone)
-        - [Start](#start)
-        - [Stop](#stop)
-    - [Domain](#domain)
-        - [Domain Controller](#domain-controller)
-            - [Start](#start-1)
-            - [Stop](#stop-1)
-        - [Host Controller](#host-controller)
-            - [Start](#start-2)
-            - [Stop](#stop-2)
-        - [Topology](#topology)
-            - [Start](#start-3)
-            - [Stop](#stop-3)
-    - [PS](#ps)
-    - [Management Clients](#management-clients)
-        - [Console](#console)
-        - [CLI](#cli)
-
 # Installation
 
 [Precompiled binaries](https://github.com/hpehl/waco/releases) are available for macOS, Linux, and Windows.
