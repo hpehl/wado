@@ -11,7 +11,7 @@ use crate::container::{
     stop_instances, verify_container_command,
 };
 use crate::progress::summary;
-use crate::progress::{stderr_reader, Progress};
+use crate::progress::{Progress, stderr_reader};
 use crate::wildfly::{AdminContainer, HostController, Server, ServerType};
 use anyhow::bail;
 use clap::ArgMatches;
