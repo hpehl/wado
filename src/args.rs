@@ -107,13 +107,6 @@ pub fn username_password_argument(matches: &ArgMatches) -> (&str, &str) {
     (username, password)
 }
 
-pub fn version_argument(matches: &ArgMatches) -> WildFlyContainer {
-    matches
-        .get_one::<WildFlyContainer>("wildfly-version")
-        .expect("Argument <wildfly-version> expected!")
-        .clone()
-}
-
 pub fn versions_argument(matches: &ArgMatches) -> Vec<WildFlyContainer> {
     matches
         .get_one::<Vec<WildFlyContainer>>("wildfly-version")

@@ -506,6 +506,14 @@ impl ManagementClient {
     }
 
     pub fn from_container_instance(container_instance: &ContainerInstance) -> ManagementClient {
+        let management_port = if let Some(ports) = &container_instance.ports {
+            ports.management
+        } else {
+            container_instance
+                .admin_container
+                .wildfly_container
+                .management_port()
+        };
         let (cli_jar_url, cli_config_url) = Self::urls(
             &container_instance
                 .admin_container
@@ -514,10 +522,7 @@ impl ManagementClient {
         );
         ManagementClient {
             wildfly_container: container_instance.admin_container.wildfly_container.clone(),
-            management_port: container_instance
-                .admin_container
-                .wildfly_container
-                .management_port(),
+            management_port,
             cli_jar_url,
             cli_config_url,
         }

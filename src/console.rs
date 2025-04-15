@@ -1,6 +1,6 @@
-use crate::args::versions_argument;
-use crate::container::get_instance;
+use crate::container::{container_ps, get_instance};
 use crate::wildfly::ManagementClient;
+use crate::wildfly::ServerType::{DomainController, Standalone};
 use anyhow::bail;
 use clap::ArgMatches;
 use futures::executor::block_on;
@@ -27,8 +27,9 @@ fn get_management_clients(matches: &ArgMatches) -> anyhow::Result<Vec<Management
         }
         let instance = block_on(get_instance(wildfly_containers, Some(name)))?;
         Ok(vec![ManagementClient::from_container_instance(&instance)])
-    } else {
-        let wildfly_containers = versions_argument(matches);
+    } else if let Some(wildfly_containers) =
+        matches.get_one::<Vec<WildFlyContainer>>("wildfly-version")
+    {
         if wildfly_containers.len() == 1 {
             Ok(vec![ManagementClient::custom_port(
                 &wildfly_containers[0],
@@ -52,5 +53,16 @@ fn get_management_clients(matches: &ArgMatches) -> anyhow::Result<Vec<Management
                 .map(ManagementClient::default_port)
                 .collect())
         }
+    } else {
+        let containers = block_on(container_ps(
+            vec![Standalone, DomainController],
+            None,
+            None,
+            true,
+        ))?;
+        Ok(containers
+            .iter()
+            .map(ManagementClient::from_container_instance)
+            .collect())
     }
 }

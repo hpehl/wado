@@ -1,6 +1,6 @@
-use clap::builder::Styles;
 use clap::builder::styling::{AnsiColor, Effects};
-use clap::{Arg, ArgAction, Command, crate_name, crate_version, value_parser};
+use clap::builder::Styles;
+use clap::{crate_name, crate_version, value_parser, Arg, ArgAction, Command};
 
 pub fn build_app() -> Command {
     Command::new(crate_name!())
@@ -305,8 +305,8 @@ stop all running host controllers of that version."))))
         .subcommand(Command::new("console")
             .about("Open the management console")
             .arg(Arg::new("wildfly-version")
-                .required_unless_present("name")
-                .help("A single WildFly version or version range"))
+                .help("A single WildFly version or version range.
+If omitted the console is opened for all running standalone and domain controller containers."))
             .arg(Arg::new("name")
                 .short('n')
                 .long("name")
@@ -324,8 +324,8 @@ Not allowed when multiple versions are specified."))
             .about("Connect to the CLI")
             .arg(Arg::new("wildfly-version")
                 .index(1)
-                .required_unless_present("name")
-                .help("A single WildFly version"))
+                .help("A single WildFly version.
+Can be omitted if only one standalone or domain controller is running."))
             .arg(Arg::new("cli-parameters")
                 .index(2)
                 .last(true)

@@ -339,7 +339,8 @@ _arguments "${_arguments_options[@]}" : \
 '--help[Print help]' \
 '-V[Print version]' \
 '--version[Print version]' \
-'::wildfly-version -- A single WildFly version or version range:_default' \
+'::wildfly-version -- A single WildFly version or version range.
+If omitted the console is opened for all running standalone and domain controller containers.:_default' \
 && ret=0
 ;;
 (cli)
@@ -356,7 +357,8 @@ _arguments "${_arguments_options[@]}" : \
 '--help[Print help]' \
 '-V[Print version]' \
 '--version[Print version]' \
-'::wildfly-version -- A single WildFly version:_default' \
+'::wildfly-version -- A single WildFly version.
+Can be omitted if only one standalone or domain controller is running.:_default' \
 '*::cli-parameters -- Parameters passed to the CLI:_default' \
 && ret=0
 ;;

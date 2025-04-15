@@ -1,11 +1,12 @@
-use crate::args::{username_password_argument, version_argument};
+use crate::args::username_password_argument;
 use crate::constants::WILDFLY_ADMIN_CONTAINER;
-use crate::container::get_instance;
+use crate::container::{container_ps, get_instance};
 use crate::progress::Progress;
 use crate::wildfly::ManagementClient;
-use anyhow::{Context, anyhow};
+use crate::wildfly::ServerType::{DomainController, Standalone};
+use anyhow::{anyhow, bail, Context};
 use clap::ArgMatches;
-use fs::{File, create_dir_all};
+use fs::{create_dir_all, File};
 use futures::executor::block_on;
 use std::env::temp_dir;
 use std::fs;
@@ -30,14 +31,27 @@ pub fn cli(matches: &ArgMatches) -> anyhow::Result<()> {
         };
         let instance = block_on(get_instance(wildfly_containers, Some(name)))?;
         ManagementClient::from_container_instance(&instance)
-    } else {
-        let wildfly_container = &version_argument(matches);
+    } else if let Some(wildfly_container) = matches.get_one::<WildFlyContainer>("wildfly-version") {
         ManagementClient::custom_port(
             wildfly_container,
             *matches
                 .get_one::<u16>("management")
                 .unwrap_or(&wildfly_container.management_port()),
         )
+    } else {
+        let containers = block_on(container_ps(
+            vec![Standalone, DomainController],
+            None,
+            None,
+            true,
+        ))?;
+        if containers.is_empty() {
+            bail!("No running containers found.")
+        } else if containers.len() > 1 {
+            bail!("Multiple running containers found. Please specify a version or a name.")
+        } else {
+            ManagementClient::from_container_instance(&containers[0])
+        }
     };
     let (username, password) = username_password_argument(matches);
     let parameters = matches
