@@ -1,6 +1,6 @@
-use clap::builder::styling::{AnsiColor, Effects};
 use clap::builder::Styles;
-use clap::{crate_name, crate_version, value_parser, Arg, ArgAction, Command};
+use clap::builder::styling::{AnsiColor, Effects};
+use clap::{Arg, ArgAction, Command, crate_name, crate_version, value_parser};
 
 pub fn build_app() -> Command {
     Command::new(crate_name!())
