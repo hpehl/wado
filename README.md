@@ -48,7 +48,7 @@ brew install waco
 cargo install waco
 ```
 
-## Shell Completion
+## Shell Completions
 
 <details>
 <summary>The repository contains shell completions for bash, fish, zsh, elvish, and PowerShell.
