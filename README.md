@@ -51,7 +51,7 @@ cargo install waco
 ## Shell Completion
 
 <details>
-<summary>The repository contains [shell completions](./completions) for bash, fish, zsh, elvish, and PowerShell.
+<summary>The repository contains shell completions for bash, fish, zsh, elvish, and PowerShell.
 They're installed automatically by brew. To install them manually, follow these steps:</summary>
 
 ### Bash
