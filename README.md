@@ -100,7 +100,7 @@ this [BNF](https://bnfplayground.pauliankline.com/?bnf=%3Cexpression%3E%20%3A%3A
 - 5x33..35
 - 20,25..29,2x31,3x32,4x33..35
 
-All supported versions are listed [here](https://crates.io/crates/wildfly_container_versions#supported-versions).
+All supported versions are listed [here](https://github.com/hpehl/wildfly-container-versions?tab=readme-ov-file#supported-versions).
 
 # Images
 
@@ -112,7 +112,7 @@ variants:
 - Host controller: [quay.io/waco/waco-hc](https://quay.io/repository/waco/waco-hc)
 
 Each image contains tags for
-all [supported versions](https://crates.io/crates/wildfly_container_versions#supported-versions).
+all [supported versions](https://github.com/hpehl/wildfly-container-versions?tab=readme-ov-file#supported-versions).
 
 ## Image Modifications
 
@@ -202,7 +202,7 @@ If not specified otherwise, the build command builds standalone, domain, and hos
 official WildFly images. The images contain specific [modifications](#image-modifications) and a management user with a
 predefined username and password.
 
-Predefined images for all [supported versions](https://crates.io/crates/wildfly_container_versions#supported-versions)
+Predefined images for all [supported versions](https://github.com/hpehl/wildfly-container-versions?tab=readme-ov-file#supported-versions)
 are available at https://quay.io/organization/waco. If you want to change the username and password, you can build your
 own local image.
 
