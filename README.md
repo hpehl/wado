@@ -588,7 +588,8 @@ Open the management console
 Usage: waco console [OPTIONS] [wildfly-version]
 
 Arguments:
-  [wildfly-version]  A single WildFly version or version range
+  [wildfly-version]  A single WildFly version or version range.
+                     If omitted the console is opened for all running standalone and domain controller containers.
 
 Options:
   -n, --name <name>              The name of the standalone server or domain controller [default: waco-sa|dc-<major><minor>].
@@ -601,6 +602,7 @@ Options:
 **Examples**
 
 ```shell
+waco console
 waco console 34
 waco console 30..35
 waco console 34 --management 9990
@@ -617,7 +619,8 @@ Connect to the CLI
 Usage: waco cli [OPTIONS] [wildfly-version] [-- [cli-parameters]...]
 
 Arguments:
-  [wildfly-version]    A single WildFly version
+  [wildfly-version]    A single WildFly version.
+                       Can be omitted if only one standalone or domain controller is running.
   [cli-parameters]...  Parameters passed to the CLI
 
 Options:
@@ -633,6 +636,7 @@ Options:
 **Examples**
 
 ```shell
+waco cli
 waco cli 34
 waco cli 34 -- --command "/subsystem=logging/console-handler=CONSOLE:write-attribute(name=level,value=DEBUG)"
 ```
