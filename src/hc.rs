@@ -11,7 +11,7 @@ use crate::container::{
     stop_instances, verify_container_command,
 };
 use crate::progress::summary;
-use crate::progress::{Progress, stderr_reader};
+use crate::progress::{stderr_reader, Progress};
 use crate::wildfly::{AdminContainer, HostController, Server, ServerType};
 use anyhow::bail;
 use clap::ArgMatches;
@@ -47,7 +47,7 @@ pub fn hc_start(matches: &ArgMatches) -> anyhow::Result<()> {
             bail!("Option <name> is not allowed when multiple <wildfly-version> are specified!");
         }
         if !same_versions(wildfly_containers.as_slice())
-            || !matches.contains_id("domain-controller")
+            && !matches.contains_id("domain-controller")
         {
             bail!(
                 "Option <domain-controller> is required when multiple <wildfly-version> are specified!"
