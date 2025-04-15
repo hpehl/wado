@@ -222,6 +222,14 @@ Options:
 
 ## Build
 
+If not specified otherwise, the build command builds standalone, domain, and host controller images based on the
+official WildFly images. The images contain specific [modifications](#image-modifications) and a management user with a
+predefined username and password.
+
+Predefined images for all [supported versions](https://crates.io/crates/wildfly_container_versions#supported-versions)
+are available at https://quay.io/organization/waco. If you want to change the username and password, you can build your
+own local image.
+
 ```shell
 Build WildFly images
 
