@@ -50,8 +50,9 @@ cargo install waco
 
 ## Shell Completion
 
-The repository contains shell completion files for bash, fish, zsh, elvish, and PowerShell.
-They're installed automatically by brew. To install them manually:
+<details>
+<summary>The repository contains [shell completions](completions) for bash, fish, zsh, elvish, and PowerShell.
+They're installed automatically by brew. To install them manually, follow these steps:</summary>
 
 ### Bash
 
@@ -86,6 +87,8 @@ wget https://github.com/hpehl/waco/raw/main/completions/waco.elv -O ~/.elvish/li
 Invoke-WebRequest -Uri https://github.com/hpehl/waco/raw/main/completions/_waco.ps1 -OutFile "$HOME\.config\powershell\_waco.ps1"
 . "$HOME\.config\powershell\_waco.ps1"
 ```
+
+</details>
 
 # Versions
 
