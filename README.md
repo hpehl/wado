@@ -53,11 +53,39 @@ cargo install waco
 The repository contains shell completion files for bash, fish, zsh, elvish, and PowerShell.
 They're installed automatically by brew. To install them manually:
 
-* for bash, copy `completions/waco.bash` to `$XDG_CONFIG_HOME/bash_completion` or `/etc/bash_completion.d/`.
-* for fish, copy `completions/waco.fish` to `~/.config/fish/completions/`.
-* for zsh, copy `completions/_waco` to one of your `$fpath` directories.
-* for elvish, install `completions/waco.elv` with [epm](https://elv.sh/ref/epm.html)
-* for PowerShell, add `completions/_waco.ps1` to your PowerShell profile.
+### Bash
+
+```shell
+wget https://github.com/hpehl/waco/raw/main/completions/waco.bash -O /etc/bash_completion.d/waco
+source /etc/bash_completion.d/waco
+```
+
+### Zsh
+
+```shell
+wget https://github.com/hpehl/waco/raw/main/completions/_waco -O /usr/local/share/zsh/site-functions/_waco
+autoload -U compinit && compinit
+autoload -U _waco
+```
+
+### Fish
+
+```shell
+wget https://github.com/hpehl/waco/raw/main/completions/waco.fish -O ~/.config/fish/completions/waco.fish
+```
+
+### Elvish
+
+```shell
+wget https://github.com/hpehl/waco/raw/main/completions/waco.elv -O ~/.elvish/lib/waco.elv
+```
+
+### PowerShell
+
+```shell
+Invoke-WebRequest -Uri https://github.com/hpehl/waco/raw/main/completions/_waco.ps1 -OutFile "$HOME\.config\powershell\_waco.ps1"
+. "$HOME\.config\powershell\_waco.ps1"
+```
 
 # Versions
 
