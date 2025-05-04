@@ -29,6 +29,7 @@ set edit:completion:arg-completer[waco] = {|@words|
             cand dc 'Start and stop a domain controller'
             cand hc 'Start and stop a host controller'
             cand topology 'Start and stop a topology defined in YAML'
+            cand images 'List all available standalone, domain and host controller images'
             cand ps 'List running standalone, domain and host controller containers'
             cand console 'Open the management console'
             cand cli 'Connect to the CLI'
@@ -210,7 +211,15 @@ set edit:completion:arg-completer[waco] = {|@words|
         }
         &'waco;topology;help;help'= {
         }
+        &'waco;images'= {
+            cand -h 'Print help'
+            cand --help 'Print help'
+            cand -V 'Print version'
+            cand --version 'Print version'
+        }
         &'waco;ps'= {
+            cand --standalone 'List standalone containers only'
+            cand --domain 'List domain controller and host controller containers only'
             cand -h 'Print help'
             cand --help 'Print help'
             cand -V 'Print version'
@@ -248,6 +257,7 @@ set edit:completion:arg-completer[waco] = {|@words|
             cand dc 'Start and stop a domain controller'
             cand hc 'Start and stop a host controller'
             cand topology 'Start and stop a topology defined in YAML'
+            cand images 'List all available standalone, domain and host controller images'
             cand ps 'List running standalone, domain and host controller containers'
             cand console 'Open the management console'
             cand cli 'Connect to the CLI'
@@ -284,6 +294,8 @@ set edit:completion:arg-completer[waco] = {|@words|
         &'waco;help;topology;start'= {
         }
         &'waco;help;topology;stop'= {
+        }
+        &'waco;help;images'= {
         }
         &'waco;help;ps'= {
         }

@@ -27,6 +27,7 @@ The container names and published ports follow default values based on the WildF
         - [Topology](#topology)
             - [Start](#start-3)
             - [Stop](#stop-3)
+    - [Images](#images-1)
     - [PS](#ps)
     - [Management Clients](#management-clients)
         - [Console](#console)
@@ -141,7 +142,13 @@ all [supported versions](https://crates.io/crates/wildfly_container_versions#sup
 ## Image Modifications
 
 The images are based on the default configuration (subsystems, profiles, server groups, socket bindings et al.) of the
-corresponding version. All images add a management user `admin:admin`
+corresponding version:
+
+- Standalone: `standalone.xml`
+- Domain controller: `domain.xml` and `host-primary.xml`
+- Host controller: `domain.xml` and `host-secondary.xml`
+
+All images add a management user `admin:admin`
 and [allowed origins](https://docs.wildfly.org/34/wildscribe/core-service/management/management-interface/http-interface/index.html#attr-allowed-origins)
 for
 
@@ -157,10 +164,10 @@ Domain and host controller images are changed so that no servers are configured.
 
 ## Naming
 
-The default name for containers is `waco-<version>-<type>[-index]`
+The default name for containers is `waco-<type>-<version>[-index]`
 
-- Version: `<major><minor>`
 - Type: `sa|dc|hc` - standalone, domain or host controller
+- Version: `<major><minor>`
 - Index: If multiple containers of the same version and type are used, a zero-based index is added to the name.
 
 ## Ports
@@ -180,15 +187,15 @@ waco start 26.1,28..30,2x32,3x35
 
 | Version | Name          | HTTP | Management |
 |---------|---------------|------|------------|
-| 26.1    | waco-261-sa   | 8261 | 9261       |
-| 28      | waco-280-sa   | 8280 | 9280       |
-| 29      | waco-290-sa   | 8290 | 9290       |
-| 30      | waco-300-sa   | 8300 | 9300       |
-| 32      | waco-320-sa-0 | 8320 | 9320       |
-| 32      | waco-320-sa-1 | 8321 | 9321       |
-| 35      | waco-350-sa-0 | 8350 | 9350       |
-| 35      | waco-350-sa-1 | 8351 | 9351       |
-| 35      | waco-350-sa-2 | 8352 | 9352       |
+| 26.1    | waco-sa-261   | 8261 | 9261       |
+| 28      | waco-sa-280   | 8280 | 9280       |
+| 29      | waco-sa-290   | 8290 | 9290       |
+| 30      | waco-sa-300   | 8300 | 9300       |
+| 32      | waco-sa-320-0 | 8320 | 9320       |
+| 32      | waco-sa-320-1 | 8321 | 9321       |
+| 35      | waco-sa-350-0 | 8350 | 9350       |
+| 35      | waco-sa-350-1 | 8351 | 9351       |
+| 35      | waco-sa-350-2 | 8352 | 9352       |
 
 # Commands
 
@@ -590,16 +597,30 @@ hosts:
         offset: 200
 ```
 
+## Images
+
+```shell
+List all available standalone, domain and host controller images
+
+Usage: waco images
+
+Options:
+  -h, --help     Print help
+  -V, --version  Print version
+```
+
 ## PS
 
 ```shell
 List running standalone, domain and host controller containers
 
-Usage: waco ps
+Usage: waco ps [OPTIONS]
 
 Options:
-  -h, --help     Print help
-  -V, --version  Print version
+      --standalone  List standalone containers only
+      --domain      List domain controller and host controller containers only
+  -h, --help        Print help
+  -V, --version     Print version
 ```
 
 ## Management Clients

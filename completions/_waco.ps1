@@ -32,6 +32,7 @@ Register-ArgumentCompleter -Native -CommandName 'waco' -ScriptBlock {
             [CompletionResult]::new('dc', 'dc', [CompletionResultType]::ParameterValue, 'Start and stop a domain controller')
             [CompletionResult]::new('hc', 'hc', [CompletionResultType]::ParameterValue, 'Start and stop a host controller')
             [CompletionResult]::new('topology', 'topology', [CompletionResultType]::ParameterValue, 'Start and stop a topology defined in YAML')
+            [CompletionResult]::new('images', 'images', [CompletionResultType]::ParameterValue, 'List all available standalone, domain and host controller images')
             [CompletionResult]::new('ps', 'ps', [CompletionResultType]::ParameterValue, 'List running standalone, domain and host controller containers')
             [CompletionResult]::new('console', 'console', [CompletionResultType]::ParameterValue, 'Open the management console')
             [CompletionResult]::new('cli', 'cli', [CompletionResultType]::ParameterValue, 'Connect to the CLI')
@@ -239,7 +240,16 @@ Register-ArgumentCompleter -Native -CommandName 'waco' -ScriptBlock {
         'waco;topology;help;help' {
             break
         }
+        'waco;images' {
+            [CompletionResult]::new('-h', '-h', [CompletionResultType]::ParameterName, 'Print help')
+            [CompletionResult]::new('--help', '--help', [CompletionResultType]::ParameterName, 'Print help')
+            [CompletionResult]::new('-V', '-V ', [CompletionResultType]::ParameterName, 'Print version')
+            [CompletionResult]::new('--version', '--version', [CompletionResultType]::ParameterName, 'Print version')
+            break
+        }
         'waco;ps' {
+            [CompletionResult]::new('--standalone', '--standalone', [CompletionResultType]::ParameterName, 'List standalone containers only')
+            [CompletionResult]::new('--domain', '--domain', [CompletionResultType]::ParameterName, 'List domain controller and host controller containers only')
             [CompletionResult]::new('-h', '-h', [CompletionResultType]::ParameterName, 'Print help')
             [CompletionResult]::new('--help', '--help', [CompletionResultType]::ParameterName, 'Print help')
             [CompletionResult]::new('-V', '-V ', [CompletionResultType]::ParameterName, 'Print version')
@@ -280,6 +290,7 @@ Register-ArgumentCompleter -Native -CommandName 'waco' -ScriptBlock {
             [CompletionResult]::new('dc', 'dc', [CompletionResultType]::ParameterValue, 'Start and stop a domain controller')
             [CompletionResult]::new('hc', 'hc', [CompletionResultType]::ParameterValue, 'Start and stop a host controller')
             [CompletionResult]::new('topology', 'topology', [CompletionResultType]::ParameterValue, 'Start and stop a topology defined in YAML')
+            [CompletionResult]::new('images', 'images', [CompletionResultType]::ParameterValue, 'List all available standalone, domain and host controller images')
             [CompletionResult]::new('ps', 'ps', [CompletionResultType]::ParameterValue, 'List running standalone, domain and host controller containers')
             [CompletionResult]::new('console', 'console', [CompletionResultType]::ParameterValue, 'Open the management console')
             [CompletionResult]::new('cli', 'cli', [CompletionResultType]::ParameterValue, 'Connect to the CLI')
@@ -329,6 +340,9 @@ Register-ArgumentCompleter -Native -CommandName 'waco' -ScriptBlock {
             break
         }
         'waco;help;topology;stop' {
+            break
+        }
+        'waco;help;images' {
             break
         }
         'waco;help;ps' {

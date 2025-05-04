@@ -2,9 +2,10 @@ use crate::constants::{WILDFLY_ADMIN_CONTAINER, WILDFLY_ADMIN_CONTAINER_REPOSITO
 use anyhow::bail;
 use semver::Version;
 use std::cmp::Ordering;
+use std::collections::HashMap;
 use std::fmt::{Debug, Display};
 use std::str::FromStr;
-use wildfly_container_versions::WildFlyContainer;
+use wildfly_container_versions::{VERSIONS, WildFlyContainer};
 
 // ------------------------------------------------------ traits
 
@@ -50,6 +51,8 @@ impl FromStr for ServerType {
 pub struct AdminContainer {
     pub wildfly_container: WildFlyContainer,
     pub server_type: ServerType,
+    pub local_image: bool,
+    pub in_use: bool,
 }
 
 impl AdminContainer {
@@ -57,6 +60,8 @@ impl AdminContainer {
         AdminContainer {
             wildfly_container,
             server_type: ServerType::Standalone,
+            local_image: false,
+            in_use: false,
         }
     }
 
@@ -64,6 +69,8 @@ impl AdminContainer {
         AdminContainer {
             wildfly_container,
             server_type: ServerType::DomainController,
+            local_image: false,
+            in_use: false,
         }
     }
 
@@ -71,6 +78,8 @@ impl AdminContainer {
         AdminContainer {
             wildfly_container,
             server_type: ServerType::HostController,
+            local_image: false,
+            in_use: false,
         }
     }
 
@@ -89,17 +98,29 @@ impl AdminContainer {
         ]
     }
 
+    pub fn all_versions_by_image_name() -> HashMap<String, AdminContainer> {
+        let mut result = HashMap::new();
+        VERSIONS.values().for_each(|v| {
+            AdminContainer::all_types(v.clone()).iter().for_each(|ac| {
+                result.insert(ac.image_name(), ac.clone());
+            });
+        });
+        result
+    }
+
     pub fn from_identifier(identifier: String) -> Option<AdminContainer> {
         // TODO Support 'dev' identifier
         if identifier.contains('-') {
             let parts = identifier.split('-').collect::<Vec<&str>>();
             if parts.len() == 2 {
-                if let Ok(identifier) = parts[0].parse::<u16>() {
-                    if let Ok(wildfly_container) = WildFlyContainer::lookup(identifier) {
-                        if let Ok(server_type) = ServerType::from_str(parts[1]) {
+                if let Ok(server_type) = ServerType::from_str(parts[0]) {
+                    if let Ok(identifier) = parts[1].parse::<u16>() {
+                        if let Ok(wildfly_container) = WildFlyContainer::lookup(identifier) {
                             return Some(AdminContainer {
                                 wildfly_container,
                                 server_type,
+                                local_image: false,
+                                in_use: false,
                             });
                         }
                     }
@@ -112,8 +133,8 @@ impl AdminContainer {
     pub fn identifier(&self) -> String {
         format!(
             "{}-{}",
-            self.wildfly_container.identifier,
-            self.server_type.short_name()
+            self.server_type.short_name(),
+            self.wildfly_container.identifier
         )
     }
 
@@ -145,11 +166,12 @@ impl AdminContainer {
 
 impl Ord for AdminContainer {
     fn cmp(&self, other: &Self) -> Ordering {
-        if self.wildfly_container == other.wildfly_container {
-            self.server_type.cmp(&other.server_type)
-        } else {
-            self.wildfly_container.cmp(&other.wildfly_container)
-        }
+        compare(
+            &self.wildfly_container,
+            &self.server_type,
+            &other.wildfly_container,
+            &other.server_type,
+        )
     }
 }
 
@@ -539,6 +561,21 @@ impl ManagementClient {
                 version
             ),
         )
+    }
+}
+
+// ------------------------------------------------------ helper functions
+
+fn compare(
+    wildfly_container_a: &WildFlyContainer,
+    server_type_a: &ServerType,
+    wildfly_container_b: &WildFlyContainer,
+    server_type_b: &ServerType,
+) -> Ordering {
+    if wildfly_container_a == wildfly_container_b {
+        server_type_a.cmp(server_type_b)
+    } else {
+        wildfly_container_a.cmp(wildfly_container_b)
     }
 }
 

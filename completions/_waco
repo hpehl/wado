@@ -321,8 +321,18 @@ esac
     ;;
 esac
 ;;
+(images)
+_arguments "${_arguments_options[@]}" : \
+'-h[Print help]' \
+'--help[Print help]' \
+'-V[Print version]' \
+'--version[Print version]' \
+&& ret=0
+;;
 (ps)
 _arguments "${_arguments_options[@]}" : \
+'--standalone[List standalone containers only]' \
+'--domain[List domain controller and host controller containers only]' \
 '-h[Print help]' \
 '--help[Print help]' \
 '-V[Print version]' \
@@ -462,6 +472,10 @@ _arguments "${_arguments_options[@]}" : \
     ;;
 esac
 ;;
+(images)
+_arguments "${_arguments_options[@]}" : \
+&& ret=0
+;;
 (ps)
 _arguments "${_arguments_options[@]}" : \
 && ret=0
@@ -497,6 +511,7 @@ _waco_commands() {
 'dc:Start and stop a domain controller' \
 'hc:Start and stop a host controller' \
 'topology:Start and stop a topology defined in YAML' \
+'images:List all available standalone, domain and host controller images' \
 'ps:List running standalone, domain and host controller containers' \
 'console:Open the management console' \
 'cli:Connect to the CLI' \
@@ -615,6 +630,7 @@ _waco__help_commands() {
 'dc:Start and stop a domain controller' \
 'hc:Start and stop a host controller' \
 'topology:Start and stop a topology defined in YAML' \
+'images:List all available standalone, domain and host controller images' \
 'ps:List running standalone, domain and host controller containers' \
 'console:Open the management console' \
 'cli:Connect to the CLI' \
@@ -678,6 +694,11 @@ _waco__help__help_commands() {
     local commands; commands=()
     _describe -t commands 'waco help help commands' commands "$@"
 }
+(( $+functions[_waco__help__images_commands] )) ||
+_waco__help__images_commands() {
+    local commands; commands=()
+    _describe -t commands 'waco help images commands' commands "$@"
+}
 (( $+functions[_waco__help__ps_commands] )) ||
 _waco__help__ps_commands() {
     local commands; commands=()
@@ -715,6 +736,11 @@ _waco__help__topology__start_commands() {
 _waco__help__topology__stop_commands() {
     local commands; commands=()
     _describe -t commands 'waco help topology stop commands' commands "$@"
+}
+(( $+functions[_waco__images_commands] )) ||
+_waco__images_commands() {
+    local commands; commands=()
+    _describe -t commands 'waco images commands' commands "$@"
 }
 (( $+functions[_waco__ps_commands] )) ||
 _waco__ps_commands() {

@@ -30,6 +30,9 @@ _waco() {
             waco,help)
                 cmd="waco__help"
                 ;;
+            waco,images)
+                cmd="waco__images"
+                ;;
             waco,ps)
                 cmd="waco__ps"
                 ;;
@@ -99,6 +102,9 @@ _waco() {
             waco__help,help)
                 cmd="waco__help__help"
                 ;;
+            waco__help,images)
+                cmd="waco__help__images"
+                ;;
             waco__help,ps)
                 cmd="waco__help__ps"
                 ;;
@@ -157,7 +163,7 @@ _waco() {
 
     case "${cmd}" in
         waco)
-            opts="-h -V --help --version build push start stop dc hc topology ps console cli help"
+            opts="-h -V --help --version build push start stop dc hc topology images ps console cli help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -589,7 +595,7 @@ _waco() {
             return 0
             ;;
         waco__help)
-            opts="build push start stop dc hc topology ps console cli help"
+            opts="build push start stop dc hc topology images ps console cli help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -742,6 +748,20 @@ _waco() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
+        waco__help__images)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
         waco__help__ps)
             opts=""
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
@@ -840,8 +860,22 @@ _waco() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
-        waco__ps)
+        waco__images)
             opts="-h -V --help --version"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        waco__ps)
+            opts="-h -V --standalone --domain --help --version"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0

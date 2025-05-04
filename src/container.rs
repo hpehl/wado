@@ -1,5 +1,6 @@
 use crate::constants::{
     BOOTSTRAP_OPERATIONS_VARIABLE, LABEL_NAME, SERVERS_VARIABLE, WILDFLY_ADMIN_CONTAINER,
+    WILDFLY_ADMIN_CONTAINER_REPOSITORY,
 };
 use crate::progress::{Progress, summary};
 use crate::wildfly::ServerType::{DomainController, Standalone};
@@ -14,7 +15,22 @@ use tokio::task::JoinSet;
 use tokio::time::Instant;
 use which::which;
 use wildfly_container_versions::WildFlyContainer;
+
 // ------------------------------------------------------ container commands (a-z)
+
+pub fn container_images() -> Command {
+    let mut command = container_command().expect("Unable to run docker images/podman images.");
+    command
+        .arg("images")
+        .arg("--filter")
+        .arg(format!(
+            "reference={}/{}*",
+            WILDFLY_ADMIN_CONTAINER_REPOSITORY, WILDFLY_ADMIN_CONTAINER
+        ))
+        .arg("--format")
+        .arg("{{.Repository}}:{{.Tag}}");
+    command
+}
 
 pub async fn container_network() -> anyhow::Result<()> {
     let mut network_command = container_command()?;

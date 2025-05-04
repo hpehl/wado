@@ -297,9 +297,21 @@ stop all running host controllers of that version."))))
                     .required(true)
                     .help("The topology setup"))))
 
+        // images
+        .subcommand(Command::new("images")
+            .about("List all available standalone, domain and host controller images"))
+
         // ps
         .subcommand(Command::new("ps")
-            .about("List running standalone, domain and host controller containers"))
+            .about("List running standalone, domain and host controller containers")
+            .arg(Arg::new("standalone")
+                .long("standalone")
+                .action(ArgAction::SetTrue)
+                .help("List standalone containers only"))
+            .arg(Arg::new("domain")
+                .long("domain")
+                .action(ArgAction::SetTrue)
+                .help("List domain controller and host controller containers only")))
 
         // console
         .subcommand(Command::new("console")

@@ -7,6 +7,7 @@ mod constants;
 mod container;
 mod dc;
 mod hc;
+mod image;
 mod progress;
 mod ps;
 mod push;
@@ -19,6 +20,7 @@ use crate::build::build;
 use crate::cli::cli;
 use crate::console::console;
 use crate::dc::{dc_start, dc_stop};
+use crate::image::images;
 use crate::ps::ps;
 use crate::push::push;
 use crate::standalone::{standalone_start, standalone_stop};
@@ -132,7 +134,8 @@ async fn main() -> Result<()> {
             _ => unreachable!("Unknown subcommand"),
         },
 
-        Some(("ps", _)) => ps(),
+        Some(("images", _)) => images(),
+        Some(("ps", m)) => ps(m),
         Some(("console", m)) => console(m),
         Some(("cli", m)) => cli(m),
 
