@@ -150,7 +150,7 @@ corresponding version. Unless specified otherwise, the images use these configur
 - Host controller: `domain.xml` and `host-secondary.xml`
 
 All images add a management user `admin:admin`
-and [allowed origins](https://docs.wildfly.org/34/wildscribe/core-service/management/management-interface/http-interface/index.html#attr-allowed-origins)
+and [allowed origins](https://docs.wildfly.org/36/wildscribe/core-service/management/management-interface/http-interface/index.html#attr-allowed-origins)
 for
 
 - http://localhost:1234 (used by console dev mode)
