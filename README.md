@@ -111,7 +111,7 @@ this [BNF](https://bnfplayground.pauliankline.com/?bnf=%3Cexpression%3E%20%3A%3A
 <two_digit_number> ::= <nonzero_number> <number>
 <number> ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
 <nonzero_number> ::= "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
-``` 
+```
 
 **Examples**
 
@@ -143,7 +143,7 @@ all [supported versions](https://github.com/hpehl/wildfly-container-versions?tab
 ## Image Modifications
 
 The images are based on the default configuration (subsystems, profiles, server groups, socket bindings et al.) of the
-corresponding version:
+corresponding version. Unless specified otherwise, the images use these configuration files to start WildFly:
 
 - Standalone: `standalone.xml`
 - Domain controller: `domain.xml` and `host-primary.xml`
@@ -200,7 +200,7 @@ waco start 26.1,28..30,2x32,3x35
 
 # Commands
 
-> [!IMPORTANT]  
+> [!IMPORTANT]
 > Most commands require `podman` to be present with `docker` as a fallback.
 > The `console` command opens the default web browser and the `cli` command requires a JVM.
 
@@ -514,7 +514,7 @@ waco hc stop --all
 
 ### Topology
 
-> [!WARNING]  
+> [!WARNING]
 > The topology commands are not yet implemented.
 > You can work around with the `dc` and `hc` commands though:
 >
