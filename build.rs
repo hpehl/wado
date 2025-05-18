@@ -7,7 +7,7 @@ use clap_complete::shells::{Bash, Elvish, Fish, PowerShell, Zsh};
 
 include!("src/app.rs");
 
-const APP_NAME: &str = "waco";
+const APP_NAME: &str = "wfadm";
 
 fn main() -> Result<()> {
     generate_shell_completions()?;

@@ -2,14 +2,14 @@
 use builtin;
 use str;
 
-set edit:completion:arg-completer[waco] = {|@words|
+set edit:completion:arg-completer[wfadm] = {|@words|
     fn spaces {|n|
         builtin:repeat $n ' ' | str:join ''
     }
     fn cand {|text desc|
         edit:complex-candidate $text &display=$text' '(spaces (- 14 (wcswidth $text)))$desc
     }
-    var command = 'waco'
+    var command = 'wfadm'
     for word $words[1..-1] {
         if (str:has-prefix $word '-') {
             break
@@ -17,7 +17,7 @@ set edit:completion:arg-completer[waco] = {|@words|
         set command = $command';'$word
     }
     var completions = [
-        &'waco'= {
+        &'wfadm'= {
             cand -h 'Print help'
             cand --help 'Print help'
             cand -V 'Print version'
@@ -35,7 +35,7 @@ set edit:completion:arg-completer[waco] = {|@words|
             cand cli 'Connect to the CLI'
             cand help 'Print this message or the help of the given subcommand(s)'
         }
-        &'waco;build'= {
+        &'wfadm;build'= {
             cand -u 'The username of the management user'
             cand --username 'The username of the management user'
             cand -p 'The password of the management user'
@@ -48,7 +48,7 @@ set edit:completion:arg-completer[waco] = {|@words|
             cand -V 'Print version'
             cand --version 'Print version'
         }
-        &'waco;push'= {
+        &'wfadm;push'= {
             cand --chunks 'Push the images in chunks of this size. If not specified, the images are pushed in one go.'
             cand --standalone 'Push standalone images only'
             cand --domain 'Push domain controller and host controller images only'
@@ -57,9 +57,9 @@ set edit:completion:arg-completer[waco] = {|@words|
             cand -V 'Print version'
             cand --version 'Print version'
         }
-        &'waco;start'= {
-            cand -n 'The name of the standalone server [default: waco-sa-<major><minor>]. Not allowed when multiple versions are specified.'
-            cand --name 'The name of the standalone server [default: waco-sa-<major><minor>]. Not allowed when multiple versions are specified.'
+        &'wfadm;start'= {
+            cand -n 'The name of the standalone server [default: wfadm-sa-<major><minor>]. Not allowed when multiple versions are specified.'
+            cand --name 'The name of the standalone server [default: wfadm-sa-<major><minor>]. Not allowed when multiple versions are specified.'
             cand -p 'The published HTTP port [default: 8<major><minor>]. Not allowed when multiple versions are specified.'
             cand --http 'The published HTTP port [default: 8<major><minor>]. Not allowed when multiple versions are specified.'
             cand -m 'The published management port [default: 9<major><minor>]. Not allowed when multiple versions are specified.'
@@ -73,9 +73,9 @@ set edit:completion:arg-completer[waco] = {|@words|
             cand -V 'Print version'
             cand --version 'Print version'
         }
-        &'waco;stop'= {
-            cand -n 'The name of the standalone server [default: waco-sa-<major><minor>]'
-            cand --name 'The name of the standalone server [default: waco-sa-<major><minor>]'
+        &'wfadm;stop'= {
+            cand -n 'The name of the standalone server [default: wfadm-sa-<major><minor>]'
+            cand --name 'The name of the standalone server [default: wfadm-sa-<major><minor>]'
             cand -a 'Stop all running standalone servers. If specified with a version, stop all running standalone servers of that version.'
             cand --all 'Stop all running standalone servers. If specified with a version, stop all running standalone servers of that version.'
             cand -h 'Print help'
@@ -83,7 +83,7 @@ set edit:completion:arg-completer[waco] = {|@words|
             cand -V 'Print version'
             cand --version 'Print version'
         }
-        &'waco;dc'= {
+        &'wfadm;dc'= {
             cand -h 'Print help'
             cand --help 'Print help'
             cand -V 'Print version'
@@ -92,9 +92,9 @@ set edit:completion:arg-completer[waco] = {|@words|
             cand stop 'Stop a domain controller'
             cand help 'Print this message or the help of the given subcommand(s)'
         }
-        &'waco;dc;start'= {
-            cand -n 'The name of the domain controller [default: waco-dc-<major><minor>]. Not allowed when multiple versions are specified.'
-            cand --name 'The name of the domain controller [default: waco-dc-<major><minor>]. Not allowed when multiple versions are specified.'
+        &'wfadm;dc;start'= {
+            cand -n 'The name of the domain controller [default: wfadm-dc-<major><minor>]. Not allowed when multiple versions are specified.'
+            cand --name 'The name of the domain controller [default: wfadm-dc-<major><minor>]. Not allowed when multiple versions are specified.'
             cand -p 'The published HTTP port [default: 8<major><minor>]. Not allowed when multiple versions are specified.'
             cand --http 'The published HTTP port [default: 8<major><minor>]. Not allowed when multiple versions are specified.'
             cand -m 'The published management port [default: 9<major><minor>]. Not allowed when multiple versions are specified.'
@@ -110,9 +110,9 @@ set edit:completion:arg-completer[waco] = {|@words|
             cand -V 'Print version'
             cand --version 'Print version'
         }
-        &'waco;dc;stop'= {
-            cand -n 'The name of the domain controller [default: waco-dc-<major><minor>]'
-            cand --name 'The name of the domain controller [default: waco-dc-<major><minor>]'
+        &'wfadm;dc;stop'= {
+            cand -n 'The name of the domain controller [default: wfadm-dc-<major><minor>]'
+            cand --name 'The name of the domain controller [default: wfadm-dc-<major><minor>]'
             cand -a 'Stop all running domain controllers. If specified with a version, stop all running domain controllers of that version.'
             cand --all 'Stop all running domain controllers. If specified with a version, stop all running domain controllers of that version.'
             cand -h 'Print help'
@@ -120,18 +120,18 @@ set edit:completion:arg-completer[waco] = {|@words|
             cand -V 'Print version'
             cand --version 'Print version'
         }
-        &'waco;dc;help'= {
+        &'wfadm;dc;help'= {
             cand start 'Start a domain controller'
             cand stop 'Stop a domain controller'
             cand help 'Print this message or the help of the given subcommand(s)'
         }
-        &'waco;dc;help;start'= {
+        &'wfadm;dc;help;start'= {
         }
-        &'waco;dc;help;stop'= {
+        &'wfadm;dc;help;stop'= {
         }
-        &'waco;dc;help;help'= {
+        &'wfadm;dc;help;help'= {
         }
-        &'waco;hc'= {
+        &'wfadm;hc'= {
             cand -h 'Print help'
             cand --help 'Print help'
             cand -V 'Print version'
@@ -140,11 +140,11 @@ set edit:completion:arg-completer[waco] = {|@words|
             cand stop 'Stop a host controller'
             cand help 'Print this message or the help of the given subcommand(s)'
         }
-        &'waco;hc;start'= {
-            cand -n 'The name of the host controller [default: waco-hc-<major><minor>]. Not allowed when multiple versions are specified.'
-            cand --name 'The name of the host controller [default: waco-hc-<major><minor>]. Not allowed when multiple versions are specified.'
-            cand -d 'The name of the domain controller [default: waco-dc-<major><minor>]. Required if different versions are specified.'
-            cand --domain-controller 'The name of the domain controller [default: waco-dc-<major><minor>]. Required if different versions are specified.'
+        &'wfadm;hc;start'= {
+            cand -n 'The name of the host controller [default: wfadm-hc-<major><minor>]. Not allowed when multiple versions are specified.'
+            cand --name 'The name of the host controller [default: wfadm-hc-<major><minor>]. Not allowed when multiple versions are specified.'
+            cand -d 'The name of the domain controller [default: wfadm-dc-<major><minor>]. Required if different versions are specified.'
+            cand --domain-controller 'The name of the domain controller [default: wfadm-dc-<major><minor>]. Required if different versions are specified.'
             cand -u 'The username to connect to the domain controller'
             cand --username 'The username to connect to the domain controller'
             cand -p 'The password to connect to the domain controller'
@@ -158,9 +158,9 @@ set edit:completion:arg-completer[waco] = {|@words|
             cand -V 'Print version'
             cand --version 'Print version'
         }
-        &'waco;hc;stop'= {
-            cand -n 'The name of the host controller [default: waco-hc-<major><minor>]'
-            cand --name 'The name of the host controller [default: waco-hc-<major><minor>]'
+        &'wfadm;hc;stop'= {
+            cand -n 'The name of the host controller [default: wfadm-hc-<major><minor>]'
+            cand --name 'The name of the host controller [default: wfadm-hc-<major><minor>]'
             cand -a 'Stop all running host controllers. If specified with a version, stop all running host controllers of that version.'
             cand --all 'Stop all running host controllers. If specified with a version, stop all running host controllers of that version.'
             cand -h 'Print help'
@@ -168,18 +168,18 @@ set edit:completion:arg-completer[waco] = {|@words|
             cand -V 'Print version'
             cand --version 'Print version'
         }
-        &'waco;hc;help'= {
+        &'wfadm;hc;help'= {
             cand start 'Start a host controller'
             cand stop 'Stop a host controller'
             cand help 'Print this message or the help of the given subcommand(s)'
         }
-        &'waco;hc;help;start'= {
+        &'wfadm;hc;help;start'= {
         }
-        &'waco;hc;help;stop'= {
+        &'wfadm;hc;help;stop'= {
         }
-        &'waco;hc;help;help'= {
+        &'wfadm;hc;help;help'= {
         }
-        &'waco;topology'= {
+        &'wfadm;topology'= {
             cand -h 'Print help'
             cand --help 'Print help'
             cand -V 'Print version'
@@ -188,36 +188,36 @@ set edit:completion:arg-completer[waco] = {|@words|
             cand stop 'Stop a topology'
             cand help 'Print this message or the help of the given subcommand(s)'
         }
-        &'waco;topology;start'= {
+        &'wfadm;topology;start'= {
             cand -h 'Print help'
             cand --help 'Print help'
             cand -V 'Print version'
             cand --version 'Print version'
         }
-        &'waco;topology;stop'= {
+        &'wfadm;topology;stop'= {
             cand -h 'Print help'
             cand --help 'Print help'
             cand -V 'Print version'
             cand --version 'Print version'
         }
-        &'waco;topology;help'= {
+        &'wfadm;topology;help'= {
             cand start 'Start a topology'
             cand stop 'Stop a topology'
             cand help 'Print this message or the help of the given subcommand(s)'
         }
-        &'waco;topology;help;start'= {
+        &'wfadm;topology;help;start'= {
         }
-        &'waco;topology;help;stop'= {
+        &'wfadm;topology;help;stop'= {
         }
-        &'waco;topology;help;help'= {
+        &'wfadm;topology;help;help'= {
         }
-        &'waco;images'= {
+        &'wfadm;images'= {
             cand -h 'Print help'
             cand --help 'Print help'
             cand -V 'Print version'
             cand --version 'Print version'
         }
-        &'waco;ps'= {
+        &'wfadm;ps'= {
             cand --standalone 'List standalone containers only'
             cand --domain 'List domain controller and host controller containers only'
             cand -h 'Print help'
@@ -225,9 +225,9 @@ set edit:completion:arg-completer[waco] = {|@words|
             cand -V 'Print version'
             cand --version 'Print version'
         }
-        &'waco;console'= {
-            cand -n 'The name of the standalone server or domain controller [default: waco-sa|dc-<major><minor>]. Not allowed when multiple versions are specified.'
-            cand --name 'The name of the standalone server or domain controller [default: waco-sa|dc-<major><minor>]. Not allowed when multiple versions are specified.'
+        &'wfadm;console'= {
+            cand -n 'The name of the standalone server or domain controller [default: wfadm-sa|dc-<major><minor>]. Not allowed when multiple versions are specified.'
+            cand --name 'The name of the standalone server or domain controller [default: wfadm-sa|dc-<major><minor>]. Not allowed when multiple versions are specified.'
             cand -m 'The published management port. Not allowed when multiple versions are specified.'
             cand --management 'The published management port. Not allowed when multiple versions are specified.'
             cand -h 'Print help'
@@ -235,9 +235,9 @@ set edit:completion:arg-completer[waco] = {|@words|
             cand -V 'Print version'
             cand --version 'Print version'
         }
-        &'waco;cli'= {
-            cand -n 'The name of the standalone server or domain controller [default: waco-sa|dc-<major><minor>]. Not allowed when multiple versions are specified.'
-            cand --name 'The name of the standalone server or domain controller [default: waco-sa|dc-<major><minor>]. Not allowed when multiple versions are specified.'
+        &'wfadm;cli'= {
+            cand -n 'The name of the standalone server or domain controller [default: wfadm-sa|dc-<major><minor>]. Not allowed when multiple versions are specified.'
+            cand --name 'The name of the standalone server or domain controller [default: wfadm-sa|dc-<major><minor>]. Not allowed when multiple versions are specified.'
             cand -m 'The published management port'
             cand --management 'The published management port'
             cand -u 'The username to connect to the CLI'
@@ -249,7 +249,7 @@ set edit:completion:arg-completer[waco] = {|@words|
             cand -V 'Print version'
             cand --version 'Print version'
         }
-        &'waco;help'= {
+        &'wfadm;help'= {
             cand build 'Build images'
             cand push 'Push images'
             cand start 'Start a standalone server'
@@ -263,47 +263,47 @@ set edit:completion:arg-completer[waco] = {|@words|
             cand cli 'Connect to the CLI'
             cand help 'Print this message or the help of the given subcommand(s)'
         }
-        &'waco;help;build'= {
+        &'wfadm;help;build'= {
         }
-        &'waco;help;push'= {
+        &'wfadm;help;push'= {
         }
-        &'waco;help;start'= {
+        &'wfadm;help;start'= {
         }
-        &'waco;help;stop'= {
+        &'wfadm;help;stop'= {
         }
-        &'waco;help;dc'= {
+        &'wfadm;help;dc'= {
             cand start 'Start a domain controller'
             cand stop 'Stop a domain controller'
         }
-        &'waco;help;dc;start'= {
+        &'wfadm;help;dc;start'= {
         }
-        &'waco;help;dc;stop'= {
+        &'wfadm;help;dc;stop'= {
         }
-        &'waco;help;hc'= {
+        &'wfadm;help;hc'= {
             cand start 'Start a host controller'
             cand stop 'Stop a host controller'
         }
-        &'waco;help;hc;start'= {
+        &'wfadm;help;hc;start'= {
         }
-        &'waco;help;hc;stop'= {
+        &'wfadm;help;hc;stop'= {
         }
-        &'waco;help;topology'= {
+        &'wfadm;help;topology'= {
             cand start 'Start a topology'
             cand stop 'Stop a topology'
         }
-        &'waco;help;topology;start'= {
+        &'wfadm;help;topology;start'= {
         }
-        &'waco;help;topology;stop'= {
+        &'wfadm;help;topology;stop'= {
         }
-        &'waco;help;images'= {
+        &'wfadm;help;images'= {
         }
-        &'waco;help;ps'= {
+        &'wfadm;help;ps'= {
         }
-        &'waco;help;console'= {
+        &'wfadm;help;console'= {
         }
-        &'waco;help;cli'= {
+        &'wfadm;help;cli'= {
         }
-        &'waco;help;help'= {
+        &'wfadm;help;help'= {
         }
     ]
     $completions[$command]

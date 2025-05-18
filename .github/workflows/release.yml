@@ -60,8 +60,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: taiki-e/upload-rust-binary-action@v1
         with:
-          bin: waco
-          include: completions/_waco,completions/waco.bash,completions/waco.fish
+          bin: wfadm
+          include: completions/_wfadm,completions/wfadm.bash,completions/wfadm.fish
           target: ${{ matrix.target }}
           token: ${{ secrets.GITHUB_TOKEN }}
   update-formula:
@@ -74,7 +74,7 @@ jobs:
         uses: battila7/get-version-action@v2.3.0
       - id: checksum
         run: |
-          echo ::set-output name=sha::"$(wget -qO- https://github.com/hpehl/waco/releases/download/${{steps.get-version.outputs.version}}/waco-x86_64-apple-darwin.tar.gz | shasum -a 256 | head -c 64)"
+          echo ::set-output name=sha::"$(wget -qO- https://github.com/hpehl/wfadm/releases/download/${{steps.get-version.outputs.version}}/wfadm-x86_64-apple-darwin.tar.gz | shasum -a 256 | head -c 64)"
       - name: Set up Git identity
         run: |
           git config --global user.name "github-actions[bot]"
@@ -89,14 +89,14 @@ jobs:
       - name: Update formula
         run: |
           cd homebrew-tap
-          sed -i 's|url ".*"|url "https://github.com/hpehl/waco/releases/download/${{steps.get-version.outputs.version}}/waco-x86_64-apple-darwin.tar.gz"|' Formula/waco.rb
-          sed -i 's|sha256 ".*"|sha256 "${{steps.checksum.outputs.sha}}"|' Formula/waco.rb
-          sed -i 's|version ".*"|version "${{steps.get-version.outputs.version-without-v}}"|' Formula/waco.rb
+          sed -i 's|url ".*"|url "https://github.com/hpehl/wfadm/releases/download/${{steps.get-version.outputs.version}}/wfadm-x86_64-apple-darwin.tar.gz"|' Formula/wfadm.rb
+          sed -i 's|sha256 ".*"|sha256 "${{steps.checksum.outputs.sha}}"|' Formula/wfadm.rb
+          sed -i 's|version ".*"|version "${{steps.get-version.outputs.version-without-v}}"|' Formula/wfadm.rb
       - name: Commit and push changes
         env:
           TOKEN: ${{ secrets.FORMULA_TOKEN }}
         run: |
           cd homebrew-tap
-          git add Formula/waco.rb
-          git commit -m "Update waco formula: version ${{steps.get-version.outputs.version-without-v}}"
+          git add Formula/wfadm.rb
+          git commit -m "Update wfadm formula: version ${{steps.get-version.outputs.version-without-v}}"
           git push origin main

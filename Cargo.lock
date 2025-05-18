@@ -1981,29 +1981,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
-name = "waco"
-version = "0.0.12"
-dependencies = [
- "anyhow",
- "clap",
- "clap_complete",
- "comfy-table",
- "console",
- "futures",
- "handlebars",
- "indicatif",
- "lazy_static",
- "regex",
- "reqwest",
- "semver",
- "tempfile",
- "tokio",
- "webbrowser",
- "which",
- "wildfly_container_versions",
-]
-
-[[package]]
 name = "walkdir"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2143,6 +2120,29 @@ dependencies = [
  "objc2-foundation",
  "url",
  "web-sys",
+]
+
+[[package]]
+name = "wfadm"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "clap_complete",
+ "comfy-table",
+ "console",
+ "futures",
+ "handlebars",
+ "indicatif",
+ "lazy_static",
+ "regex",
+ "reqwest",
+ "semver",
+ "tempfile",
+ "tokio",
+ "webbrowser",
+ "which",
+ "wildfly_container_versions",
 ]
 
 [[package]]

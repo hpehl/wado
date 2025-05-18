@@ -2,12 +2,12 @@
 using namespace System.Management.Automation
 using namespace System.Management.Automation.Language
 
-Register-ArgumentCompleter -Native -CommandName 'waco' -ScriptBlock {
+Register-ArgumentCompleter -Native -CommandName 'wfadm' -ScriptBlock {
     param($wordToComplete, $commandAst, $cursorPosition)
 
     $commandElements = $commandAst.CommandElements
     $command = @(
-        'waco'
+        'wfadm'
         for ($i = 1; $i -lt $commandElements.Count; $i++) {
             $element = $commandElements[$i]
             if ($element -isnot [StringConstantExpressionAst] -or
@@ -20,7 +20,7 @@ Register-ArgumentCompleter -Native -CommandName 'waco' -ScriptBlock {
     }) -join ';'
 
     $completions = @(switch ($command) {
-        'waco' {
+        'wfadm' {
             [CompletionResult]::new('-h', '-h', [CompletionResultType]::ParameterName, 'Print help')
             [CompletionResult]::new('--help', '--help', [CompletionResultType]::ParameterName, 'Print help')
             [CompletionResult]::new('-V', '-V ', [CompletionResultType]::ParameterName, 'Print version')
@@ -39,7 +39,7 @@ Register-ArgumentCompleter -Native -CommandName 'waco' -ScriptBlock {
             [CompletionResult]::new('help', 'help', [CompletionResultType]::ParameterValue, 'Print this message or the help of the given subcommand(s)')
             break
         }
-        'waco;build' {
+        'wfadm;build' {
             [CompletionResult]::new('-u', '-u', [CompletionResultType]::ParameterName, 'The username of the management user')
             [CompletionResult]::new('--username', '--username', [CompletionResultType]::ParameterName, 'The username of the management user')
             [CompletionResult]::new('-p', '-p', [CompletionResultType]::ParameterName, 'The password of the management user')
@@ -53,7 +53,7 @@ Register-ArgumentCompleter -Native -CommandName 'waco' -ScriptBlock {
             [CompletionResult]::new('--version', '--version', [CompletionResultType]::ParameterName, 'Print version')
             break
         }
-        'waco;push' {
+        'wfadm;push' {
             [CompletionResult]::new('--chunks', '--chunks', [CompletionResultType]::ParameterName, 'Push the images in chunks of this size. If not specified, the images are pushed in one go.')
             [CompletionResult]::new('--standalone', '--standalone', [CompletionResultType]::ParameterName, 'Push standalone images only')
             [CompletionResult]::new('--domain', '--domain', [CompletionResultType]::ParameterName, 'Push domain controller and host controller images only')
@@ -63,9 +63,9 @@ Register-ArgumentCompleter -Native -CommandName 'waco' -ScriptBlock {
             [CompletionResult]::new('--version', '--version', [CompletionResultType]::ParameterName, 'Print version')
             break
         }
-        'waco;start' {
-            [CompletionResult]::new('-n', '-n', [CompletionResultType]::ParameterName, 'The name of the standalone server [default: waco-sa-<major><minor>]. Not allowed when multiple versions are specified.')
-            [CompletionResult]::new('--name', '--name', [CompletionResultType]::ParameterName, 'The name of the standalone server [default: waco-sa-<major><minor>]. Not allowed when multiple versions are specified.')
+        'wfadm;start' {
+            [CompletionResult]::new('-n', '-n', [CompletionResultType]::ParameterName, 'The name of the standalone server [default: wfadm-sa-<major><minor>]. Not allowed when multiple versions are specified.')
+            [CompletionResult]::new('--name', '--name', [CompletionResultType]::ParameterName, 'The name of the standalone server [default: wfadm-sa-<major><minor>]. Not allowed when multiple versions are specified.')
             [CompletionResult]::new('-p', '-p', [CompletionResultType]::ParameterName, 'The published HTTP port [default: 8<major><minor>]. Not allowed when multiple versions are specified.')
             [CompletionResult]::new('--http', '--http', [CompletionResultType]::ParameterName, 'The published HTTP port [default: 8<major><minor>]. Not allowed when multiple versions are specified.')
             [CompletionResult]::new('-m', '-m', [CompletionResultType]::ParameterName, 'The published management port [default: 9<major><minor>]. Not allowed when multiple versions are specified.')
@@ -80,9 +80,9 @@ Register-ArgumentCompleter -Native -CommandName 'waco' -ScriptBlock {
             [CompletionResult]::new('--version', '--version', [CompletionResultType]::ParameterName, 'Print version')
             break
         }
-        'waco;stop' {
-            [CompletionResult]::new('-n', '-n', [CompletionResultType]::ParameterName, 'The name of the standalone server [default: waco-sa-<major><minor>]')
-            [CompletionResult]::new('--name', '--name', [CompletionResultType]::ParameterName, 'The name of the standalone server [default: waco-sa-<major><minor>]')
+        'wfadm;stop' {
+            [CompletionResult]::new('-n', '-n', [CompletionResultType]::ParameterName, 'The name of the standalone server [default: wfadm-sa-<major><minor>]')
+            [CompletionResult]::new('--name', '--name', [CompletionResultType]::ParameterName, 'The name of the standalone server [default: wfadm-sa-<major><minor>]')
             [CompletionResult]::new('-a', '-a', [CompletionResultType]::ParameterName, 'Stop all running standalone servers. If specified with a version, stop all running standalone servers of that version.')
             [CompletionResult]::new('--all', '--all', [CompletionResultType]::ParameterName, 'Stop all running standalone servers. If specified with a version, stop all running standalone servers of that version.')
             [CompletionResult]::new('-h', '-h', [CompletionResultType]::ParameterName, 'Print help')
@@ -91,7 +91,7 @@ Register-ArgumentCompleter -Native -CommandName 'waco' -ScriptBlock {
             [CompletionResult]::new('--version', '--version', [CompletionResultType]::ParameterName, 'Print version')
             break
         }
-        'waco;dc' {
+        'wfadm;dc' {
             [CompletionResult]::new('-h', '-h', [CompletionResultType]::ParameterName, 'Print help')
             [CompletionResult]::new('--help', '--help', [CompletionResultType]::ParameterName, 'Print help')
             [CompletionResult]::new('-V', '-V ', [CompletionResultType]::ParameterName, 'Print version')
@@ -101,9 +101,9 @@ Register-ArgumentCompleter -Native -CommandName 'waco' -ScriptBlock {
             [CompletionResult]::new('help', 'help', [CompletionResultType]::ParameterValue, 'Print this message or the help of the given subcommand(s)')
             break
         }
-        'waco;dc;start' {
-            [CompletionResult]::new('-n', '-n', [CompletionResultType]::ParameterName, 'The name of the domain controller [default: waco-dc-<major><minor>]. Not allowed when multiple versions are specified.')
-            [CompletionResult]::new('--name', '--name', [CompletionResultType]::ParameterName, 'The name of the domain controller [default: waco-dc-<major><minor>]. Not allowed when multiple versions are specified.')
+        'wfadm;dc;start' {
+            [CompletionResult]::new('-n', '-n', [CompletionResultType]::ParameterName, 'The name of the domain controller [default: wfadm-dc-<major><minor>]. Not allowed when multiple versions are specified.')
+            [CompletionResult]::new('--name', '--name', [CompletionResultType]::ParameterName, 'The name of the domain controller [default: wfadm-dc-<major><minor>]. Not allowed when multiple versions are specified.')
             [CompletionResult]::new('-p', '-p', [CompletionResultType]::ParameterName, 'The published HTTP port [default: 8<major><minor>]. Not allowed when multiple versions are specified.')
             [CompletionResult]::new('--http', '--http', [CompletionResultType]::ParameterName, 'The published HTTP port [default: 8<major><minor>]. Not allowed when multiple versions are specified.')
             [CompletionResult]::new('-m', '-m', [CompletionResultType]::ParameterName, 'The published management port [default: 9<major><minor>]. Not allowed when multiple versions are specified.')
@@ -120,9 +120,9 @@ Register-ArgumentCompleter -Native -CommandName 'waco' -ScriptBlock {
             [CompletionResult]::new('--version', '--version', [CompletionResultType]::ParameterName, 'Print version')
             break
         }
-        'waco;dc;stop' {
-            [CompletionResult]::new('-n', '-n', [CompletionResultType]::ParameterName, 'The name of the domain controller [default: waco-dc-<major><minor>]')
-            [CompletionResult]::new('--name', '--name', [CompletionResultType]::ParameterName, 'The name of the domain controller [default: waco-dc-<major><minor>]')
+        'wfadm;dc;stop' {
+            [CompletionResult]::new('-n', '-n', [CompletionResultType]::ParameterName, 'The name of the domain controller [default: wfadm-dc-<major><minor>]')
+            [CompletionResult]::new('--name', '--name', [CompletionResultType]::ParameterName, 'The name of the domain controller [default: wfadm-dc-<major><minor>]')
             [CompletionResult]::new('-a', '-a', [CompletionResultType]::ParameterName, 'Stop all running domain controllers. If specified with a version, stop all running domain controllers of that version.')
             [CompletionResult]::new('--all', '--all', [CompletionResultType]::ParameterName, 'Stop all running domain controllers. If specified with a version, stop all running domain controllers of that version.')
             [CompletionResult]::new('-h', '-h', [CompletionResultType]::ParameterName, 'Print help')
@@ -131,22 +131,22 @@ Register-ArgumentCompleter -Native -CommandName 'waco' -ScriptBlock {
             [CompletionResult]::new('--version', '--version', [CompletionResultType]::ParameterName, 'Print version')
             break
         }
-        'waco;dc;help' {
+        'wfadm;dc;help' {
             [CompletionResult]::new('start', 'start', [CompletionResultType]::ParameterValue, 'Start a domain controller')
             [CompletionResult]::new('stop', 'stop', [CompletionResultType]::ParameterValue, 'Stop a domain controller')
             [CompletionResult]::new('help', 'help', [CompletionResultType]::ParameterValue, 'Print this message or the help of the given subcommand(s)')
             break
         }
-        'waco;dc;help;start' {
+        'wfadm;dc;help;start' {
             break
         }
-        'waco;dc;help;stop' {
+        'wfadm;dc;help;stop' {
             break
         }
-        'waco;dc;help;help' {
+        'wfadm;dc;help;help' {
             break
         }
-        'waco;hc' {
+        'wfadm;hc' {
             [CompletionResult]::new('-h', '-h', [CompletionResultType]::ParameterName, 'Print help')
             [CompletionResult]::new('--help', '--help', [CompletionResultType]::ParameterName, 'Print help')
             [CompletionResult]::new('-V', '-V ', [CompletionResultType]::ParameterName, 'Print version')
@@ -156,11 +156,11 @@ Register-ArgumentCompleter -Native -CommandName 'waco' -ScriptBlock {
             [CompletionResult]::new('help', 'help', [CompletionResultType]::ParameterValue, 'Print this message or the help of the given subcommand(s)')
             break
         }
-        'waco;hc;start' {
-            [CompletionResult]::new('-n', '-n', [CompletionResultType]::ParameterName, 'The name of the host controller [default: waco-hc-<major><minor>]. Not allowed when multiple versions are specified.')
-            [CompletionResult]::new('--name', '--name', [CompletionResultType]::ParameterName, 'The name of the host controller [default: waco-hc-<major><minor>]. Not allowed when multiple versions are specified.')
-            [CompletionResult]::new('-d', '-d', [CompletionResultType]::ParameterName, 'The name of the domain controller [default: waco-dc-<major><minor>]. Required if different versions are specified.')
-            [CompletionResult]::new('--domain-controller', '--domain-controller', [CompletionResultType]::ParameterName, 'The name of the domain controller [default: waco-dc-<major><minor>]. Required if different versions are specified.')
+        'wfadm;hc;start' {
+            [CompletionResult]::new('-n', '-n', [CompletionResultType]::ParameterName, 'The name of the host controller [default: wfadm-hc-<major><minor>]. Not allowed when multiple versions are specified.')
+            [CompletionResult]::new('--name', '--name', [CompletionResultType]::ParameterName, 'The name of the host controller [default: wfadm-hc-<major><minor>]. Not allowed when multiple versions are specified.')
+            [CompletionResult]::new('-d', '-d', [CompletionResultType]::ParameterName, 'The name of the domain controller [default: wfadm-dc-<major><minor>]. Required if different versions are specified.')
+            [CompletionResult]::new('--domain-controller', '--domain-controller', [CompletionResultType]::ParameterName, 'The name of the domain controller [default: wfadm-dc-<major><minor>]. Required if different versions are specified.')
             [CompletionResult]::new('-u', '-u', [CompletionResultType]::ParameterName, 'The username to connect to the domain controller')
             [CompletionResult]::new('--username', '--username', [CompletionResultType]::ParameterName, 'The username to connect to the domain controller')
             [CompletionResult]::new('-p', '-p', [CompletionResultType]::ParameterName, 'The password to connect to the domain controller')
@@ -175,9 +175,9 @@ Register-ArgumentCompleter -Native -CommandName 'waco' -ScriptBlock {
             [CompletionResult]::new('--version', '--version', [CompletionResultType]::ParameterName, 'Print version')
             break
         }
-        'waco;hc;stop' {
-            [CompletionResult]::new('-n', '-n', [CompletionResultType]::ParameterName, 'The name of the host controller [default: waco-hc-<major><minor>]')
-            [CompletionResult]::new('--name', '--name', [CompletionResultType]::ParameterName, 'The name of the host controller [default: waco-hc-<major><minor>]')
+        'wfadm;hc;stop' {
+            [CompletionResult]::new('-n', '-n', [CompletionResultType]::ParameterName, 'The name of the host controller [default: wfadm-hc-<major><minor>]')
+            [CompletionResult]::new('--name', '--name', [CompletionResultType]::ParameterName, 'The name of the host controller [default: wfadm-hc-<major><minor>]')
             [CompletionResult]::new('-a', '-a', [CompletionResultType]::ParameterName, 'Stop all running host controllers. If specified with a version, stop all running host controllers of that version.')
             [CompletionResult]::new('--all', '--all', [CompletionResultType]::ParameterName, 'Stop all running host controllers. If specified with a version, stop all running host controllers of that version.')
             [CompletionResult]::new('-h', '-h', [CompletionResultType]::ParameterName, 'Print help')
@@ -186,22 +186,22 @@ Register-ArgumentCompleter -Native -CommandName 'waco' -ScriptBlock {
             [CompletionResult]::new('--version', '--version', [CompletionResultType]::ParameterName, 'Print version')
             break
         }
-        'waco;hc;help' {
+        'wfadm;hc;help' {
             [CompletionResult]::new('start', 'start', [CompletionResultType]::ParameterValue, 'Start a host controller')
             [CompletionResult]::new('stop', 'stop', [CompletionResultType]::ParameterValue, 'Stop a host controller')
             [CompletionResult]::new('help', 'help', [CompletionResultType]::ParameterValue, 'Print this message or the help of the given subcommand(s)')
             break
         }
-        'waco;hc;help;start' {
+        'wfadm;hc;help;start' {
             break
         }
-        'waco;hc;help;stop' {
+        'wfadm;hc;help;stop' {
             break
         }
-        'waco;hc;help;help' {
+        'wfadm;hc;help;help' {
             break
         }
-        'waco;topology' {
+        'wfadm;topology' {
             [CompletionResult]::new('-h', '-h', [CompletionResultType]::ParameterName, 'Print help')
             [CompletionResult]::new('--help', '--help', [CompletionResultType]::ParameterName, 'Print help')
             [CompletionResult]::new('-V', '-V ', [CompletionResultType]::ParameterName, 'Print version')
@@ -211,43 +211,43 @@ Register-ArgumentCompleter -Native -CommandName 'waco' -ScriptBlock {
             [CompletionResult]::new('help', 'help', [CompletionResultType]::ParameterValue, 'Print this message or the help of the given subcommand(s)')
             break
         }
-        'waco;topology;start' {
+        'wfadm;topology;start' {
             [CompletionResult]::new('-h', '-h', [CompletionResultType]::ParameterName, 'Print help')
             [CompletionResult]::new('--help', '--help', [CompletionResultType]::ParameterName, 'Print help')
             [CompletionResult]::new('-V', '-V ', [CompletionResultType]::ParameterName, 'Print version')
             [CompletionResult]::new('--version', '--version', [CompletionResultType]::ParameterName, 'Print version')
             break
         }
-        'waco;topology;stop' {
+        'wfadm;topology;stop' {
             [CompletionResult]::new('-h', '-h', [CompletionResultType]::ParameterName, 'Print help')
             [CompletionResult]::new('--help', '--help', [CompletionResultType]::ParameterName, 'Print help')
             [CompletionResult]::new('-V', '-V ', [CompletionResultType]::ParameterName, 'Print version')
             [CompletionResult]::new('--version', '--version', [CompletionResultType]::ParameterName, 'Print version')
             break
         }
-        'waco;topology;help' {
+        'wfadm;topology;help' {
             [CompletionResult]::new('start', 'start', [CompletionResultType]::ParameterValue, 'Start a topology')
             [CompletionResult]::new('stop', 'stop', [CompletionResultType]::ParameterValue, 'Stop a topology')
             [CompletionResult]::new('help', 'help', [CompletionResultType]::ParameterValue, 'Print this message or the help of the given subcommand(s)')
             break
         }
-        'waco;topology;help;start' {
+        'wfadm;topology;help;start' {
             break
         }
-        'waco;topology;help;stop' {
+        'wfadm;topology;help;stop' {
             break
         }
-        'waco;topology;help;help' {
+        'wfadm;topology;help;help' {
             break
         }
-        'waco;images' {
+        'wfadm;images' {
             [CompletionResult]::new('-h', '-h', [CompletionResultType]::ParameterName, 'Print help')
             [CompletionResult]::new('--help', '--help', [CompletionResultType]::ParameterName, 'Print help')
             [CompletionResult]::new('-V', '-V ', [CompletionResultType]::ParameterName, 'Print version')
             [CompletionResult]::new('--version', '--version', [CompletionResultType]::ParameterName, 'Print version')
             break
         }
-        'waco;ps' {
+        'wfadm;ps' {
             [CompletionResult]::new('--standalone', '--standalone', [CompletionResultType]::ParameterName, 'List standalone containers only')
             [CompletionResult]::new('--domain', '--domain', [CompletionResultType]::ParameterName, 'List domain controller and host controller containers only')
             [CompletionResult]::new('-h', '-h', [CompletionResultType]::ParameterName, 'Print help')
@@ -256,9 +256,9 @@ Register-ArgumentCompleter -Native -CommandName 'waco' -ScriptBlock {
             [CompletionResult]::new('--version', '--version', [CompletionResultType]::ParameterName, 'Print version')
             break
         }
-        'waco;console' {
-            [CompletionResult]::new('-n', '-n', [CompletionResultType]::ParameterName, 'The name of the standalone server or domain controller [default: waco-sa|dc-<major><minor>]. Not allowed when multiple versions are specified.')
-            [CompletionResult]::new('--name', '--name', [CompletionResultType]::ParameterName, 'The name of the standalone server or domain controller [default: waco-sa|dc-<major><minor>]. Not allowed when multiple versions are specified.')
+        'wfadm;console' {
+            [CompletionResult]::new('-n', '-n', [CompletionResultType]::ParameterName, 'The name of the standalone server or domain controller [default: wfadm-sa|dc-<major><minor>]. Not allowed when multiple versions are specified.')
+            [CompletionResult]::new('--name', '--name', [CompletionResultType]::ParameterName, 'The name of the standalone server or domain controller [default: wfadm-sa|dc-<major><minor>]. Not allowed when multiple versions are specified.')
             [CompletionResult]::new('-m', '-m', [CompletionResultType]::ParameterName, 'The published management port. Not allowed when multiple versions are specified.')
             [CompletionResult]::new('--management', '--management', [CompletionResultType]::ParameterName, 'The published management port. Not allowed when multiple versions are specified.')
             [CompletionResult]::new('-h', '-h', [CompletionResultType]::ParameterName, 'Print help')
@@ -267,9 +267,9 @@ Register-ArgumentCompleter -Native -CommandName 'waco' -ScriptBlock {
             [CompletionResult]::new('--version', '--version', [CompletionResultType]::ParameterName, 'Print version')
             break
         }
-        'waco;cli' {
-            [CompletionResult]::new('-n', '-n', [CompletionResultType]::ParameterName, 'The name of the standalone server or domain controller [default: waco-sa|dc-<major><minor>]. Not allowed when multiple versions are specified.')
-            [CompletionResult]::new('--name', '--name', [CompletionResultType]::ParameterName, 'The name of the standalone server or domain controller [default: waco-sa|dc-<major><minor>]. Not allowed when multiple versions are specified.')
+        'wfadm;cli' {
+            [CompletionResult]::new('-n', '-n', [CompletionResultType]::ParameterName, 'The name of the standalone server or domain controller [default: wfadm-sa|dc-<major><minor>]. Not allowed when multiple versions are specified.')
+            [CompletionResult]::new('--name', '--name', [CompletionResultType]::ParameterName, 'The name of the standalone server or domain controller [default: wfadm-sa|dc-<major><minor>]. Not allowed when multiple versions are specified.')
             [CompletionResult]::new('-m', '-m', [CompletionResultType]::ParameterName, 'The published management port')
             [CompletionResult]::new('--management', '--management', [CompletionResultType]::ParameterName, 'The published management port')
             [CompletionResult]::new('-u', '-u', [CompletionResultType]::ParameterName, 'The username to connect to the CLI')
@@ -282,7 +282,7 @@ Register-ArgumentCompleter -Native -CommandName 'waco' -ScriptBlock {
             [CompletionResult]::new('--version', '--version', [CompletionResultType]::ParameterName, 'Print version')
             break
         }
-        'waco;help' {
+        'wfadm;help' {
             [CompletionResult]::new('build', 'build', [CompletionResultType]::ParameterValue, 'Build images')
             [CompletionResult]::new('push', 'push', [CompletionResultType]::ParameterValue, 'Push images')
             [CompletionResult]::new('start', 'start', [CompletionResultType]::ParameterValue, 'Start a standalone server')
@@ -297,64 +297,64 @@ Register-ArgumentCompleter -Native -CommandName 'waco' -ScriptBlock {
             [CompletionResult]::new('help', 'help', [CompletionResultType]::ParameterValue, 'Print this message or the help of the given subcommand(s)')
             break
         }
-        'waco;help;build' {
+        'wfadm;help;build' {
             break
         }
-        'waco;help;push' {
+        'wfadm;help;push' {
             break
         }
-        'waco;help;start' {
+        'wfadm;help;start' {
             break
         }
-        'waco;help;stop' {
+        'wfadm;help;stop' {
             break
         }
-        'waco;help;dc' {
+        'wfadm;help;dc' {
             [CompletionResult]::new('start', 'start', [CompletionResultType]::ParameterValue, 'Start a domain controller')
             [CompletionResult]::new('stop', 'stop', [CompletionResultType]::ParameterValue, 'Stop a domain controller')
             break
         }
-        'waco;help;dc;start' {
+        'wfadm;help;dc;start' {
             break
         }
-        'waco;help;dc;stop' {
+        'wfadm;help;dc;stop' {
             break
         }
-        'waco;help;hc' {
+        'wfadm;help;hc' {
             [CompletionResult]::new('start', 'start', [CompletionResultType]::ParameterValue, 'Start a host controller')
             [CompletionResult]::new('stop', 'stop', [CompletionResultType]::ParameterValue, 'Stop a host controller')
             break
         }
-        'waco;help;hc;start' {
+        'wfadm;help;hc;start' {
             break
         }
-        'waco;help;hc;stop' {
+        'wfadm;help;hc;stop' {
             break
         }
-        'waco;help;topology' {
+        'wfadm;help;topology' {
             [CompletionResult]::new('start', 'start', [CompletionResultType]::ParameterValue, 'Start a topology')
             [CompletionResult]::new('stop', 'stop', [CompletionResultType]::ParameterValue, 'Stop a topology')
             break
         }
-        'waco;help;topology;start' {
+        'wfadm;help;topology;start' {
             break
         }
-        'waco;help;topology;stop' {
+        'wfadm;help;topology;stop' {
             break
         }
-        'waco;help;images' {
+        'wfadm;help;images' {
             break
         }
-        'waco;help;ps' {
+        'wfadm;help;ps' {
             break
         }
-        'waco;help;console' {
+        'wfadm;help;console' {
             break
         }
-        'waco;help;cli' {
+        'wfadm;help;cli' {
             break
         }
-        'waco;help;help' {
+        'wfadm;help;help' {
             break
         }
     })
