@@ -95,7 +95,7 @@ impl Progress {
         let progress = Progress {
             prefix: prefix.to_string(),
             image_name: image_name.to_string(),
-            bar: Self::spinner(prefix).with_message(format!("{:<41}", style(image_name).cyan())),
+            bar: Self::spinner(prefix).with_message(format!("{:<35}", style(image_name).cyan())),
         };
         progress.bar.enable_steady_tick(Duration::from_millis(100));
         progress
@@ -128,7 +128,7 @@ impl Progress {
 
     pub fn show_progress(&self, progress: &str) {
         self.bar.set_message(format!(
-            "{:<41}   {}",
+            "{:<35}   {}",
             style(self.image_name.clone()).cyan(),
             style(truncate_str(progress, 80, "...")).dim()
         ));
