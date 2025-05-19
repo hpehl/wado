@@ -3,7 +3,7 @@
 
 # WildFly Admin Containers
 
-`wado` (**W**ildFly **ad**in c**o**ntainers) is a command line tool to build and run WildFly containers of different
+`wado` (**W**ildFly **ad**min c**o**ntainers) is a command line tool to build and run WildFly containers of different
 versions in different operation modes (domain and standalone). The container images are based on the official WildFly
 images but are intended more for the development and testing of WildFly and its management tools (CLI and console).
 The container names and published ports follow default values based on the WildFly version.
