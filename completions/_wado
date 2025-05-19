@@ -1,8 +1,8 @@
-#compdef wfadm
+#compdef wado
 
 autoload -U is-at-least
 
-_wfadm() {
+_wado() {
     typeset -A opt_args
     typeset -a _arguments_options
     local ret=1
@@ -19,14 +19,14 @@ _wfadm() {
 '--help[Print help]' \
 '-V[Print version]' \
 '--version[Print version]' \
-":: :_wfadm_commands" \
+":: :_wado_commands" \
 "*::: :->wado" \
 && ret=0
     case $state in
     (wado)
         words=($line[1] "${words[@]}")
         (( CURRENT += 1 ))
-        curcontext="${curcontext%:*:*}:wfadm-command-$line[1]:"
+        curcontext="${curcontext%:*:*}:wado-command-$line[1]:"
         case $line[1] in
             (build)
 _arguments "${_arguments_options[@]}" : \
@@ -58,8 +58,8 @@ _arguments "${_arguments_options[@]}" : \
 ;;
 (start)
 _arguments "${_arguments_options[@]}" : \
-'-n+[The name of the standalone server \[default\: wfadm-sa-<major><minor>\]. Not allowed when multiple versions are specified.]: :_default' \
-'--name=[The name of the standalone server \[default\: wfadm-sa-<major><minor>\]. Not allowed when multiple versions are specified.]: :_default' \
+'-n+[The name of the standalone server \[default\: wado-sa-<major><minor>\]. Not allowed when multiple versions are specified.]: :_default' \
+'--name=[The name of the standalone server \[default\: wado-sa-<major><minor>\]. Not allowed when multiple versions are specified.]: :_default' \
 '-p+[The published HTTP port \[default\: 8<major><minor>\]. Not allowed when multiple versions are specified.]: :_default' \
 '--http=[The published HTTP port \[default\: 8<major><minor>\]. Not allowed when multiple versions are specified.]: :_default' \
 '-m+[The published management port \[default\: 9<major><minor>\]. Not allowed when multiple versions are specified.]: :_default' \
@@ -78,8 +78,8 @@ _arguments "${_arguments_options[@]}" : \
 ;;
 (stop)
 _arguments "${_arguments_options[@]}" : \
-'-n+[The name of the standalone server \[default\: wfadm-sa-<major><minor>\]]: :_default' \
-'--name=[The name of the standalone server \[default\: wfadm-sa-<major><minor>\]]: :_default' \
+'-n+[The name of the standalone server \[default\: wado-sa-<major><minor>\]]: :_default' \
+'--name=[The name of the standalone server \[default\: wado-sa-<major><minor>\]]: :_default' \
 '-a[Stop all running standalone servers. If specified with a version, stop all running standalone servers of that version.]' \
 '--all[Stop all running standalone servers. If specified with a version, stop all running standalone servers of that version.]' \
 '-h[Print help]' \
@@ -95,7 +95,7 @@ _arguments "${_arguments_options[@]}" : \
 '--help[Print help]' \
 '-V[Print version]' \
 '--version[Print version]' \
-":: :_wfadm__dc_commands" \
+":: :_wado__dc_commands" \
 "*::: :->dc" \
 && ret=0
 
@@ -103,12 +103,12 @@ _arguments "${_arguments_options[@]}" : \
     (dc)
         words=($line[1] "${words[@]}")
         (( CURRENT += 1 ))
-        curcontext="${curcontext%:*:*}:wfadm-dc-command-$line[1]:"
+        curcontext="${curcontext%:*:*}:wado-dc-command-$line[1]:"
         case $line[1] in
             (start)
 _arguments "${_arguments_options[@]}" : \
-'-n+[The name of the domain controller \[default\: wfadm-dc-<major><minor>\]. Not allowed when multiple versions are specified.]: :_default' \
-'--name=[The name of the domain controller \[default\: wfadm-dc-<major><minor>\]. Not allowed when multiple versions are specified.]: :_default' \
+'-n+[The name of the domain controller \[default\: wado-dc-<major><minor>\]. Not allowed when multiple versions are specified.]: :_default' \
+'--name=[The name of the domain controller \[default\: wado-dc-<major><minor>\]. Not allowed when multiple versions are specified.]: :_default' \
 '-p+[The published HTTP port \[default\: 8<major><minor>\]. Not allowed when multiple versions are specified.]: :_default' \
 '--http=[The published HTTP port \[default\: 8<major><minor>\]. Not allowed when multiple versions are specified.]: :_default' \
 '-m+[The published management port \[default\: 9<major><minor>\]. Not allowed when multiple versions are specified.]: :_default' \
@@ -129,8 +129,8 @@ _arguments "${_arguments_options[@]}" : \
 ;;
 (stop)
 _arguments "${_arguments_options[@]}" : \
-'-n+[The name of the domain controller \[default\: wfadm-dc-<major><minor>\]]: :_default' \
-'--name=[The name of the domain controller \[default\: wfadm-dc-<major><minor>\]]: :_default' \
+'-n+[The name of the domain controller \[default\: wado-dc-<major><minor>\]]: :_default' \
+'--name=[The name of the domain controller \[default\: wado-dc-<major><minor>\]]: :_default' \
 '-a[Stop all running domain controllers. If specified with a version, stop all running domain controllers of that version.]' \
 '--all[Stop all running domain controllers. If specified with a version, stop all running domain controllers of that version.]' \
 '-h[Print help]' \
@@ -142,7 +142,7 @@ _arguments "${_arguments_options[@]}" : \
 ;;
 (help)
 _arguments "${_arguments_options[@]}" : \
-":: :_wfadm__dc__help_commands" \
+":: :_wado__dc__help_commands" \
 "*::: :->help" \
 && ret=0
 
@@ -150,7 +150,7 @@ _arguments "${_arguments_options[@]}" : \
     (help)
         words=($line[1] "${words[@]}")
         (( CURRENT += 1 ))
-        curcontext="${curcontext%:*:*}:wfadm-dc-help-command-$line[1]:"
+        curcontext="${curcontext%:*:*}:wado-dc-help-command-$line[1]:"
         case $line[1] in
             (start)
 _arguments "${_arguments_options[@]}" : \
@@ -178,7 +178,7 @@ _arguments "${_arguments_options[@]}" : \
 '--help[Print help]' \
 '-V[Print version]' \
 '--version[Print version]' \
-":: :_wfadm__hc_commands" \
+":: :_wado__hc_commands" \
 "*::: :->hc" \
 && ret=0
 
@@ -186,14 +186,14 @@ _arguments "${_arguments_options[@]}" : \
     (hc)
         words=($line[1] "${words[@]}")
         (( CURRENT += 1 ))
-        curcontext="${curcontext%:*:*}:wfadm-hc-command-$line[1]:"
+        curcontext="${curcontext%:*:*}:wado-hc-command-$line[1]:"
         case $line[1] in
             (start)
 _arguments "${_arguments_options[@]}" : \
-'-n+[The name of the host controller \[default\: wfadm-hc-<major><minor>\]. Not allowed when multiple versions are specified.]: :_default' \
-'--name=[The name of the host controller \[default\: wfadm-hc-<major><minor>\]. Not allowed when multiple versions are specified.]: :_default' \
-'-d+[The name of the domain controller \[default\: wfadm-dc-<major><minor>\]. Required if different versions are specified.]: :_default' \
-'--domain-controller=[The name of the domain controller \[default\: wfadm-dc-<major><minor>\]. Required if different versions are specified.]: :_default' \
+'-n+[The name of the host controller \[default\: wado-hc-<major><minor>\]. Not allowed when multiple versions are specified.]: :_default' \
+'--name=[The name of the host controller \[default\: wado-hc-<major><minor>\]. Not allowed when multiple versions are specified.]: :_default' \
+'-d+[The name of the domain controller \[default\: wado-dc-<major><minor>\]. Required if different versions are specified.]: :_default' \
+'--domain-controller=[The name of the domain controller \[default\: wado-dc-<major><minor>\]. Required if different versions are specified.]: :_default' \
 '-u+[The username to connect to the domain controller]: :_default' \
 '--username=[The username to connect to the domain controller]: :_default' \
 '-p+[The password to connect to the domain controller]: :_default' \
@@ -212,8 +212,8 @@ _arguments "${_arguments_options[@]}" : \
 ;;
 (stop)
 _arguments "${_arguments_options[@]}" : \
-'-n+[The name of the host controller \[default\: wfadm-hc-<major><minor>\]]: :_default' \
-'--name=[The name of the host controller \[default\: wfadm-hc-<major><minor>\]]: :_default' \
+'-n+[The name of the host controller \[default\: wado-hc-<major><minor>\]]: :_default' \
+'--name=[The name of the host controller \[default\: wado-hc-<major><minor>\]]: :_default' \
 '-a[Stop all running host controllers. If specified with a version, stop all running host controllers of that version.]' \
 '--all[Stop all running host controllers. If specified with a version, stop all running host controllers of that version.]' \
 '-h[Print help]' \
@@ -225,7 +225,7 @@ _arguments "${_arguments_options[@]}" : \
 ;;
 (help)
 _arguments "${_arguments_options[@]}" : \
-":: :_wfadm__hc__help_commands" \
+":: :_wado__hc__help_commands" \
 "*::: :->help" \
 && ret=0
 
@@ -233,7 +233,7 @@ _arguments "${_arguments_options[@]}" : \
     (help)
         words=($line[1] "${words[@]}")
         (( CURRENT += 1 ))
-        curcontext="${curcontext%:*:*}:wfadm-hc-help-command-$line[1]:"
+        curcontext="${curcontext%:*:*}:wado-hc-help-command-$line[1]:"
         case $line[1] in
             (start)
 _arguments "${_arguments_options[@]}" : \
@@ -261,7 +261,7 @@ _arguments "${_arguments_options[@]}" : \
 '--help[Print help]' \
 '-V[Print version]' \
 '--version[Print version]' \
-":: :_wfadm__topology_commands" \
+":: :_wado__topology_commands" \
 "*::: :->topology" \
 && ret=0
 
@@ -269,7 +269,7 @@ _arguments "${_arguments_options[@]}" : \
     (topology)
         words=($line[1] "${words[@]}")
         (( CURRENT += 1 ))
-        curcontext="${curcontext%:*:*}:wfadm-topology-command-$line[1]:"
+        curcontext="${curcontext%:*:*}:wado-topology-command-$line[1]:"
         case $line[1] in
             (start)
 _arguments "${_arguments_options[@]}" : \
@@ -291,7 +291,7 @@ _arguments "${_arguments_options[@]}" : \
 ;;
 (help)
 _arguments "${_arguments_options[@]}" : \
-":: :_wfadm__topology__help_commands" \
+":: :_wado__topology__help_commands" \
 "*::: :->help" \
 && ret=0
 
@@ -299,7 +299,7 @@ _arguments "${_arguments_options[@]}" : \
     (help)
         words=($line[1] "${words[@]}")
         (( CURRENT += 1 ))
-        curcontext="${curcontext%:*:*}:wfadm-topology-help-command-$line[1]:"
+        curcontext="${curcontext%:*:*}:wado-topology-help-command-$line[1]:"
         case $line[1] in
             (start)
 _arguments "${_arguments_options[@]}" : \
@@ -341,8 +341,8 @@ _arguments "${_arguments_options[@]}" : \
 ;;
 (console)
 _arguments "${_arguments_options[@]}" : \
-'-n+[The name of the standalone server or domain controller \[default\: wfadm-sa|dc-<major><minor>\]. Not allowed when multiple versions are specified.]: :_default' \
-'--name=[The name of the standalone server or domain controller \[default\: wfadm-sa|dc-<major><minor>\]. Not allowed when multiple versions are specified.]: :_default' \
+'-n+[The name of the standalone server or domain controller \[default\: wado-sa|dc-<major><minor>\]. Not allowed when multiple versions are specified.]: :_default' \
+'--name=[The name of the standalone server or domain controller \[default\: wado-sa|dc-<major><minor>\]. Not allowed when multiple versions are specified.]: :_default' \
 '(-n --name)-m+[The published management port. Not allowed when multiple versions are specified.]: :_default' \
 '(-n --name)--management=[The published management port. Not allowed when multiple versions are specified.]: :_default' \
 '-h[Print help]' \
@@ -355,8 +355,8 @@ If omitted the console is opened for all running standalone and domain controlle
 ;;
 (cli)
 _arguments "${_arguments_options[@]}" : \
-'-n+[The name of the standalone server or domain controller \[default\: wfadm-sa|dc-<major><minor>\]. Not allowed when multiple versions are specified.]: :_default' \
-'--name=[The name of the standalone server or domain controller \[default\: wfadm-sa|dc-<major><minor>\]. Not allowed when multiple versions are specified.]: :_default' \
+'-n+[The name of the standalone server or domain controller \[default\: wado-sa|dc-<major><minor>\]. Not allowed when multiple versions are specified.]: :_default' \
+'--name=[The name of the standalone server or domain controller \[default\: wado-sa|dc-<major><minor>\]. Not allowed when multiple versions are specified.]: :_default' \
 '(-n --name)-m+[The published management port]: :_default' \
 '(-n --name)--management=[The published management port]: :_default' \
 '-u+[The username to connect to the CLI]: :_default' \
@@ -374,7 +374,7 @@ Can be omitted if only one standalone or domain controller is running.:_default'
 ;;
 (help)
 _arguments "${_arguments_options[@]}" : \
-":: :_wfadm__help_commands" \
+":: :_wado__help_commands" \
 "*::: :->help" \
 && ret=0
 
@@ -382,7 +382,7 @@ _arguments "${_arguments_options[@]}" : \
     (help)
         words=($line[1] "${words[@]}")
         (( CURRENT += 1 ))
-        curcontext="${curcontext%:*:*}:wfadm-help-command-$line[1]:"
+        curcontext="${curcontext%:*:*}:wado-help-command-$line[1]:"
         case $line[1] in
             (build)
 _arguments "${_arguments_options[@]}" : \
@@ -402,7 +402,7 @@ _arguments "${_arguments_options[@]}" : \
 ;;
 (dc)
 _arguments "${_arguments_options[@]}" : \
-":: :_wfadm__help__dc_commands" \
+":: :_wado__help__dc_commands" \
 "*::: :->dc" \
 && ret=0
 
@@ -410,7 +410,7 @@ _arguments "${_arguments_options[@]}" : \
     (dc)
         words=($line[1] "${words[@]}")
         (( CURRENT += 1 ))
-        curcontext="${curcontext%:*:*}:wfadm-help-dc-command-$line[1]:"
+        curcontext="${curcontext%:*:*}:wado-help-dc-command-$line[1]:"
         case $line[1] in
             (start)
 _arguments "${_arguments_options[@]}" : \
@@ -426,7 +426,7 @@ esac
 ;;
 (hc)
 _arguments "${_arguments_options[@]}" : \
-":: :_wfadm__help__hc_commands" \
+":: :_wado__help__hc_commands" \
 "*::: :->hc" \
 && ret=0
 
@@ -434,7 +434,7 @@ _arguments "${_arguments_options[@]}" : \
     (hc)
         words=($line[1] "${words[@]}")
         (( CURRENT += 1 ))
-        curcontext="${curcontext%:*:*}:wfadm-help-hc-command-$line[1]:"
+        curcontext="${curcontext%:*:*}:wado-help-hc-command-$line[1]:"
         case $line[1] in
             (start)
 _arguments "${_arguments_options[@]}" : \
@@ -450,7 +450,7 @@ esac
 ;;
 (topology)
 _arguments "${_arguments_options[@]}" : \
-":: :_wfadm__help__topology_commands" \
+":: :_wado__help__topology_commands" \
 "*::: :->topology" \
 && ret=0
 
@@ -458,7 +458,7 @@ _arguments "${_arguments_options[@]}" : \
     (topology)
         words=($line[1] "${words[@]}")
         (( CURRENT += 1 ))
-        curcontext="${curcontext%:*:*}:wfadm-help-topology-command-$line[1]:"
+        curcontext="${curcontext%:*:*}:wado-help-topology-command-$line[1]:"
         case $line[1] in
             (start)
 _arguments "${_arguments_options[@]}" : \
@@ -501,8 +501,8 @@ esac
 esac
 }
 
-(( $+functions[_wfadm_commands] )) ||
-_wfadm_commands() {
+(( $+functions[_wado_commands] )) ||
+_wado_commands() {
     local commands; commands=(
 'build:Build images' \
 'push:Push images' \
@@ -517,111 +517,111 @@ _wfadm_commands() {
 'cli:Connect to the CLI' \
 'help:Print this message or the help of the given subcommand(s)' \
     )
-    _describe -t commands 'wfadm commands' commands "$@"
+    _describe -t commands 'wado commands' commands "$@"
 }
-(( $+functions[_wfadm__build_commands] )) ||
-_wfadm__build_commands() {
+(( $+functions[_wado__build_commands] )) ||
+_wado__build_commands() {
     local commands; commands=()
-    _describe -t commands 'wfadm build commands' commands "$@"
+    _describe -t commands 'wado build commands' commands "$@"
 }
-(( $+functions[_wfadm__cli_commands] )) ||
-_wfadm__cli_commands() {
+(( $+functions[_wado__cli_commands] )) ||
+_wado__cli_commands() {
     local commands; commands=()
-    _describe -t commands 'wfadm cli commands' commands "$@"
+    _describe -t commands 'wado cli commands' commands "$@"
 }
-(( $+functions[_wfadm__console_commands] )) ||
-_wfadm__console_commands() {
+(( $+functions[_wado__console_commands] )) ||
+_wado__console_commands() {
     local commands; commands=()
-    _describe -t commands 'wfadm console commands' commands "$@"
+    _describe -t commands 'wado console commands' commands "$@"
 }
-(( $+functions[_wfadm__dc_commands] )) ||
-_wfadm__dc_commands() {
+(( $+functions[_wado__dc_commands] )) ||
+_wado__dc_commands() {
     local commands; commands=(
 'start:Start a domain controller' \
 'stop:Stop a domain controller' \
 'help:Print this message or the help of the given subcommand(s)' \
     )
-    _describe -t commands 'wfadm dc commands' commands "$@"
+    _describe -t commands 'wado dc commands' commands "$@"
 }
-(( $+functions[_wfadm__dc__help_commands] )) ||
-_wfadm__dc__help_commands() {
+(( $+functions[_wado__dc__help_commands] )) ||
+_wado__dc__help_commands() {
     local commands; commands=(
 'start:Start a domain controller' \
 'stop:Stop a domain controller' \
 'help:Print this message or the help of the given subcommand(s)' \
     )
-    _describe -t commands 'wfadm dc help commands' commands "$@"
+    _describe -t commands 'wado dc help commands' commands "$@"
 }
-(( $+functions[_wfadm__dc__help__help_commands] )) ||
-_wfadm__dc__help__help_commands() {
+(( $+functions[_wado__dc__help__help_commands] )) ||
+_wado__dc__help__help_commands() {
     local commands; commands=()
-    _describe -t commands 'wfadm dc help help commands' commands "$@"
+    _describe -t commands 'wado dc help help commands' commands "$@"
 }
-(( $+functions[_wfadm__dc__help__start_commands] )) ||
-_wfadm__dc__help__start_commands() {
+(( $+functions[_wado__dc__help__start_commands] )) ||
+_wado__dc__help__start_commands() {
     local commands; commands=()
-    _describe -t commands 'wfadm dc help start commands' commands "$@"
+    _describe -t commands 'wado dc help start commands' commands "$@"
 }
-(( $+functions[_wfadm__dc__help__stop_commands] )) ||
-_wfadm__dc__help__stop_commands() {
+(( $+functions[_wado__dc__help__stop_commands] )) ||
+_wado__dc__help__stop_commands() {
     local commands; commands=()
-    _describe -t commands 'wfadm dc help stop commands' commands "$@"
+    _describe -t commands 'wado dc help stop commands' commands "$@"
 }
-(( $+functions[_wfadm__dc__start_commands] )) ||
-_wfadm__dc__start_commands() {
+(( $+functions[_wado__dc__start_commands] )) ||
+_wado__dc__start_commands() {
     local commands; commands=()
-    _describe -t commands 'wfadm dc start commands' commands "$@"
+    _describe -t commands 'wado dc start commands' commands "$@"
 }
-(( $+functions[_wfadm__dc__stop_commands] )) ||
-_wfadm__dc__stop_commands() {
+(( $+functions[_wado__dc__stop_commands] )) ||
+_wado__dc__stop_commands() {
     local commands; commands=()
-    _describe -t commands 'wfadm dc stop commands' commands "$@"
+    _describe -t commands 'wado dc stop commands' commands "$@"
 }
-(( $+functions[_wfadm__hc_commands] )) ||
-_wfadm__hc_commands() {
+(( $+functions[_wado__hc_commands] )) ||
+_wado__hc_commands() {
     local commands; commands=(
 'start:Start a host controller' \
 'stop:Stop a host controller' \
 'help:Print this message or the help of the given subcommand(s)' \
     )
-    _describe -t commands 'wfadm hc commands' commands "$@"
+    _describe -t commands 'wado hc commands' commands "$@"
 }
-(( $+functions[_wfadm__hc__help_commands] )) ||
-_wfadm__hc__help_commands() {
+(( $+functions[_wado__hc__help_commands] )) ||
+_wado__hc__help_commands() {
     local commands; commands=(
 'start:Start a host controller' \
 'stop:Stop a host controller' \
 'help:Print this message or the help of the given subcommand(s)' \
     )
-    _describe -t commands 'wfadm hc help commands' commands "$@"
+    _describe -t commands 'wado hc help commands' commands "$@"
 }
-(( $+functions[_wfadm__hc__help__help_commands] )) ||
-_wfadm__hc__help__help_commands() {
+(( $+functions[_wado__hc__help__help_commands] )) ||
+_wado__hc__help__help_commands() {
     local commands; commands=()
-    _describe -t commands 'wfadm hc help help commands' commands "$@"
+    _describe -t commands 'wado hc help help commands' commands "$@"
 }
-(( $+functions[_wfadm__hc__help__start_commands] )) ||
-_wfadm__hc__help__start_commands() {
+(( $+functions[_wado__hc__help__start_commands] )) ||
+_wado__hc__help__start_commands() {
     local commands; commands=()
-    _describe -t commands 'wfadm hc help start commands' commands "$@"
+    _describe -t commands 'wado hc help start commands' commands "$@"
 }
-(( $+functions[_wfadm__hc__help__stop_commands] )) ||
-_wfadm__hc__help__stop_commands() {
+(( $+functions[_wado__hc__help__stop_commands] )) ||
+_wado__hc__help__stop_commands() {
     local commands; commands=()
-    _describe -t commands 'wfadm hc help stop commands' commands "$@"
+    _describe -t commands 'wado hc help stop commands' commands "$@"
 }
-(( $+functions[_wfadm__hc__start_commands] )) ||
-_wfadm__hc__start_commands() {
+(( $+functions[_wado__hc__start_commands] )) ||
+_wado__hc__start_commands() {
     local commands; commands=()
-    _describe -t commands 'wfadm hc start commands' commands "$@"
+    _describe -t commands 'wado hc start commands' commands "$@"
 }
-(( $+functions[_wfadm__hc__stop_commands] )) ||
-_wfadm__hc__stop_commands() {
+(( $+functions[_wado__hc__stop_commands] )) ||
+_wado__hc__stop_commands() {
     local commands; commands=()
-    _describe -t commands 'wfadm hc stop commands' commands "$@"
+    _describe -t commands 'wado hc stop commands' commands "$@"
 }
-(( $+functions[_wfadm__help_commands] )) ||
-_wfadm__help_commands() {
+(( $+functions[_wado__help_commands] )) ||
+_wado__help_commands() {
     local commands; commands=(
 'build:Build images' \
 'push:Push images' \
@@ -636,178 +636,178 @@ _wfadm__help_commands() {
 'cli:Connect to the CLI' \
 'help:Print this message or the help of the given subcommand(s)' \
     )
-    _describe -t commands 'wfadm help commands' commands "$@"
+    _describe -t commands 'wado help commands' commands "$@"
 }
-(( $+functions[_wfadm__help__build_commands] )) ||
-_wfadm__help__build_commands() {
+(( $+functions[_wado__help__build_commands] )) ||
+_wado__help__build_commands() {
     local commands; commands=()
-    _describe -t commands 'wfadm help build commands' commands "$@"
+    _describe -t commands 'wado help build commands' commands "$@"
 }
-(( $+functions[_wfadm__help__cli_commands] )) ||
-_wfadm__help__cli_commands() {
+(( $+functions[_wado__help__cli_commands] )) ||
+_wado__help__cli_commands() {
     local commands; commands=()
-    _describe -t commands 'wfadm help cli commands' commands "$@"
+    _describe -t commands 'wado help cli commands' commands "$@"
 }
-(( $+functions[_wfadm__help__console_commands] )) ||
-_wfadm__help__console_commands() {
+(( $+functions[_wado__help__console_commands] )) ||
+_wado__help__console_commands() {
     local commands; commands=()
-    _describe -t commands 'wfadm help console commands' commands "$@"
+    _describe -t commands 'wado help console commands' commands "$@"
 }
-(( $+functions[_wfadm__help__dc_commands] )) ||
-_wfadm__help__dc_commands() {
+(( $+functions[_wado__help__dc_commands] )) ||
+_wado__help__dc_commands() {
     local commands; commands=(
 'start:Start a domain controller' \
 'stop:Stop a domain controller' \
     )
-    _describe -t commands 'wfadm help dc commands' commands "$@"
+    _describe -t commands 'wado help dc commands' commands "$@"
 }
-(( $+functions[_wfadm__help__dc__start_commands] )) ||
-_wfadm__help__dc__start_commands() {
+(( $+functions[_wado__help__dc__start_commands] )) ||
+_wado__help__dc__start_commands() {
     local commands; commands=()
-    _describe -t commands 'wfadm help dc start commands' commands "$@"
+    _describe -t commands 'wado help dc start commands' commands "$@"
 }
-(( $+functions[_wfadm__help__dc__stop_commands] )) ||
-_wfadm__help__dc__stop_commands() {
+(( $+functions[_wado__help__dc__stop_commands] )) ||
+_wado__help__dc__stop_commands() {
     local commands; commands=()
-    _describe -t commands 'wfadm help dc stop commands' commands "$@"
+    _describe -t commands 'wado help dc stop commands' commands "$@"
 }
-(( $+functions[_wfadm__help__hc_commands] )) ||
-_wfadm__help__hc_commands() {
+(( $+functions[_wado__help__hc_commands] )) ||
+_wado__help__hc_commands() {
     local commands; commands=(
 'start:Start a host controller' \
 'stop:Stop a host controller' \
     )
-    _describe -t commands 'wfadm help hc commands' commands "$@"
+    _describe -t commands 'wado help hc commands' commands "$@"
 }
-(( $+functions[_wfadm__help__hc__start_commands] )) ||
-_wfadm__help__hc__start_commands() {
+(( $+functions[_wado__help__hc__start_commands] )) ||
+_wado__help__hc__start_commands() {
     local commands; commands=()
-    _describe -t commands 'wfadm help hc start commands' commands "$@"
+    _describe -t commands 'wado help hc start commands' commands "$@"
 }
-(( $+functions[_wfadm__help__hc__stop_commands] )) ||
-_wfadm__help__hc__stop_commands() {
+(( $+functions[_wado__help__hc__stop_commands] )) ||
+_wado__help__hc__stop_commands() {
     local commands; commands=()
-    _describe -t commands 'wfadm help hc stop commands' commands "$@"
+    _describe -t commands 'wado help hc stop commands' commands "$@"
 }
-(( $+functions[_wfadm__help__help_commands] )) ||
-_wfadm__help__help_commands() {
+(( $+functions[_wado__help__help_commands] )) ||
+_wado__help__help_commands() {
     local commands; commands=()
-    _describe -t commands 'wfadm help help commands' commands "$@"
+    _describe -t commands 'wado help help commands' commands "$@"
 }
-(( $+functions[_wfadm__help__images_commands] )) ||
-_wfadm__help__images_commands() {
+(( $+functions[_wado__help__images_commands] )) ||
+_wado__help__images_commands() {
     local commands; commands=()
-    _describe -t commands 'wfadm help images commands' commands "$@"
+    _describe -t commands 'wado help images commands' commands "$@"
 }
-(( $+functions[_wfadm__help__ps_commands] )) ||
-_wfadm__help__ps_commands() {
+(( $+functions[_wado__help__ps_commands] )) ||
+_wado__help__ps_commands() {
     local commands; commands=()
-    _describe -t commands 'wfadm help ps commands' commands "$@"
+    _describe -t commands 'wado help ps commands' commands "$@"
 }
-(( $+functions[_wfadm__help__push_commands] )) ||
-_wfadm__help__push_commands() {
+(( $+functions[_wado__help__push_commands] )) ||
+_wado__help__push_commands() {
     local commands; commands=()
-    _describe -t commands 'wfadm help push commands' commands "$@"
+    _describe -t commands 'wado help push commands' commands "$@"
 }
-(( $+functions[_wfadm__help__start_commands] )) ||
-_wfadm__help__start_commands() {
+(( $+functions[_wado__help__start_commands] )) ||
+_wado__help__start_commands() {
     local commands; commands=()
-    _describe -t commands 'wfadm help start commands' commands "$@"
+    _describe -t commands 'wado help start commands' commands "$@"
 }
-(( $+functions[_wfadm__help__stop_commands] )) ||
-_wfadm__help__stop_commands() {
+(( $+functions[_wado__help__stop_commands] )) ||
+_wado__help__stop_commands() {
     local commands; commands=()
-    _describe -t commands 'wfadm help stop commands' commands "$@"
+    _describe -t commands 'wado help stop commands' commands "$@"
 }
-(( $+functions[_wfadm__help__topology_commands] )) ||
-_wfadm__help__topology_commands() {
+(( $+functions[_wado__help__topology_commands] )) ||
+_wado__help__topology_commands() {
     local commands; commands=(
 'start:Start a topology' \
 'stop:Stop a topology' \
     )
-    _describe -t commands 'wfadm help topology commands' commands "$@"
+    _describe -t commands 'wado help topology commands' commands "$@"
 }
-(( $+functions[_wfadm__help__topology__start_commands] )) ||
-_wfadm__help__topology__start_commands() {
+(( $+functions[_wado__help__topology__start_commands] )) ||
+_wado__help__topology__start_commands() {
     local commands; commands=()
-    _describe -t commands 'wfadm help topology start commands' commands "$@"
+    _describe -t commands 'wado help topology start commands' commands "$@"
 }
-(( $+functions[_wfadm__help__topology__stop_commands] )) ||
-_wfadm__help__topology__stop_commands() {
+(( $+functions[_wado__help__topology__stop_commands] )) ||
+_wado__help__topology__stop_commands() {
     local commands; commands=()
-    _describe -t commands 'wfadm help topology stop commands' commands "$@"
+    _describe -t commands 'wado help topology stop commands' commands "$@"
 }
-(( $+functions[_wfadm__images_commands] )) ||
-_wfadm__images_commands() {
+(( $+functions[_wado__images_commands] )) ||
+_wado__images_commands() {
     local commands; commands=()
-    _describe -t commands 'wfadm images commands' commands "$@"
+    _describe -t commands 'wado images commands' commands "$@"
 }
-(( $+functions[_wfadm__ps_commands] )) ||
-_wfadm__ps_commands() {
+(( $+functions[_wado__ps_commands] )) ||
+_wado__ps_commands() {
     local commands; commands=()
-    _describe -t commands 'wfadm ps commands' commands "$@"
+    _describe -t commands 'wado ps commands' commands "$@"
 }
-(( $+functions[_wfadm__push_commands] )) ||
-_wfadm__push_commands() {
+(( $+functions[_wado__push_commands] )) ||
+_wado__push_commands() {
     local commands; commands=()
-    _describe -t commands 'wfadm push commands' commands "$@"
+    _describe -t commands 'wado push commands' commands "$@"
 }
-(( $+functions[_wfadm__start_commands] )) ||
-_wfadm__start_commands() {
+(( $+functions[_wado__start_commands] )) ||
+_wado__start_commands() {
     local commands; commands=()
-    _describe -t commands 'wfadm start commands' commands "$@"
+    _describe -t commands 'wado start commands' commands "$@"
 }
-(( $+functions[_wfadm__stop_commands] )) ||
-_wfadm__stop_commands() {
+(( $+functions[_wado__stop_commands] )) ||
+_wado__stop_commands() {
     local commands; commands=()
-    _describe -t commands 'wfadm stop commands' commands "$@"
+    _describe -t commands 'wado stop commands' commands "$@"
 }
-(( $+functions[_wfadm__topology_commands] )) ||
-_wfadm__topology_commands() {
-    local commands; commands=(
-'start:Start a topology' \
-'stop:Stop a topology' \
-'help:Print this message or the help of the given subcommand(s)' \
-    )
-    _describe -t commands 'wfadm topology commands' commands "$@"
-}
-(( $+functions[_wfadm__topology__help_commands] )) ||
-_wfadm__topology__help_commands() {
+(( $+functions[_wado__topology_commands] )) ||
+_wado__topology_commands() {
     local commands; commands=(
 'start:Start a topology' \
 'stop:Stop a topology' \
 'help:Print this message or the help of the given subcommand(s)' \
     )
-    _describe -t commands 'wfadm topology help commands' commands "$@"
+    _describe -t commands 'wado topology commands' commands "$@"
 }
-(( $+functions[_wfadm__topology__help__help_commands] )) ||
-_wfadm__topology__help__help_commands() {
-    local commands; commands=()
-    _describe -t commands 'wfadm topology help help commands' commands "$@"
+(( $+functions[_wado__topology__help_commands] )) ||
+_wado__topology__help_commands() {
+    local commands; commands=(
+'start:Start a topology' \
+'stop:Stop a topology' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'wado topology help commands' commands "$@"
 }
-(( $+functions[_wfadm__topology__help__start_commands] )) ||
-_wfadm__topology__help__start_commands() {
+(( $+functions[_wado__topology__help__help_commands] )) ||
+_wado__topology__help__help_commands() {
     local commands; commands=()
-    _describe -t commands 'wfadm topology help start commands' commands "$@"
+    _describe -t commands 'wado topology help help commands' commands "$@"
 }
-(( $+functions[_wfadm__topology__help__stop_commands] )) ||
-_wfadm__topology__help__stop_commands() {
+(( $+functions[_wado__topology__help__start_commands] )) ||
+_wado__topology__help__start_commands() {
     local commands; commands=()
-    _describe -t commands 'wfadm topology help stop commands' commands "$@"
+    _describe -t commands 'wado topology help start commands' commands "$@"
 }
-(( $+functions[_wfadm__topology__start_commands] )) ||
-_wfadm__topology__start_commands() {
+(( $+functions[_wado__topology__help__stop_commands] )) ||
+_wado__topology__help__stop_commands() {
     local commands; commands=()
-    _describe -t commands 'wfadm topology start commands' commands "$@"
+    _describe -t commands 'wado topology help stop commands' commands "$@"
 }
-(( $+functions[_wfadm__topology__stop_commands] )) ||
-_wfadm__topology__stop_commands() {
+(( $+functions[_wado__topology__start_commands] )) ||
+_wado__topology__start_commands() {
     local commands; commands=()
-    _describe -t commands 'wfadm topology stop commands' commands "$@"
+    _describe -t commands 'wado topology start commands' commands "$@"
+}
+(( $+functions[_wado__topology__stop_commands] )) ||
+_wado__topology__stop_commands() {
+    local commands; commands=()
+    _describe -t commands 'wado topology stop commands' commands "$@"
 }
 
-if [ "$funcstack[1]" = "_wfadm" ]; then
-    _wfadm "$@"
+if [ "$funcstack[1]" = "_wado" ]; then
+    _wado "$@"
 else
-    compdef _wfadm wfadm
+    compdef _wado wado
 fi

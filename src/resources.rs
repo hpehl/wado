@@ -22,14 +22,14 @@ CMD ["-c", "standalone.xml"]
 // language=shell script
 pub static STANDALONE_ENTRYPOINT_SH: &str = r#"#!/bin/sh
 
-if [[ ! -z $WFADM_BOOTSTRAP_OPERATIONS ]]; then
+if [[ ! -z $WADO_BOOTSTRAP_OPERATIONS ]]; then
     $JBOSS_HOME/bin/standalone.sh $@ --admin-only &
     until `$JBOSS_HOME/bin/jboss-cli.sh -c ":read-attribute(name=server-state)" 2> /dev/null | grep -q running`; do
         sleep 1
     done
     echo "[== Bootstrap WildFly Standalone $WILDFLY_VERSION ==]"
-    echo "[-- Execute bootstrap operation: $WFADM_BOOTSTRAP_OPERATIONS --]"
-    $JBOSS_HOME/bin/jboss-cli.sh -c --commands="$WFADM_BOOTSTRAP_OPERATIONS"
+    echo "[-- Execute bootstrap operation: $WADO_BOOTSTRAP_OPERATIONS --]"
+    $JBOSS_HOME/bin/jboss-cli.sh -c --commands="$WADO_BOOTSTRAP_OPERATIONS"
     $JBOSS_HOME/bin/jboss-cli.sh -c ":shutdown()"
     echo "[== Bootstrap finished ==]"
 fi
@@ -65,20 +65,20 @@ until `$JBOSS_HOME/bin/jboss-cli.sh -c "/host=primary:read-attribute(name=host-s
     sleep 1
 done
 echo "[== Bootstrap WildFly Domain Controller $WILDFLY_VERSION ==]"
-echo "[-- Rename primary to $WFADM_HOSTNAME --]"
-$JBOSS_HOME/bin/jboss-cli.sh -c --commands="/host=primary:write-attribute(name=name,value=$WFADM_HOSTNAME),/host=primary:reload(admin-only)"
-until `$JBOSS_HOME/bin/jboss-cli.sh -c "/host=$WFADM_HOSTNAME:read-attribute(name=host-state)" 2> /dev/null | grep -q running`; do
+echo "[-- Rename primary to $WADO_HOSTNAME --]"
+$JBOSS_HOME/bin/jboss-cli.sh -c --commands="/host=primary:write-attribute(name=name,value=$WADO_HOSTNAME),/host=primary:reload(admin-only)"
+until `$JBOSS_HOME/bin/jboss-cli.sh -c "/host=$WADO_HOSTNAME:read-attribute(name=host-state)" 2> /dev/null | grep -q running`; do
     sleep 1
 done
-if [[ ! -z $WFADM_SERVERS ]]; then
-    echo "[-- Add servers: $WFADM_SERVERS --]"
-    $JBOSS_HOME/bin/jboss-cli.sh -c --commands="$WFADM_SERVERS"
+if [[ ! -z $WADO_SERVERS ]]; then
+    echo "[-- Add servers: $WADO_SERVERS --]"
+    $JBOSS_HOME/bin/jboss-cli.sh -c --commands="$WADO_SERVERS"
 fi
-if [[ ! -z $WFADM_BOOTSTRAP_OPERATIONS ]]; then
-    echo "[-- Execute bootstrap operation: $WFADM_BOOTSTRAP_OPERATIONS --]"
-    $JBOSS_HOME/bin/jboss-cli.sh -c --commands="$WFADM_BOOTSTRAP_OPERATIONS"
+if [[ ! -z $WADO_BOOTSTRAP_OPERATIONS ]]; then
+    echo "[-- Execute bootstrap operation: $WADO_BOOTSTRAP_OPERATIONS --]"
+    $JBOSS_HOME/bin/jboss-cli.sh -c --commands="$WADO_BOOTSTRAP_OPERATIONS"
 fi
-$JBOSS_HOME/bin/jboss-cli.sh -c "/host=$WFADM_HOSTNAME:shutdown()"
+$JBOSS_HOME/bin/jboss-cli.sh -c "/host=$WADO_HOSTNAME:shutdown()"
 echo "[== Bootstrap finished ==]"
 $JBOSS_HOME/bin/domain.sh $@
 "#;
@@ -112,22 +112,22 @@ until `$JBOSS_HOME/bin/jboss-cli.sh -c "/host=$HOSTNAME:read-attribute(name=host
     sleep 1
 done
 echo "[== Bootstrap WildFly Host Controller $WILDFLY_VERSION ==]"
-echo "[-- Rename $HOSTNAME to $WFADM_HOSTNAME --]"
-$JBOSS_HOME/bin/jboss-cli.sh -c --commands="/host=$HOSTNAME:write-attribute(name=name,value=$WFADM_HOSTNAME),/host=$HOSTNAME:reload(admin-only)"
-until `$JBOSS_HOME/bin/jboss-cli.sh -c "/host=$WFADM_HOSTNAME:read-attribute(name=host-state)" 2> /dev/null | grep -q running`; do
+echo "[-- Rename $HOSTNAME to $WADO_HOSTNAME --]"
+$JBOSS_HOME/bin/jboss-cli.sh -c --commands="/host=$HOSTNAME:write-attribute(name=name,value=$WADO_HOSTNAME),/host=$HOSTNAME:reload(admin-only)"
+until `$JBOSS_HOME/bin/jboss-cli.sh -c "/host=$WADO_HOSTNAME:read-attribute(name=host-state)" 2> /dev/null | grep -q running`; do
     sleep 1
 done
 echo "[-- Add authentication context --]"
-$JBOSS_HOME/bin/jboss-cli.sh -c --commands="/host=$WFADM_HOSTNAME/subsystem=elytron/authentication-configuration=wac-auth-config:add(sasl-mechanism-selector=DIGEST-MD5,authentication-name=$WFADM_USERNAME,realm=ManagementRealm,credential-reference={clear-text=$WFADM_PASSWORD}),/host=$WFADM_HOSTNAME/subsystem=elytron/authentication-context=wac-auth-context:add(match-rules=[{match-host=$WFADM_DOMAIN_CONTROLLER,authentication-configuration=wac-auth-config}]),/host=$WFADM_HOSTNAME:write-attribute(name=domain-controller.remote.authentication-context,value=wac-auth-context)"
-if [[ ! -z $WFADM_SERVERS ]]; then
-    echo "[-- Add servers: $WFADM_SERVERS --]"
-    $JBOSS_HOME/bin/jboss-cli.sh -c --commands="$WFADM_SERVERS"
+$JBOSS_HOME/bin/jboss-cli.sh -c --commands="/host=$WADO_HOSTNAME/subsystem=elytron/authentication-configuration=wac-auth-config:add(sasl-mechanism-selector=DIGEST-MD5,authentication-name=$WADO_USERNAME,realm=ManagementRealm,credential-reference={clear-text=$WADO_PASSWORD}),/host=$WADO_HOSTNAME/subsystem=elytron/authentication-context=wac-auth-context:add(match-rules=[{match-host=$WADO_DOMAIN_CONTROLLER,authentication-configuration=wac-auth-config}]),/host=$WADO_HOSTNAME:write-attribute(name=domain-controller.remote.authentication-context,value=wac-auth-context)"
+if [[ ! -z $WADO_SERVERS ]]; then
+    echo "[-- Add servers: $WADO_SERVERS --]"
+    $JBOSS_HOME/bin/jboss-cli.sh -c --commands="$WADO_SERVERS"
 fi
-if [[ ! -z $WFADM_BOOTSTRAP_OPERATIONS ]]; then
-    echo "[-- Execute bootstrap operation: $WFADM_BOOTSTRAP_OPERATIONS --]"
-    $JBOSS_HOME/bin/jboss-cli.sh -c --commands="$WFADM_BOOTSTRAP_OPERATIONS"
+if [[ ! -z $WADO_BOOTSTRAP_OPERATIONS ]]; then
+    echo "[-- Execute bootstrap operation: $WADO_BOOTSTRAP_OPERATIONS --]"
+    $JBOSS_HOME/bin/jboss-cli.sh -c --commands="$WADO_BOOTSTRAP_OPERATIONS"
 fi
-$JBOSS_HOME/bin/jboss-cli.sh -c "/host=$WFADM_HOSTNAME:shutdown()"
+$JBOSS_HOME/bin/jboss-cli.sh -c "/host=$WADO_HOSTNAME:shutdown()"
 echo "[== Bootstrap finished ==]"
 $JBOSS_HOME/bin/domain.sh $@
 "#;

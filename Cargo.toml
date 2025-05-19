@@ -1,12 +1,12 @@
 [package]
-name = "wfadm"
+name = "wado"
 version = "0.1.0"
 authors = ["Harald Pehl <harald.pehl@gmail.com>"]
 edition = "2024"
 description = "Command line tool to manage WildFly containers."
 readme = "README.md"
-homepage = "https://github.com/hpehl/wfadm"
-repository = "https://github.com/hpehl/wfadm"
+homepage = "https://github.com/hpehl/wado"
+repository = "https://github.com/hpehl/wado"
 license = "Apache-2.0"
 keywords = ["cli", "WildFly", "admin", "image", "container"]
 categories = ["command-line-utilities"]
@@ -39,4 +39,4 @@ clap_complete = "4.5.50"
 lto = true
 
 [[bin]]
-name = "wfadm"
+name = "wado"

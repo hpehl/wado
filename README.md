@@ -1,9 +1,9 @@
-![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/hpehl/wfadm/verify.yml)
-[![Crates.io](https://img.shields.io/crates/v/wfadm.svg)](https://crates.io/crates/wfadm)
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/hpehl/wado/verify.yml)
+[![Crates.io](https://img.shields.io/crates/v/wado.svg)](https://crates.io/crates/wado)
 
 # WildFly Admin Containers
 
-`wfadm` (**W**ild**F**ly **adm**in containers) is a command line tool to build and run WildFly containers of different
+`wado` (**W**ildFly **ad**in c**o**ntainers) is a command line tool to build and run WildFly containers of different
 versions in different operation modes (domain and standalone). The container images are based on the official WildFly
 images but are intended more for the development and testing of WildFly and its management tools (CLI and console).
 The container names and published ports follow default values based on the WildFly version.
@@ -35,19 +35,19 @@ The container names and published ports follow default values based on the WildF
 
 # Installation
 
-[Precompiled binaries](https://github.com/hpehl/wfadm/releases) are available for macOS, Linux, and Windows.
+[Precompiled binaries](https://github.com/hpehl/wado/releases) are available for macOS, Linux, and Windows.
 
 ## Brew
 
 ```shell
 brew tap hpehl/tap
-brew install wfadm
+brew install wado
 ```
 
 ## Cargo
 
 ```shell
-cargo install wfadm
+cargo install wado
 ```
 
 ## Shell Completions
@@ -59,35 +59,35 @@ They're installed automatically by brew. To install them manually, follow these 
 ### Bash
 
 ```shell
-wget https://github.com/hpehl/wfadm/raw/main/completions/wfadm.bash -O /etc/bash_completion.d/wfadm
-source /etc/bash_completion.d/wfadm
+wget https://github.com/hpehl/wado/raw/main/completions/wado.bash -O /etc/bash_completion.d/wado
+source /etc/bash_completion.d/wado
 ```
 
 ### Zsh
 
 ```shell
-wget https://github.com/hpehl/wfadm/raw/main/completions/_wfadm -O /usr/local/share/zsh/site-functions/_wfadm
+wget https://github.com/hpehl/wado/raw/main/completions/_wado -O /usr/local/share/zsh/site-functions/_wado
 autoload -U compinit && compinit
-autoload -U _wfadm
+autoload -U _wado
 ```
 
 ### Fish
 
 ```shell
-wget https://github.com/hpehl/wfadm/raw/main/completions/wfadm.fish -O ~/.config/fish/completions/wfadm.fish
+wget https://github.com/hpehl/wado/raw/main/completions/wado.fish -O ~/.config/fish/completions/wado.fish
 ```
 
 ### Elvish
 
 ```shell
-wget https://github.com/hpehl/wfadm/raw/main/completions/wfadm.elv -O ~/.elvish/lib/wfadm.elv
+wget https://github.com/hpehl/wado/raw/main/completions/wado.elv -O ~/.elvish/lib/wado.elv
 ```
 
 ### PowerShell
 
 ```shell
-Invoke-WebRequest -Uri https://github.com/hpehl/wfadm/raw/main/completions/_wfadm.ps1 -OutFile "$HOME\.config\powershell\_wfadm.ps1"
-. "$HOME\.config\powershell\_wfadm.ps1"
+Invoke-WebRequest -Uri https://github.com/hpehl/wado/raw/main/completions/_wado.ps1 -OutFile "$HOME\.config\powershell\_wado.ps1"
+. "$HOME\.config\powershell\_wado.ps1"
 ```
 
 </details>
@@ -130,12 +130,12 @@ listed [here](https://github.com/hpehl/wildfly-container-versions?tab=readme-ov-
 
 # Images
 
-The images are based on the official WildFly images, are hosted at https://quay.io/organization/wfadm, and come in three
+The images are based on the official WildFly images, are hosted at https://quay.io/organization/wado, and come in three
 variants:
 
-- Standalone: [quay.io/wfadm/wfadm-sa](https://quay.io/repository/wfadm/wfadm-sa)
-- Domain controller: [quay.io/wfadm/wfadm-dc](https://quay.io/repository/wfadm/wfadm-dc)
-- Host controller: [quay.io/wfadm/wfadm-hc](https://quay.io/repository/wfadm/wfadm-hc)
+- Standalone: [quay.io/wado/wado-sa](https://quay.io/repository/wado/wado-sa)
+- Domain controller: [quay.io/wado/wado-dc](https://quay.io/repository/wado/wado-dc)
+- Host controller: [quay.io/wado/wado-hc](https://quay.io/repository/wado/wado-hc)
 
 Each image contains tags for
 all [supported versions](https://github.com/hpehl/wildfly-container-versions?tab=readme-ov-file#supported-versions).
@@ -165,7 +165,7 @@ Domain and host controller images are changed so that no servers are configured.
 
 ## Naming
 
-The default name for containers is `wfadm-<type>-<version>[-index]`
+The default name for containers is `wado-<type>-<version>[-index]`
 
 - Type: `sa|dc|hc` - standalone, domain or host controller
 - Version: `<major><minor>`
@@ -183,20 +183,20 @@ So for WildFly 34, the port mappings are 8340 and 9340, and for WildFly 26.1, th
 If multiple containers of the same version are used, the port is increased by one from the second container onwards.
 
 ```shell
-wfadm start 26.1,28..30,2x32,3x35
+wado start 26.1,28..30,2x32,3x35
 ```
 
-| Version | Name           | HTTP | Management |
-|---------|----------------|------|------------|
-| 26.1    | wfadm-sa-261   | 8261 | 9261       |
-| 28      | wfadm-sa-280   | 8280 | 9280       |
-| 29      | wfadm-sa-290   | 8290 | 9290       |
-| 30      | wfadm-sa-300   | 8300 | 9300       |
-| 32      | wfadm-sa-320-0 | 8320 | 9320       |
-| 32      | wfadm-sa-320-1 | 8321 | 9321       |
-| 35      | wfadm-sa-350-0 | 8350 | 9350       |
-| 35      | wfadm-sa-350-1 | 8351 | 9351       |
-| 35      | wfadm-sa-350-2 | 8352 | 9352       |
+| Version | Name          | HTTP | Management |
+|---------|---------------|------|------------|
+| 26.1    | wado-sa-261   | 8261 | 9261       |
+| 28      | wado-sa-280   | 8280 | 9280       |
+| 29      | wado-sa-290   | 8290 | 9290       |
+| 30      | wado-sa-300   | 8300 | 9300       |
+| 32      | wado-sa-320-0 | 8320 | 9320       |
+| 32      | wado-sa-320-1 | 8321 | 9321       |
+| 35      | wado-sa-350-0 | 8350 | 9350       |
+| 35      | wado-sa-350-1 | 8351 | 9351       |
+| 35      | wado-sa-350-2 | 8352 | 9352       |
 
 # Commands
 
@@ -209,7 +209,7 @@ Currently, the following commands are supported:
 ```shell
 Command line tool to build and run WildFly containers in different versions and operation modes.
 
-Usage: wfadm <COMMAND>
+Usage: wado <COMMAND>
 
 Commands:
   build     Build WildFly images
@@ -236,13 +236,13 @@ predefined username and password.
 
 Predefined images for
 all [supported versions](https://github.com/hpehl/wildfly-container-versions?tab=readme-ov-file#supported-versions)
-are available at https://quay.io/organization/wfadm. If you want to change the username and password, you can build your
+are available at https://quay.io/organization/wado. If you want to change the username and password, you can build your
 own local image.
 
 ```shell
 Build WildFly images
 
-Usage: wfadm build [OPTIONS] <wildfly-version>
+Usage: wado build [OPTIONS] <wildfly-version>
 
 Arguments:
   <wildfly-version>  A single WildFly version or version range
@@ -260,12 +260,12 @@ Options:
 **Examples**
 
 ```shell
-wfadm build 34
-wfadm build 34 --username alice --password "Admin#70365"
-wfadm build 10,23,34 --standalone
-wfadm build 20..29 --domain
-wfadm build 10,20..29,34
-wfadm build .. --chuncks 5
+wado build 34
+wado build 34 --username alice --password "Admin#70365"
+wado build 10,23,34 --standalone
+wado build 20..29 --domain
+wado build 10,20..29,34
+wado build .. --chuncks 5
 ```
 
 ## Standalone
@@ -275,14 +275,14 @@ wfadm build .. --chuncks 5
 ```shell
 Start a standalone server
 
-Usage: wfadm start [OPTIONS] <wildfly-version> [-- [wildfly-parameters]...]
+Usage: wado start [OPTIONS] <wildfly-version> [-- [wildfly-parameters]...]
 
 Arguments:
   <wildfly-version>        A single WildFly version or version range
   [wildfly-parameters]...  Parameters passed to the standalone server
 
 Options:
-  -n, --name <name>              The name of the standalone server [default: wfadm-sa-<major><minor>].
+  -n, --name <name>              The name of the standalone server [default: wado-sa-<major><minor>].
                                  Not allowed when multiple versions are specified.
   -p, --http <http>              The published HTTP port [default: 8<major><minor>].
                                  Not allowed when multiple versions are specified.
@@ -300,14 +300,14 @@ Options:
 **Examples**
 
 ```shell
-wfadm start 34
-wfadm start 3x34
-wfadm start 30..35
-wfadm start 34 --name foo
-wfadm start 34 --name bar --offset 100
-wfadm start 34 --http 8080 --management 9990
-wfadm start 34 --operations "/subsystem=logging/console-handler=CONSOLE:write-attribute(name=level,value=DEBUG)"
-wfadm start 34 --offset 100 -- --server-config=standalone-microprofile.xml
+wado start 34
+wado start 3x34
+wado start 30..35
+wado start 34 --name foo
+wado start 34 --name bar --offset 100
+wado start 34 --http 8080 --management 9990
+wado start 34 --operations "/subsystem=logging/console-handler=CONSOLE:write-attribute(name=level,value=DEBUG)"
+wado start 34 --offset 100 -- --server-config=standalone-microprofile.xml
 ```
 
 ### Stop
@@ -315,13 +315,13 @@ wfadm start 34 --offset 100 -- --server-config=standalone-microprofile.xml
 ```shell
 Stop a standalone server
 
-Usage: wfadm stop [OPTIONS] [wildfly-version]
+Usage: wado stop [OPTIONS] [wildfly-version]
 
 Arguments:
   [wildfly-version]  A single WildFly version or version range
 
 Options:
-  -n, --name <name>  The name of the standalone server [default: wfadm-sa-<major><minor>]
+  -n, --name <name>  The name of the standalone server [default: wado-sa-<major><minor>]
   -a, --all          Stop all running standalone servers. If specified with a version,
                      stop all running standalone servers of that version.
   -h, --help         Print help
@@ -331,11 +331,11 @@ Options:
 **Examples**
 
 ```shell
-wfadm stop 34
-wfadm stop 30..35
-wfadm stop 34 --name foo
-wfadm stop 34 --all
-wfadm stop --all
+wado stop 34
+wado stop 30..35
+wado stop 34 --name foo
+wado stop 34 --all
+wado stop --all
 ```
 
 ## Domain
@@ -347,14 +347,14 @@ wfadm stop --all
 ```shell
 Start a domain controller
 
-Usage: wfadm dc start [OPTIONS] <wildfly-version> [-- [wildfly-parameters]...]
+Usage: wado dc start [OPTIONS] <wildfly-version> [-- [wildfly-parameters]...]
 
 Arguments:
   <wildfly-version>        A single WildFly version or version range
   [wildfly-parameters]...  Parameters passed to the domain controller
 
 Options:
-  -n, --name <name>              The name of the domain controller [default: wfadm-dc-<major><minor>].
+  -n, --name <name>              The name of the domain controller [default: wado-dc-<major><minor>].
                                  Not allowed when multiple versions are specified.
   -p, --http <http>              The published HTTP port [default: 8<major><minor>].
                                  Not allowed when multiple versions are specified.
@@ -381,16 +381,16 @@ Options:
 **Examples**
 
 ```shell
-wfadm dc start 34
-wfadm dc start 3x34
-wfadm dc start 30..35
-wfadm dc start 34 --name foo
-wfadm dc start 34 --name bar --offset 100
-wfadm dc start 34 --http 8080 --management 9990
-wfadm dc start 34 --server s1:start
-wfadm dc start 35 --server s1,s2,s3,s4:osg,s5:osg
-wfadm dc start 34 --server s1:start,s2,s3 --server s4:osg:start,s5:osg,s6:osg
-wfadm dc start 34 --name dc \
+wado dc start 34
+wado dc start 3x34
+wado dc start 30..35
+wado dc start 34 --name foo
+wado dc start 34 --name bar --offset 100
+wado dc start 34 --http 8080 --management 9990
+wado dc start 34 --server s1:start
+wado dc start 35 --server s1,s2,s3,s4:osg,s5:osg
+wado dc start 34 --server s1:start,s2,s3 --server s4:osg:start,s5:osg,s6:osg
+wado dc start 34 --name dc \
   --server server-one:main-server-group:start \
   --server server-two:main-server-group:10 \
   --server server-three:other-server-group:20
@@ -401,13 +401,13 @@ wfadm dc start 34 --name dc \
 ```shell
 Stop a domain controller
 
-Usage: wfadm dc stop [OPTIONS] [wildfly-version]
+Usage: wado dc stop [OPTIONS] [wildfly-version]
 
 Arguments:
   [wildfly-version]  A single WildFly version or version range
 
 Options:
-  -n, --name <name>  The name of the domain controller [default: wfadm-dc-<major><minor>]
+  -n, --name <name>  The name of the domain controller [default: wado-dc-<major><minor>]
   -a, --all          Stop all running domain controllers. If specified with a version,
                      stop all running domain controllers of that version.
   -h, --help         Print help
@@ -417,11 +417,11 @@ Options:
 **Examples**
 
 ```shell
-wfadm dc stop 34
-wfadm dc stop 30..35
-wfadm dc stop 34 --name foo
-wfadm dc stop 34 --all
-wfadm dc stop --all
+wado dc stop 34
+wado dc stop 30..35
+wado dc stop 34 --name foo
+wado dc stop 34 --all
+wado dc stop --all
 ```
 
 ### Host Controller
@@ -431,7 +431,7 @@ wfadm dc stop --all
 ```shell
 Start a host controller
 
-Usage: wfadm hc start [OPTIONS] <wildfly-version> [-- [wildfly-parameters]...]
+Usage: wado hc start [OPTIONS] <wildfly-version> [-- [wildfly-parameters]...]
 
 Arguments:
   <wildfly-version>        A single WildFly version or version range
@@ -439,10 +439,10 @@ Arguments:
 
 Options:
   -n, --name <name>
-          The name of the host controller [default: wfadm-hc-<major><minor>].
+          The name of the host controller [default: wado-hc-<major><minor>].
           Not allowed when multiple versions are specified.
   -d, --domain-controller <domain-controller>
-          The name of the domain controller [default: wfadm-dc-<major><minor>].
+          The name of the domain controller [default: wado-dc-<major><minor>].
           Required if different versions are specified.
   -u, --username <username>
           The username to connect to the domain controller [default: admin]
@@ -472,13 +472,13 @@ Options:
 **Examples**
 
 ```shell
-wfadm hc start 34
-wfadm hc start 3x34
-wfadm hc start 30..35 --domain-controller dc
-wfadm hc start 34 -n foo -d dc -u alice -p "Admin#70365"
-wfadm hc start 34 --server s1
-wfadm hc start 3x34 --server s1,s2,s3:osg
-wfadm hc start 35 --name hc \
+wado hc start 34
+wado hc start 3x34
+wado hc start 30..35 --domain-controller dc
+wado hc start 34 -n foo -d dc -u alice -p "Admin#70365"
+wado hc start 34 --server s1
+wado hc start 3x34 --server s1,s2,s3:osg
+wado hc start 35 --name hc \
   --server server-one:main-server-group:start \
   --server server-two:main-server-group:10 \
   --server server-three:other-server-group:20
@@ -489,13 +489,13 @@ wfadm hc start 35 --name hc \
 ```shell
 Stop a host controller
 
-Usage: wfadm hc stop [OPTIONS] [wildfly-version]
+Usage: wado hc stop [OPTIONS] [wildfly-version]
 
 Arguments:
   [wildfly-version]  A single WildFly version or version range
 
 Options:
-  -n, --name <name>  The name of the host controller [default: wfadm-hc-<major><minor>]
+  -n, --name <name>  The name of the host controller [default: wado-hc-<major><minor>]
   -a, --all          Stop all running host controllers. If specified with a version,
                      stop all running host controllers of that version.
   -h, --help         Print help
@@ -505,11 +505,11 @@ Options:
 **Examples**
 
 ```shell
-wfadm hc stop 34
-wfadm hc stop 30..35
-wfadm hc stop 34 --name foo
-wfadm hc stop 34 --all
-wfadm hc stop --all
+wado hc stop 34
+wado hc stop 30..35
+wado hc stop 34 --name foo
+wado hc stop 34 --all
+wado hc stop --all
 ```
 
 ### Topology
@@ -519,9 +519,9 @@ wfadm hc stop --all
 > You can work around with the `dc` and `hc` commands though:
 >
 > ```shell
-> wfadm dc start 35 -n dc -s s1,s2,s3,s4:osg,s5:osg
-> wfadm hc start 32,33,2x35 -d dc -s s1,s2,s3:osg
-> wfadm console 35
+> wado dc start 35 -n dc -s s1,s2,s3,s4:osg,s5:osg
+> wado hc start 32,33,2x35 -d dc -s s1,s2,s3:osg
+> wado console 35
 > ```
 > Open http://localhost:9350/console/index.html#runtime;path=domain-browse-by~topology
 
@@ -530,7 +530,7 @@ wfadm hc stop --all
 ```shell
 Start a topology
 
-Usage: wfadm topology start <setup>
+Usage: wado topology start <setup>
 
 Arguments:
   <setup>  The topology setup
@@ -545,7 +545,7 @@ Options:
 ```shell
 Stop a topology
 
-Usage: wfadm topology stop <setup>
+Usage: wado topology stop <setup>
 
 Arguments:
   <setup>  The topology setup
@@ -604,7 +604,7 @@ hosts:
 ```shell
 List all available standalone, domain and host controller images
 
-Usage: wfadm images
+Usage: wado images
 
 Options:
   -h, --help     Print help
@@ -616,7 +616,7 @@ Options:
 ```shell
 List running standalone, domain and host controller containers
 
-Usage: wfadm ps [OPTIONS]
+Usage: wado ps [OPTIONS]
 
 Options:
       --standalone  List standalone containers only
@@ -632,14 +632,14 @@ Options:
 ```shell
 Open the management console
 
-Usage: wfadm console [OPTIONS] [wildfly-version]
+Usage: wado console [OPTIONS] [wildfly-version]
 
 Arguments:
   [wildfly-version]  A single WildFly version or version range.
                      If omitted the console is opened for all running standalone and domain controller containers.
 
 Options:
-  -n, --name <name>              The name of the standalone server or domain controller [default: wfadm-sa|dc-<major><minor>].
+  -n, --name <name>              The name of the standalone server or domain controller [default: wado-sa|dc-<major><minor>].
                                  Not allowed when multiple versions are specified.
   -m, --management <management>  The published management port. Not allowed when multiple versions are specified.
   -h, --help                     Print help
@@ -649,10 +649,10 @@ Options:
 **Examples**
 
 ```shell
-wfadm console
-wfadm console 34
-wfadm console 30..35
-wfadm console 34 --management 9990
+wado console
+wado console 34
+wado console 30..35
+wado console 34 --management 9990
 ```
 
 ### CLI
@@ -663,7 +663,7 @@ to the `$TMPDIR`.
 ```shell
 Connect to the CLI
 
-Usage: wfadm cli [OPTIONS] [wildfly-version] [-- [cli-parameters]...]
+Usage: wado cli [OPTIONS] [wildfly-version] [-- [cli-parameters]...]
 
 Arguments:
   [wildfly-version]    A single WildFly version.
@@ -671,7 +671,7 @@ Arguments:
   [cli-parameters]...  Parameters passed to the CLI
 
 Options:
-  -n, --name <name>              The name of the standalone server or domain controller [default: wfadm-sa|dc-<major><minor>].
+  -n, --name <name>              The name of the standalone server or domain controller [default: wado-sa|dc-<major><minor>].
                                  Not allowed when multiple versions are specified.
   -m, --management <management>  The published management port
   -u, --username <username>      The username to connect to the CLI [default: admin]
@@ -683,7 +683,7 @@ Options:
 **Examples**
 
 ```shell
-wfadm cli
-wfadm cli 34
-wfadm cli 34 -- --command "/subsystem=logging/console-handler=CONSOLE:write-attribute(name=level,value=DEBUG)"
+wado cli
+wado cli 34
+wado cli 34 -- --command "/subsystem=logging/console-handler=CONSOLE:write-attribute(name=level,value=DEBUG)"
 ```
