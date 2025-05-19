@@ -2,6 +2,7 @@ pub static WILDFLY_ADMIN_CONTAINER: &str = "wfadm";
 pub static WILDFLY_ADMIN_CONTAINER_REPOSITORY: &str = "quay.io/wfadm";
 pub static ENTRYPOINT: &str = "wfadm-entrypoint.sh";
 pub static LABEL_NAME: &str = "org.wildfly.wfadm.id";
+pub static FQN_LENGTH: usize = "quay.io/wfadm/wfadm-xx:00.0.0.Final-jdkxx".len();
 
 pub static BOOTSTRAP_OPERATIONS_VARIABLE: &str = "WFADM_BOOTSTRAP_OPERATIONS";
 pub static DOMAIN_CONTROLLER_VARIABLE: &str = "WFADM_DOMAIN_CONTROLLER";

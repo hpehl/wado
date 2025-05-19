@@ -1,3 +1,4 @@
+use crate::constants::FQN_LENGTH;
 use console::{style, truncate_str};
 use indicatif::{HumanDuration, MultiProgress, ProgressBar, ProgressStyle};
 use std::process::Output;
@@ -5,7 +6,6 @@ use std::time::Duration;
 use tokio::io::{AsyncBufReadExt, BufReader, Lines};
 use tokio::process::{Child, ChildStderr, ChildStdout};
 use tokio::time::Instant;
-
 // ------------------------------------------------------ command status
 
 #[derive(Clone)]
@@ -95,7 +95,11 @@ impl Progress {
         let progress = Progress {
             prefix: prefix.to_string(),
             image_name: image_name.to_string(),
-            bar: Self::spinner(prefix).with_message(format!("{:<35}", style(image_name).cyan())),
+            bar: Self::spinner(prefix).with_message(format!(
+                "{:<width$}",
+                style(image_name).cyan(),
+                width = FQN_LENGTH
+            )),
         };
         progress.bar.enable_steady_tick(Duration::from_millis(100));
         progress
@@ -128,9 +132,10 @@ impl Progress {
 
     pub fn show_progress(&self, progress: &str) {
         self.bar.set_message(format!(
-            "{:<35}   {}",
+            "{:<width$}   {}",
             style(self.image_name.clone()).cyan(),
-            style(truncate_str(progress, 80, "...")).dim()
+            style(truncate_str(progress, 80, "...")).dim(),
+            width = FQN_LENGTH
         ));
     }
 
