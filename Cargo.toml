@@ -1,6 +1,6 @@
 [package]
 name = "wfadm"
-version = "0.0.12"
+version = "0.1.0"
 authors = ["Harald Pehl <harald.pehl@gmail.com>"]
 edition = "2024"
 description = "Command line tool to manage WildFly containers."

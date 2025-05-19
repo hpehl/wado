@@ -2124,7 +2124,7 @@ dependencies = [
 
 [[package]]
 name = "wfadm"
-version = "0.0.12"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
