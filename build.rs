@@ -5,7 +5,7 @@ use std::{env, fs};
 use anyhow::{Context, Result};
 use clap_complete::generate_to;
 use clap_complete::shells::{Bash, Elvish, Fish, PowerShell, Zsh};
-use diffy::{Patch, apply};
+use diffy::{apply, Patch};
 
 include!("src/app.rs");
 
@@ -28,12 +28,17 @@ fn generate_shell_completions() -> Result<()> {
     generate_to(Zsh, &mut app, APP_NAME, &manifest_dir)?;
     generate_to(PowerShell, &mut app, APP_NAME, &manifest_dir)?;
     generate_to(Elvish, &mut app, APP_NAME, &manifest_dir)?;
-    patch(&manifest_dir, "wado.fish")?;
-    patch(&manifest_dir, "wado.bash")?;
-    patch(&manifest_dir, "_wado")?;
+
+    #[cfg(not(windows))]
+    {
+        patch(&manifest_dir, "wado.fish")?;
+        patch(&manifest_dir, "wado.bash")?;
+        patch(&manifest_dir, "_wado")?;
+    }
     Ok(())
 }
 
+#[cfg(not(windows))]
 fn patch(manifest_dir: &Path, completions: &str) -> Result<()> {
     let completions_path_buf = manifest_dir.join(completions);
     let completions_path = completions_path_buf.as_path();
