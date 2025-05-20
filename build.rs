@@ -30,6 +30,7 @@ fn generate_shell_completions() -> Result<()> {
     generate_to(Elvish, &mut app, APP_NAME, &manifest_dir)?;
     patch(&manifest_dir, "wado.fish")?;
     patch(&manifest_dir, "wado.bash")?;
+    patch(&manifest_dir, "_wado")?;
     Ok(())
 }
 

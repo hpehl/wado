@@ -2,6 +2,12 @@
 
 autoload -U is-at-least
 
+_wado_wildfly_versions() {
+    local -a versions
+    versions=("${(@f)$(wado wildfly-version-completion 2>/dev/null)}")
+    _describe 'wildfly versions' versions
+}
+
 _wado() {
     typeset -A opt_args
     typeset -a _arguments_options
@@ -41,7 +47,7 @@ _arguments "${_arguments_options[@]}" : \
 '--help[Print help]' \
 '-V[Print version]' \
 '--version[Print version]' \
-':wildfly-version -- A single WildFly version or version range:_default' \
+':wildfly-version -- A single WildFly version or version range:_wado_wildfly_versions' \
 && ret=0
 ;;
 (push)
@@ -53,7 +59,7 @@ _arguments "${_arguments_options[@]}" : \
 '--help[Print help]' \
 '-V[Print version]' \
 '--version[Print version]' \
-':wildfly-version -- A single WildFly version or version range:_default' \
+':wildfly-version -- A single WildFly version or version range:_wado_wildfly_versions' \
 && ret=0
 ;;
 (start)
@@ -72,7 +78,7 @@ _arguments "${_arguments_options[@]}" : \
 '--help[Print help]' \
 '-V[Print version]' \
 '--version[Print version]' \
-':wildfly-version -- A single WildFly version or version range:_default' \
+':wildfly-version -- A single WildFly version or version range:_wado_wildfly_versions' \
 '*::wildfly-parameters -- Parameters passed to the standalone server:_default' \
 && ret=0
 ;;
@@ -123,7 +129,7 @@ _arguments "${_arguments_options[@]}" : \
 '--help[Print help]' \
 '-V[Print version]' \
 '--version[Print version]' \
-':wildfly-version -- A single WildFly version or version range:_default' \
+':wildfly-version -- A single WildFly version or version range:_wado_wildfly_versions' \
 '*::wildfly-parameters -- Parameters passed to the domain controller:_default' \
 && ret=0
 ;;
@@ -206,7 +212,7 @@ _arguments "${_arguments_options[@]}" : \
 '--help[Print help]' \
 '-V[Print version]' \
 '--version[Print version]' \
-':wildfly-version -- A single WildFly version or version range:_default' \
+':wildfly-version -- A single WildFly version or version range:_wado_wildfly_versions' \
 '*::wildfly-parameters -- Parameters passed to the domain controller:_default' \
 && ret=0
 ;;
