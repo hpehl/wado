@@ -2,6 +2,7 @@ mod app;
 mod args;
 mod build;
 mod cli;
+mod completion;
 mod console;
 mod constants;
 mod container;
@@ -18,6 +19,7 @@ mod wildfly;
 
 use crate::build::build;
 use crate::cli::cli;
+use crate::completion::version_completion;
 use crate::console::console;
 use crate::dc::{dc_start, dc_stop};
 use crate::image::images;
@@ -28,7 +30,7 @@ use crate::topology::{topology_start, topology_stop};
 use crate::wildfly::Server;
 use anyhow::Result;
 use app::build_app;
-use clap::value_parser;
+use clap::{value_parser, Command};
 use hc::{hc_start, hc_stop};
 use std::path::PathBuf;
 use wildfly_container_versions::WildFlyContainer;
@@ -107,6 +109,7 @@ async fn main() -> Result<()> {
         .mut_subcommand("cli", |sub_cmd| {
             sub_cmd.mut_arg("wildfly-version", |arg| arg.value_parser(parse_version))
         })
+        .subcommand(Command::new("wildfly-version-completion").hide(true))
         .get_matches();
 
     match matches.subcommand() {
@@ -138,6 +141,7 @@ async fn main() -> Result<()> {
         Some(("ps", m)) => ps(m),
         Some(("console", m)) => console(m),
         Some(("cli", m)) => cli(m),
+        Some(("wildfly-version-completion", _)) => version_completion(),
 
         _ => unreachable!("Unknown subcommand"),
     }?;

@@ -1,9 +1,11 @@
-use std::env;
+use fs::{read_to_string, write};
 use std::path::Path;
+use std::{env, fs};
 
 use anyhow::{Context, Result};
 use clap_complete::generate_to;
 use clap_complete::shells::{Bash, Elvish, Fish, PowerShell, Zsh};
+use diffy::{apply, Patch};
 
 include!("src/app.rs");
 
@@ -21,10 +23,23 @@ fn generate_shell_completions() -> Result<()> {
     let mut app = build_app();
     app.set_bin_name(APP_NAME);
 
-    generate_to(Bash, &mut app, APP_NAME, &manifest_dir)?;
     generate_to(Fish, &mut app, APP_NAME, &manifest_dir)?;
+    generate_to(Bash, &mut app, APP_NAME, &manifest_dir)?;
     generate_to(Zsh, &mut app, APP_NAME, &manifest_dir)?;
     generate_to(PowerShell, &mut app, APP_NAME, &manifest_dir)?;
     generate_to(Elvish, &mut app, APP_NAME, &manifest_dir)?;
+    patch(&manifest_dir, "wado.fish")?;
+    patch(&manifest_dir, "wado.bash")?;
+    Ok(())
+}
+
+fn patch(manifest_dir: &Path, completions: &str) -> Result<()> {
+    let completions_path_buf = manifest_dir.join(completions);
+    let completions_path = completions_path_buf.as_path();
+    let completions_str = read_to_string(completions_path)?;
+    let patch_str = read_to_string(manifest_dir.join(format!("{}.diff", completions)))?;
+    let patch = Patch::from_str(patch_str.as_str())?;
+    let patched = apply(completions_str.as_str(), &patch)?;
+    write(completions_path, patched)?;
     Ok(())
 }

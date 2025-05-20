@@ -181,6 +181,12 @@ _wado() {
             return 0
             ;;
         wado__build)
+            if [[ ${COMP_CWORD} -eq 2 ]]; then
+                local versions
+                versions=$(wado wildfly-version-completion)
+                COMPREPLY=( $(compgen -W "${versions}") )
+                return 0
+            fi
             opts="-u -p -h -V --username --password --standalone --domain --chunks --help --version <wildfly-version>"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -215,6 +221,12 @@ _wado() {
             return 0
             ;;
         wado__cli)
+            if [[ ${COMP_CWORD} -eq 2 ]]; then
+                local versions
+                versions=$(wado wildfly-version-completion)
+                COMPREPLY=( $(compgen -W "${versions}") )
+                return 0
+            fi
             opts="-n -m -u -p -h -V --name --management --username --password --help --version [wildfly-version] [cli-parameters]..."
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -261,6 +273,12 @@ _wado() {
             return 0
             ;;
         wado__console)
+            if [[ ${COMP_CWORD} -eq 2 ]]; then
+                local versions
+                versions=$(wado wildfly-version-completion)
+                COMPREPLY=( $(compgen -W "${versions}") )
+                return 0
+            fi
             opts="-n -m -h -V --name --management --help --version [wildfly-version]"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -361,6 +379,12 @@ _wado() {
             return 0
             ;;
         wado__dc__start)
+            if [[ ${COMP_CWORD} -eq 3 ]]; then
+                local versions
+                versions=$(wado wildfly-version-completion)
+                COMPREPLY=( $(compgen -W "${versions}") )
+                return 0
+            fi
             opts="-n -p -m -o -s -h -V --name --http --management --offset --server --operations --cli --help --version <wildfly-version> [wildfly-parameters]..."
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -423,6 +447,12 @@ _wado() {
             return 0
             ;;
         wado__dc__stop)
+            if [[ ${COMP_CWORD} -eq 3 ]]; then
+                local versions
+                versions=$(wado wildfly-version-completion)
+                COMPREPLY=( $(compgen -W "${versions}") )
+                return 0
+            fi
             opts="-n -a -h -V --name --all --help --version [wildfly-version]"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -515,6 +545,12 @@ _wado() {
             return 0
             ;;
         wado__hc__start)
+            if [[ ${COMP_CWORD} -eq 3 ]]; then
+                local versions
+                versions=$(wado wildfly-version-completion)
+                COMPREPLY=( $(compgen -W "${versions}") )
+                return 0
+            fi
             opts="-n -d -u -p -s -h -V --name --domain-controller --username --password --server --operations --cli --help --version <wildfly-version> [wildfly-parameters]..."
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -577,6 +613,12 @@ _wado() {
             return 0
             ;;
         wado__hc__stop)
+            if [[ ${COMP_CWORD} -eq 3 ]]; then
+                local versions
+                versions=$(wado wildfly-version-completion)
+                COMPREPLY=( $(compgen -W "${versions}") )
+                return 0
+            fi
             opts="-n -a -h -V --name --all --help --version [wildfly-version]"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -893,6 +935,12 @@ _wado() {
             return 0
             ;;
         wado__push)
+            if [[ ${COMP_CWORD} -eq 2 ]]; then
+                local versions
+                versions=$(wado wildfly-version-completion)
+                COMPREPLY=( $(compgen -W "${versions}") )
+                return 0
+            fi
             opts="-h -V --standalone --domain --chunks --help --version <wildfly-version>"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -911,6 +959,12 @@ _wado() {
             return 0
             ;;
         wado__start)
+            if [[ ${COMP_CWORD} -eq 2 ]]; then
+                local versions
+                versions=$(wado wildfly-version-completion)
+                COMPREPLY=( $(compgen -W "${versions}") )
+                return 0
+            fi
             opts="-n -p -m -o -h -V --name --http --management --offset --operations --cli --help --version <wildfly-version> [wildfly-parameters]..."
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -965,6 +1019,12 @@ _wado() {
             return 0
             ;;
         wado__stop)
+            if [[ ${COMP_CWORD} -eq 2 ]]; then
+                local versions
+                versions=$(wado wildfly-version-completion)
+                COMPREPLY=( $(compgen -W "${versions}") )
+                return 0
+            fi
             opts="-n -a -h -V --name --all --help --version [wildfly-version]"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )

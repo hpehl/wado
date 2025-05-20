@@ -17,6 +17,11 @@ function __fish_wado_needs_command
 	return 0
 end
 
+function __fish_wado_version_completion
+	# Call wado wildfly-version-completion to get list of available versions
+	wado wildfly-version-completion
+end
+
 function __fish_wado_using_subcommand
 	set -l cmd (__fish_wado_needs_command)
 	test -z "$cmd"
@@ -38,6 +43,7 @@ complete -c wado -n "__fish_wado_needs_command" -f -a "ps" -d 'List running stan
 complete -c wado -n "__fish_wado_needs_command" -f -a "console" -d 'Open the management console'
 complete -c wado -n "__fish_wado_needs_command" -f -a "cli" -d 'Connect to the CLI'
 complete -c wado -n "__fish_wado_needs_command" -f -a "help" -d 'Print this message or the help of the given subcommand(s)'
+complete -c wado -n "__fish_wado_using_subcommand build" -f -a "(__fish_wado_version_completion)" -d 'WildFly version(s)'
 complete -c wado -n "__fish_wado_using_subcommand build" -s u -l username -d 'The username of the management user' -r
 complete -c wado -n "__fish_wado_using_subcommand build" -s p -l password -d 'The password of the management user' -r
 complete -c wado -n "__fish_wado_using_subcommand build" -l chunks -d 'Build the images in chunks of this size. If not specified, the images are built in one go.' -r
@@ -45,11 +51,13 @@ complete -c wado -n "__fish_wado_using_subcommand build" -l standalone -d 'Build
 complete -c wado -n "__fish_wado_using_subcommand build" -l domain -d 'Build domain controller and host controller images only'
 complete -c wado -n "__fish_wado_using_subcommand build" -s h -l help -d 'Print help'
 complete -c wado -n "__fish_wado_using_subcommand build" -s V -l version -d 'Print version'
+complete -c wado -n "__fish_wado_using_subcommand push" -f -a "(__fish_wado_version_completion)" -d 'WildFly version(s)'
 complete -c wado -n "__fish_wado_using_subcommand push" -l chunks -d 'Push the images in chunks of this size. If not specified, the images are pushed in one go.' -r
 complete -c wado -n "__fish_wado_using_subcommand push" -l standalone -d 'Push standalone images only'
 complete -c wado -n "__fish_wado_using_subcommand push" -l domain -d 'Push domain controller and host controller images only'
 complete -c wado -n "__fish_wado_using_subcommand push" -s h -l help -d 'Print help'
 complete -c wado -n "__fish_wado_using_subcommand push" -s V -l version -d 'Print version'
+complete -c wado -n "__fish_wado_using_subcommand start" -f -a "(__fish_wado_version_completion)" -d 'WildFly version(s)'
 complete -c wado -n "__fish_wado_using_subcommand start" -s n -l name -d 'The name of the standalone server [default: wado-sa-<major><minor>]. Not allowed when multiple versions are specified.' -r
 complete -c wado -n "__fish_wado_using_subcommand start" -s p -l http -d 'The published HTTP port [default: 8<major><minor>]. Not allowed when multiple versions are specified.' -r
 complete -c wado -n "__fish_wado_using_subcommand start" -s m -l management -d 'The published management port [default: 9<major><minor>]. Not allowed when multiple versions are specified.' -r
@@ -58,6 +66,7 @@ complete -c wado -n "__fish_wado_using_subcommand start" -l operations -d 'A com
 complete -c wado -n "__fish_wado_using_subcommand start" -l cli -d 'A file with operations to bootstrap the standalone server' -r
 complete -c wado -n "__fish_wado_using_subcommand start" -s h -l help -d 'Print help'
 complete -c wado -n "__fish_wado_using_subcommand start" -s V -l version -d 'Print version'
+complete -c wado -n "__fish_wado_using_subcommand stop" -f -a "(__fish_wado_version_completion)" -d 'WildFly version(s)'
 complete -c wado -n "__fish_wado_using_subcommand stop" -s n -l name -d 'The name of the standalone server [default: wado-sa-<major><minor>]' -r
 complete -c wado -n "__fish_wado_using_subcommand stop" -s a -l all -d 'Stop all running standalone servers. If specified with a version, stop all running standalone servers of that version.'
 complete -c wado -n "__fish_wado_using_subcommand stop" -s h -l help -d 'Print help'
@@ -67,6 +76,7 @@ complete -c wado -n "__fish_wado_using_subcommand dc; and not __fish_seen_subcom
 complete -c wado -n "__fish_wado_using_subcommand dc; and not __fish_seen_subcommand_from start stop help" -f -a "start" -d 'Start a domain controller'
 complete -c wado -n "__fish_wado_using_subcommand dc; and not __fish_seen_subcommand_from start stop help" -f -a "stop" -d 'Stop a domain controller'
 complete -c wado -n "__fish_wado_using_subcommand dc; and not __fish_seen_subcommand_from start stop help" -f -a "help" -d 'Print this message or the help of the given subcommand(s)'
+complete -c wado -n "__fish_wado_using_subcommand dc; and __fish_seen_subcommand_from start" -f -a "(__fish_wado_version_completion)" -d 'WildFly version(s)'
 complete -c wado -n "__fish_wado_using_subcommand dc; and __fish_seen_subcommand_from start" -s n -l name -d 'The name of the domain controller [default: wado-dc-<major><minor>]. Not allowed when multiple versions are specified.' -r
 complete -c wado -n "__fish_wado_using_subcommand dc; and __fish_seen_subcommand_from start" -s p -l http -d 'The published HTTP port [default: 8<major><minor>]. Not allowed when multiple versions are specified.' -r
 complete -c wado -n "__fish_wado_using_subcommand dc; and __fish_seen_subcommand_from start" -s m -l management -d 'The published management port [default: 9<major><minor>]. Not allowed when multiple versions are specified.' -r
@@ -76,6 +86,7 @@ complete -c wado -n "__fish_wado_using_subcommand dc; and __fish_seen_subcommand
 complete -c wado -n "__fish_wado_using_subcommand dc; and __fish_seen_subcommand_from start" -l cli -d 'A file with operations to bootstrap the domain controller' -r
 complete -c wado -n "__fish_wado_using_subcommand dc; and __fish_seen_subcommand_from start" -s h -l help -d 'Print help'
 complete -c wado -n "__fish_wado_using_subcommand dc; and __fish_seen_subcommand_from start" -s V -l version -d 'Print version'
+complete -c wado -n "__fish_wado_using_subcommand dc; and __fish_seen_subcommand_from stop" -f -a "(__fish_wado_version_completion)" -d 'WildFly version(s)'
 complete -c wado -n "__fish_wado_using_subcommand dc; and __fish_seen_subcommand_from stop" -s n -l name -d 'The name of the domain controller [default: wado-dc-<major><minor>]' -r
 complete -c wado -n "__fish_wado_using_subcommand dc; and __fish_seen_subcommand_from stop" -s a -l all -d 'Stop all running domain controllers. If specified with a version, stop all running domain controllers of that version.'
 complete -c wado -n "__fish_wado_using_subcommand dc; and __fish_seen_subcommand_from stop" -s h -l help -d 'Print help'
@@ -88,6 +99,7 @@ complete -c wado -n "__fish_wado_using_subcommand hc; and not __fish_seen_subcom
 complete -c wado -n "__fish_wado_using_subcommand hc; and not __fish_seen_subcommand_from start stop help" -f -a "start" -d 'Start a host controller'
 complete -c wado -n "__fish_wado_using_subcommand hc; and not __fish_seen_subcommand_from start stop help" -f -a "stop" -d 'Stop a host controller'
 complete -c wado -n "__fish_wado_using_subcommand hc; and not __fish_seen_subcommand_from start stop help" -f -a "help" -d 'Print this message or the help of the given subcommand(s)'
+complete -c wado -n "__fish_wado_using_subcommand hc; and __fish_seen_subcommand_from start" -f -a "(__fish_wado_version_completion)" -d 'WildFly version(s)'
 complete -c wado -n "__fish_wado_using_subcommand hc; and __fish_seen_subcommand_from start" -s n -l name -d 'The name of the host controller [default: wado-hc-<major><minor>]. Not allowed when multiple versions are specified.' -r
 complete -c wado -n "__fish_wado_using_subcommand hc; and __fish_seen_subcommand_from start" -s d -l domain-controller -d 'The name of the domain controller [default: wado-dc-<major><minor>]. Required if different versions are specified.' -r
 complete -c wado -n "__fish_wado_using_subcommand hc; and __fish_seen_subcommand_from start" -s u -l username -d 'The username to connect to the domain controller' -r
@@ -97,6 +109,7 @@ complete -c wado -n "__fish_wado_using_subcommand hc; and __fish_seen_subcommand
 complete -c wado -n "__fish_wado_using_subcommand hc; and __fish_seen_subcommand_from start" -l cli -d 'A file with operations to bootstrap the host controller' -r
 complete -c wado -n "__fish_wado_using_subcommand hc; and __fish_seen_subcommand_from start" -s h -l help -d 'Print help'
 complete -c wado -n "__fish_wado_using_subcommand hc; and __fish_seen_subcommand_from start" -s V -l version -d 'Print version'
+complete -c wado -n "__fish_wado_using_subcommand hc; and __fish_seen_subcommand_from stop" -f -a "(__fish_wado_version_completion)" -d 'WildFly version(s)'
 complete -c wado -n "__fish_wado_using_subcommand hc; and __fish_seen_subcommand_from stop" -s n -l name -d 'The name of the host controller [default: wado-hc-<major><minor>]' -r
 complete -c wado -n "__fish_wado_using_subcommand hc; and __fish_seen_subcommand_from stop" -s a -l all -d 'Stop all running host controllers. If specified with a version, stop all running host controllers of that version.'
 complete -c wado -n "__fish_wado_using_subcommand hc; and __fish_seen_subcommand_from stop" -s h -l help -d 'Print help'
@@ -122,10 +135,12 @@ complete -c wado -n "__fish_wado_using_subcommand ps" -l standalone -d 'List sta
 complete -c wado -n "__fish_wado_using_subcommand ps" -l domain -d 'List domain controller and host controller containers only'
 complete -c wado -n "__fish_wado_using_subcommand ps" -s h -l help -d 'Print help'
 complete -c wado -n "__fish_wado_using_subcommand ps" -s V -l version -d 'Print version'
+complete -c wado -n "__fish_wado_using_subcommand console" -f -a "(__fish_wado_version_completion)" -d 'WildFly version(s)'
 complete -c wado -n "__fish_wado_using_subcommand console" -s n -l name -d 'The name of the standalone server or domain controller [default: wado-sa|dc-<major><minor>]. Not allowed when multiple versions are specified.' -r
 complete -c wado -n "__fish_wado_using_subcommand console" -s m -l management -d 'The published management port. Not allowed when multiple versions are specified.' -r
 complete -c wado -n "__fish_wado_using_subcommand console" -s h -l help -d 'Print help'
 complete -c wado -n "__fish_wado_using_subcommand console" -s V -l version -d 'Print version'
+complete -c wado -n "__fish_wado_using_subcommand cli" -l wildfly-version -d 'WildFly version' -r -a "(__fish_wado_version_completion)"
 complete -c wado -n "__fish_wado_using_subcommand cli" -s n -l name -d 'The name of the standalone server or domain controller [default: wado-sa|dc-<major><minor>]. Not allowed when multiple versions are specified.' -r
 complete -c wado -n "__fish_wado_using_subcommand cli" -s m -l management -d 'The published management port' -r
 complete -c wado -n "__fish_wado_using_subcommand cli" -s u -l username -d 'The username to connect to the CLI' -r
