@@ -30,7 +30,7 @@ use crate::topology::{topology_start, topology_stop};
 use crate::wildfly::Server;
 use anyhow::Result;
 use app::build_app;
-use clap::{value_parser, Command};
+use clap::{Command, value_parser};
 use hc::{hc_start, hc_stop};
 use std::path::PathBuf;
 use wildfly_container_versions::WildFlyContainer;
