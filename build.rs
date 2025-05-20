@@ -5,7 +5,7 @@ use std::{env, fs};
 use anyhow::{Context, Result};
 use clap_complete::generate_to;
 use clap_complete::shells::{Bash, Elvish, Fish, PowerShell, Zsh};
-use diffy::{apply, Patch};
+use diffy::{Patch, apply};
 
 include!("src/app.rs");
 
