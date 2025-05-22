@@ -19,10 +19,11 @@ pub fn version_completion(matches: &ArgMatches) -> anyhow::Result<()> {
         };
 
         if token.ends_with('x') {
-            print_suggestions(Some(&format!("{}{}", prefix, token)), &all_versions());
+            print_suggestions(prefix, token, &all_versions());
         } else if token == ".." {
             print_suggestions(
-                Some(&format!("{}{}", prefix, token)),
+                prefix,
+                token,
                 &all_versions()
                     .iter()
                     .skip(1)
@@ -32,35 +33,50 @@ pub fn version_completion(matches: &ArgMatches) -> anyhow::Result<()> {
         } else if token.starts_with("..") {
             let after_dots = token.chars().skip(2).collect::<String>();
             print_suggestions(
-                Some(&format!("{}{}", prefix, token)),
+                prefix,
+                token,
                 &all_versions()
                     .iter()
                     .filter(|v| v.starts_with(&after_dots))
                     .map(|v| v.trim_start_matches(&after_dots).to_string())
+                    .filter(|v| !v.is_empty())
                     .collect::<Vec<String>>(),
             );
         } else if token.ends_with("..") {
             let before_dots = token.chars().take(token.len() - 2).collect::<String>();
             print_suggestions(
-                Some(&format!("{}{}", prefix, token)),
+                prefix,
+                token,
                 &all_versions()
                     .iter()
                     .filter(|v| v.gt(&&before_dots))
                     .cloned()
                     .collect::<Vec<String>>(),
             );
+        } else if token.contains("..") {
+            let after_dots = token.split("..").nth(1).unwrap_or("");
+            print_suggestions(
+                prefix,
+                token,
+                &all_versions()
+                    .iter()
+                    .filter(|v| v.starts_with(after_dots))
+                    .map(|v| v.trim_start_matches(after_dots).to_string())
+                    .filter(|v| !v.is_empty())
+                    .collect::<Vec<String>>(),
+            );
         } else {
-            print_suggestions(Some(prefix), &all_versions());
+            print_suggestions(prefix, "", &all_versions());
         }
     } else {
-        print_suggestions(None, &all_versions());
+        print_suggestions("", "", &all_versions());
     }
     Ok(())
 }
 
-fn print_suggestions(prefix: Option<&str>, suggestions: &[String]) {
+fn print_suggestions(prefix_0: &str, prefix_1: &str, suggestions: &[String]) {
     for s in suggestions {
-        println!("{}{}", prefix.unwrap_or(""), s);
+        println!("{}{}{}", prefix_0, prefix_1, s);
     }
 }
 
