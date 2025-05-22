@@ -30,7 +30,7 @@ use crate::topology::{topology_start, topology_stop};
 use crate::wildfly::Server;
 use anyhow::Result;
 use app::build_app;
-use clap::{Command, value_parser};
+use clap::{value_parser, Arg, Command};
 use hc::{hc_start, hc_stop};
 use std::path::PathBuf;
 use wildfly_container_versions::WildFlyContainer;
@@ -109,7 +109,11 @@ async fn main() -> Result<()> {
         .mut_subcommand("cli", |sub_cmd| {
             sub_cmd.mut_arg("wildfly-version", |arg| arg.value_parser(parse_version))
         })
-        .subcommand(Command::new("wildfly-version-completion").hide(true))
+        .subcommand(
+            Command::new("wildfly-version-completion")
+                .hide(true)
+                .arg(Arg::new("wildfly-version")),
+        )
         .get_matches();
 
     match matches.subcommand() {
@@ -141,7 +145,7 @@ async fn main() -> Result<()> {
         Some(("ps", m)) => ps(m),
         Some(("console", m)) => console(m),
         Some(("cli", m)) => cli(m),
-        Some(("wildfly-version-completion", _)) => version_completion(),
+        Some(("wildfly-version-completion", m)) => version_completion(m),
 
         _ => unreachable!("Unknown subcommand"),
     }?;

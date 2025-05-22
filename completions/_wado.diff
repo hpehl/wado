@@ -8,7 +8,7 @@ index 735f812..78eb39a 100644
  
 +_wado_wildfly_versions() {
 +    local -a versions
-+    versions=("${(@f)$(wado wildfly-version-completion 2>/dev/null)}")
++    versions=("${(@f)$(wado wildfly-version-completion $CURRENT 2>/dev/null)}")
 +    _describe 'wildfly versions' versions
 +}
 +
