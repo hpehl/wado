@@ -19,7 +19,7 @@ end
 
 function __fish_wado_version_completion
 	# Call wado wildfly-version-completion to get list of available versions
-	wado wildfly-version-completion (commandline -ct)
+	/Users/hpehl/dev/wildfly/wado/target/debug/wado wildfly-version-completion (commandline -ct)
 end
 
 function __fish_wado_using_subcommand
