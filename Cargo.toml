@@ -27,7 +27,7 @@ tempfile = "3.20.0"
 tokio = { version = "1.45.0", features = ["full"] }
 webbrowser = "1.0.4"
 which = "7.0.3"
-wildfly_container_versions = "0.2.1"
+wildfly_container_versions = "0.2.2"
 
 [build-dependencies]
 anyhow = "1.0.98"
