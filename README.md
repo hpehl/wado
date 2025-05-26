@@ -218,6 +218,7 @@ Commands:
   dc        Start and stop a domain controller
   hc        Start and stop a host controller
   topology  Start and stop a topology defined as YAML
+  images    List all available standalone, domain and host controller images
   ps        List running images
   console   Open the management console
   cli       Connect to the CLI
