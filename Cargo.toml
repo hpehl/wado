@@ -13,7 +13,7 @@ categories = ["command-line-utilities"]
 
 [dependencies]
 anyhow = "1.0.98"
-clap = { version = "4.5.38", features = ["cargo"] }
+clap = { version = "4.5.39", features = ["cargo"] }
 comfy-table = "7.1.4"
 console = "0.15.11"
 futures = "0.3.31"
@@ -21,18 +21,18 @@ handlebars = "6.3.2"
 indicatif = { version = "0.17.11", features = ["rayon"] }
 lazy_static = "1.5.0"
 regex = "1.11.1"
-reqwest = "0.12.15"
+reqwest = "0.12.18"
 semver = "1.0.26"
 tempfile = "3.20.0"
-tokio = { version = "1.45.0", features = ["full"] }
+tokio = { version = "1.45.1", features = ["full"] }
 webbrowser = "1.0.4"
 which = "7.0.3"
 wildfly_container_versions = "0.2.2"
 
 [build-dependencies]
 anyhow = "1.0.98"
-clap = { version = "4.5.38", features = ["cargo"] }
-clap_complete = "4.5.50"
+clap = { version = "4.5.39", features = ["cargo"] }
+clap_complete = "4.5.51"
 diffy = "0.4.2"
 
 # use LTO for smaller binaries (that take longer to build)
