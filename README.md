@@ -50,6 +50,16 @@ brew install wado
 cargo install wado
 ```
 
+## Build from source
+
+1. `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh` (
+   see [Install Rust and Cargo](https://www.rust-lang.org/tools/install))
+2. `git clone git@github.com:hpehl/wado.git`
+3. `cd wado`
+4. `cargo build --release && cargo install --path .`
+
+This installs the `wado` binary to `~/.cargo/bin/` which should be in you `$PATH`.
+
 ## Shell Completions
 
 <details>
