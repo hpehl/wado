@@ -3,12 +3,15 @@ use semver::Version;
 use wildfly_container_versions::{WildFlyContainer, VERSIONS};
 
 pub fn version_completion(matches: &ArgMatches) -> anyhow::Result<()> {
-    let (prefix_0, prefix_1, suggestions) = find_suggestions(
-        matches
-            .get_one::<String>("wildfly-version")
-            .map(|v| v.as_str()),
-    );
-    print_suggestions(prefix_0, prefix_1, &suggestions);
+    match matches.try_get_one::<String>("wildfly-version") {
+        Ok(result) => {
+            let (prefix_0, prefix_1, suggestions) = find_suggestions(result.map(|v| v.as_str()));
+            print_suggestions(prefix_0, prefix_1, &suggestions);
+        }
+        Err(_) => {
+            // ignore any error!
+        }
+    }
     Ok(())
 }
 
@@ -182,6 +185,20 @@ mod tests {
     #[test]
     fn test_find_suggestions_empty() {
         let (prefix_0, prefix_1, suggestions) = find_suggestions(None);
+        assert_eq!(prefix_0, "");
+        assert_eq!(prefix_1, "");
+        assert_eq!(
+            suggestions,
+            all_versions()
+                .iter()
+                .map(simple_version)
+                .collect::<Vec<String>>()
+        );
+    }
+
+    #[test]
+    fn test_find_suggestions_invalid() {
+        let (prefix_0, prefix_1, suggestions) = find_suggestions(Some("--foo"));
         assert_eq!(prefix_0, "");
         assert_eq!(prefix_1, "");
         assert_eq!(
