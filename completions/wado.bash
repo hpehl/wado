@@ -183,7 +183,7 @@ _wado() {
         wado__build)
             if [[ ${COMP_CWORD} -eq 2 ]]; then
                 local versions
-                versions=$(wado wildfly-version-completion)
+                versions=$(wado wildfly-version-completion 2>/dev/null)
                 COMPREPLY=( $(compgen -W "${versions}") )
                 return 0
             fi
@@ -223,7 +223,7 @@ _wado() {
         wado__cli)
             if [[ ${COMP_CWORD} -eq 2 ]]; then
                 local versions
-                versions=$(wado wildfly-version-completion)
+                versions=$(wado wildfly-version-completion 2>/dev/null)
                 COMPREPLY=( $(compgen -W "${versions}") )
                 return 0
             fi
@@ -275,7 +275,7 @@ _wado() {
         wado__console)
             if [[ ${COMP_CWORD} -eq 2 ]]; then
                 local versions
-                versions=$(wado wildfly-version-completion)
+                versions=$(wado wildfly-version-completion 2>/dev/null)
                 COMPREPLY=( $(compgen -W "${versions}") )
                 return 0
             fi
@@ -381,7 +381,7 @@ _wado() {
         wado__dc__start)
             if [[ ${COMP_CWORD} -eq 3 ]]; then
                 local versions
-                versions=$(wado wildfly-version-completion)
+                versions=$(wado wildfly-version-completion 2>/dev/null)
                 COMPREPLY=( $(compgen -W "${versions}") )
                 return 0
             fi
@@ -449,7 +449,7 @@ _wado() {
         wado__dc__stop)
             if [[ ${COMP_CWORD} -eq 3 ]]; then
                 local versions
-                versions=$(wado wildfly-version-completion)
+                versions=$(wado wildfly-version-completion 2>/dev/null)
                 COMPREPLY=( $(compgen -W "${versions}") )
                 return 0
             fi
@@ -547,7 +547,7 @@ _wado() {
         wado__hc__start)
             if [[ ${COMP_CWORD} -eq 3 ]]; then
                 local versions
-                versions=$(wado wildfly-version-completion)
+                versions=$(wado wildfly-version-completion 2>/dev/null)
                 COMPREPLY=( $(compgen -W "${versions}") )
                 return 0
             fi
@@ -615,7 +615,7 @@ _wado() {
         wado__hc__stop)
             if [[ ${COMP_CWORD} -eq 3 ]]; then
                 local versions
-                versions=$(wado wildfly-version-completion)
+                versions=$(wado wildfly-version-completion 2>/dev/null)
                 COMPREPLY=( $(compgen -W "${versions}") )
                 return 0
             fi
@@ -937,7 +937,7 @@ _wado() {
         wado__push)
             if [[ ${COMP_CWORD} -eq 2 ]]; then
                 local versions
-                versions=$(wado wildfly-version-completion)
+                versions=$(wado wildfly-version-completion 2>/dev/null)
                 COMPREPLY=( $(compgen -W "${versions}") )
                 return 0
             fi
@@ -961,7 +961,7 @@ _wado() {
         wado__start)
             if [[ ${COMP_CWORD} -eq 2 ]]; then
                 local versions
-                versions=$(wado wildfly-version-completion)
+                versions=$(wado wildfly-version-completion 2>/dev/null)
                 COMPREPLY=( $(compgen -W "${versions}") )
                 return 0
             fi
@@ -1021,7 +1021,7 @@ _wado() {
         wado__stop)
             if [[ ${COMP_CWORD} -eq 2 ]]; then
                 local versions
-                versions=$(wado wildfly-version-completion)
+                versions=$(wado wildfly-version-completion 2>/dev/null)
                 COMPREPLY=( $(compgen -W "${versions}") )
                 return 0
             fi

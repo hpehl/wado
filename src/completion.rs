@@ -1,6 +1,6 @@
 use clap::ArgMatches;
 use semver::Version;
-use wildfly_container_versions::{WildFlyContainer, VERSIONS};
+use wildfly_container_versions::{VERSIONS, WildFlyContainer};
 
 pub fn version_completion(matches: &ArgMatches) -> anyhow::Result<()> {
     match matches.try_get_one::<String>("wildfly-version") {
