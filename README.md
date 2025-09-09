@@ -210,10 +210,6 @@ wado start 26.1,28..30,2x32,3x35
 
 # Commands
 
-> [!IMPORTANT]
-> Most commands require `podman` to be present with `docker` as a fallback.
-> The `console` command opens the default web browser and the `cli` command requires a JVM.
-
 Currently, the following commands are supported:
 
 ```shell
@@ -238,6 +234,10 @@ Options:
   -h, --help     Print help
   -V, --version  Print version
 ```
+
+> [!IMPORTANT]
+> Most commands require `podman` to be present with `docker` as a fallback.
+> The `console` command opens the default web browser and the `cli` command requires a JVM.
 
 ## Build
 
