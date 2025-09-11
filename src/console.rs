@@ -18,12 +18,10 @@ pub fn console(matches: &ArgMatches) -> anyhow::Result<()> {
 fn get_management_clients(matches: &ArgMatches) -> anyhow::Result<Vec<ManagementClient>> {
     if let Some(name) = matches.get_one::<String>("name") {
         let wildfly_containers = matches.get_one::<Vec<WildFlyContainer>>("wildfly-version");
-        if let Some(wildfly_containers) = wildfly_containers {
-            if wildfly_containers.len() > 1 {
-                bail!(
-                    "Option <name> is not allowed when multiple <wildfly-version> are specified!"
-                );
-            }
+        if let Some(wildfly_containers) = wildfly_containers
+            && wildfly_containers.len() > 1
+        {
+            bail!("Option <name> is not allowed when multiple <wildfly-version> are specified!");
         }
         let instance = block_on(get_instance(wildfly_containers, Some(name)))?;
         Ok(vec![ManagementClient::from_container_instance(&instance)])

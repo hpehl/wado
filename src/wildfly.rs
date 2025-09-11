@@ -5,7 +5,7 @@ use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::fmt::{Debug, Display};
 use std::str::FromStr;
-use wildfly_container_versions::{VERSIONS, WildFlyContainer};
+use wildfly_container_versions::{WildFlyContainer, VERSIONS};
 
 // ------------------------------------------------------ traits
 
@@ -112,19 +112,17 @@ impl AdminContainer {
         // TODO Support 'dev' identifier
         if identifier.contains('-') {
             let parts = identifier.split('-').collect::<Vec<&str>>();
-            if parts.len() == 2 {
-                if let Ok(server_type) = ServerType::from_str(parts[0]) {
-                    if let Ok(identifier) = parts[1].parse::<u16>() {
-                        if let Ok(wildfly_container) = WildFlyContainer::lookup(identifier) {
-                            return Some(AdminContainer {
-                                wildfly_container,
-                                server_type,
-                                local_image: false,
-                                in_use: false,
-                            });
-                        }
-                    }
-                }
+            if parts.len() == 2
+                && let Ok(server_type) = ServerType::from_str(parts[0])
+                && let Ok(identifier) = parts[1].parse::<u16>()
+                && let Ok(wildfly_container) = WildFlyContainer::lookup(identifier)
+            {
+                return Some(AdminContainer {
+                    wildfly_container,
+                    server_type,
+                    local_image: false,
+                    in_use: false,
+                });
             }
         }
         None

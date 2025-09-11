@@ -9,8 +9,7 @@ use wildfly_container_versions::WildFlyContainer;
 pub fn admin_containers_argument(matches: &ArgMatches) -> Vec<AdminContainer> {
     let standalone = matches.get_flag("standalone");
     let domain = matches.get_flag("domain");
-    let wildfly_containers = versions_argument(matches);
-    let admin_containers = wildfly_containers
+    versions_argument(matches)
         .iter()
         .flat_map(|wc| {
             if standalone {
@@ -21,8 +20,7 @@ pub fn admin_containers_argument(matches: &ArgMatches) -> Vec<AdminContainer> {
                 AdminContainer::all_types(wc.clone())
             }
         })
-        .collect::<Vec<_>>();
-    admin_containers
+        .collect::<Vec<_>>()
 }
 
 pub fn name_argument<F>(name: &str, matches: &ArgMatches, f: F) -> String
@@ -46,15 +44,15 @@ pub fn operations_argument(matches: &ArgMatches) -> Vec<String> {
                 .collect::<Vec<String>>()
         })
         .collect::<Vec<_>>();
-    if matches.contains_id("cli") {
-        if let Some(cli_path) = matches.get_one::<String>("cli") {
-            match read_to_string(cli_path) {
-                Ok(content) => {
-                    operations.extend(content.lines().map(|s| s.trim().to_string()));
-                }
-                Err(err) => {
-                    eprintln!("Failed to read file {}: {}", cli_path, err);
-                }
+    if matches.contains_id("cli")
+        && let Some(cli_path) = matches.get_one::<String>("cli")
+    {
+        match read_to_string(cli_path) {
+            Ok(content) => {
+                operations.extend(content.lines().map(|s| s.trim().to_string()));
+            }
+            Err(err) => {
+                eprintln!("Failed to read file {}: {}", cli_path, err);
             }
         }
     }
