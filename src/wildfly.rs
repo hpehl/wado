@@ -5,7 +5,7 @@ use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::fmt::{Debug, Display};
 use std::str::FromStr;
-use wildfly_container_versions::{WildFlyContainer, VERSIONS};
+use wildfly_container_versions::{VERSIONS, WildFlyContainer};
 
 // ------------------------------------------------------ traits
 
