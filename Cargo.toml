@@ -15,7 +15,7 @@ categories = ["command-line-utilities"]
 anyhow = "1.0.100"
 clap = { version = "4.5.52", features = ["cargo"] }
 comfy-table = "7.2.1"
-console = "0.16.1"
+console = "0.16.2"
 futures = "0.3.31"
 handlebars = "6.3.2"
 indicatif = { version = "0.18.3", features = ["rayon"] }
