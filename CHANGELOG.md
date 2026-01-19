@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.9] - 2026-01-19
+
+### Added
+
+- Upgrade to WildFly 39.0.0
+
 ## [0.2.8] - 2025-11-18
 
 ### Added
@@ -148,7 +154,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - First release 🎉
 
-[Unreleased]: https://github.com/hpehl/wado/compare/v0.2.8...HEAD
+[Unreleased]: https://github.com/hpehl/wado/compare/v0.2.9...HEAD
+
+[0.2.8]: https://github.com/hpehl/wado/compare/v0.2.8...v0.2.9
 
 [0.2.8]: https://github.com/hpehl/wado/compare/v0.2.7...v0.2.8
 
