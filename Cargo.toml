@@ -12,7 +12,7 @@ keywords = ["cli", "WildFly", "admin", "image", "container"]
 categories = ["command-line-utilities"]
 
 [dependencies]
-anyhow = "1.0.100"
+anyhow = "1.0.101"
 clap = { version = "4.5.56", features = ["cargo"] }
 comfy-table = "7.2.2"
 console = "0.16.2"
@@ -30,7 +30,7 @@ which = "8.0.0"
 wildfly_container_versions = "39.0.0"
 
 [build-dependencies]
-anyhow = "1.0.100"
+anyhow = "1.0.101"
 clap = { version = "4.5.56", features = ["cargo"] }
 clap_complete = "4.5.65"
 diffy = "0.4.2"
