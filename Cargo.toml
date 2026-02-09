@@ -25,7 +25,7 @@ reqwest = "0.13.1"
 semver = "1.0.27"
 tempfile = "3.24.0"
 tokio = { version = "1.49.0", features = ["full"] }
-webbrowser = "1.0.6"
+webbrowser = "1.1.0"
 which = "8.0.0"
 wildfly_container_versions = "39.0.0"
 
