@@ -32,7 +32,7 @@ wildfly_container_versions = "39.0.0"
 [build-dependencies]
 anyhow = "1.0.101"
 clap = { version = "4.5.57", features = ["cargo"] }
-clap_complete = "4.5.65"
+clap_complete = "4.5.66"
 diffy = "0.4.2"
 
 # use LTO for smaller binaries (that take longer to build)
