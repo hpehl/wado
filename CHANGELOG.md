@@ -160,7 +160,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - First release 🎉
 
-[Unreleased]: https://github.com/hpehl/wado/compare/v0.2.9...HEAD
+[Unreleased]: https://github.com/hpehl/wado/compare/v0.2.10...HEAD
+
+[0.2.10]: https://github.com/hpehl/wado/compare/v0.2.9...v0.2.10
 
 [0.2.9]: https://github.com/hpehl/wado/compare/v0.2.8...v0.2.9
 
