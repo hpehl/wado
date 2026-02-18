@@ -18,7 +18,7 @@ comfy-table = "7.2.2"
 console = "0.16.2"
 futures = "0.3.32"
 handlebars = "6.4.0"
-indicatif = { version = "0.18.3", features = ["rayon"] }
+indicatif = { version = "0.18.4", features = ["rayon"] }
 lazy_static = "1.5.0"
 regex = "1.12.3"
 reqwest = "0.13.2"
