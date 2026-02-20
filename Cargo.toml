@@ -13,7 +13,7 @@ categories = ["command-line-utilities"]
 
 [dependencies]
 anyhow = "1.0.101"
-clap = { version = "4.5.59", features = ["cargo"] }
+clap = { version = "4.5.60", features = ["cargo"] }
 comfy-table = "7.2.2"
 console = "0.16.2"
 futures = "0.3.32"
@@ -31,7 +31,7 @@ wildfly_container_versions = "39.0.2"
 
 [build-dependencies]
 anyhow = "1.0.101"
-clap = { version = "4.5.59", features = ["cargo"] }
+clap = { version = "4.5.60", features = ["cargo"] }
 clap_complete = "4.5.66"
 diffy = "0.4.2"
 
