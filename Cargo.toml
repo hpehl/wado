@@ -22,7 +22,7 @@ indicatif = { version = "0.18.4", features = ["rayon"] }
 lazy_static = "1.5.0"
 regex = "1.12.3"
 reqwest = "0.13.2"
-semver = "1.0.27"
+semver = "1.0.28"
 tempfile = "3.27.0"
 tokio = { version = "1.50.0", features = ["full"] }
 webbrowser = "1.2.0"
