@@ -1,6 +1,6 @@
 [package]
 name = "wado"
-version = "0.2.12"
+version = "0.2.13"
 authors = ["Harald Pehl <harald.pehl@gmail.com>"]
 edition = "2024"
 description = "Command line tool to manage WildFly containers."

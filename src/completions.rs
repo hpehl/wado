@@ -89,8 +89,7 @@ fn install_completions(shell: &str) -> Result<()> {
 }
 
 fn completion_path(shell: &str) -> Result<PathBuf> {
-    let home =
-        home_dir().with_context(|| "Could not determine home directory")?;
+    let home = home_dir().with_context(|| "Could not determine home directory")?;
     match shell {
         "fish" => Ok(home.join(".config/fish/completions/wado.fish")),
         "zsh" => Ok(home.join(".zsh/completions/_wado")),
@@ -125,9 +124,7 @@ fn print_post_install_instructions(shell: &str, path: &PathBuf) {
             );
         }
         "elvish" => {
-            println!(
-                "\nAdd this to your ~/.config/elvish/rc.elv:\n  use wado",
-            );
+            println!("\nAdd this to your ~/.config/elvish/rc.elv:\n  use wado",);
         }
         "powershell" => {
             println!(
