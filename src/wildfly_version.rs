@@ -1,18 +1,17 @@
-use clap::ArgMatches;
+use std::ffi::OsStr;
+
+use clap_complete::engine::CompletionCandidate;
 use semver::Version;
 use wildfly_container_versions::{VERSIONS, WildFlyContainer};
 
-pub fn version_completion(matches: &ArgMatches) -> anyhow::Result<()> {
-    match matches.try_get_one::<String>("wildfly-version") {
-        Ok(result) => {
-            let (prefix_0, prefix_1, suggestions) = find_suggestions(result.map(|v| v.as_str()));
-            print_suggestions(prefix_0, prefix_1, &suggestions);
-        }
-        Err(_) => {
-            // ignore any error!
-        }
-    }
-    Ok(())
+pub fn complete_versions(current: &OsStr) -> Vec<CompletionCandidate> {
+    let input = current.to_str().unwrap_or("");
+    let parameter = if input.is_empty() { None } else { Some(input) };
+    let (prefix_0, prefix_1, suggestions) = find_suggestions(parameter);
+    suggestions
+        .iter()
+        .map(|s| CompletionCandidate::new(format!("{}{}{}", prefix_0, prefix_1, s)))
+        .collect()
 }
 
 fn find_suggestions(parameter: Option<&str>) -> (String, String, Vec<String>) {
@@ -155,12 +154,6 @@ fn find_after_dots(
         }
     } else {
         (prefix.to_string(), token.to_string(), vec![])
-    }
-}
-
-fn print_suggestions(prefix_0: String, prefix_1: String, suggestions: &[String]) {
-    for s in suggestions {
-        println!("{}{}{}", prefix_0, prefix_1, s);
     }
 }
 

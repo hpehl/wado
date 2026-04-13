@@ -62,45 +62,25 @@ This installs the `wado` binary to `~/.cargo/bin/` which should be in you `$PATH
 
 ## Shell Completions
 
-<details>
-<summary>The repository contains shell completions for bash, fish, zsh, elvish, and PowerShell.
-They're installed automatically by brew. To install them manually, follow these steps:</summary>
-
-### Bash
+`wado` provides dynamic shell completions including WildFly version suggestions. The easiest way to set them up is:
 
 ```shell
-wget https://github.com/hpehl/wado/raw/main/completions/wado.bash -O /etc/bash_completion.d/wado
-source /etc/bash_completion.d/wado
+wado completions --install
 ```
 
-### Zsh
+This auto-detects your shell and installs the completion script to the standard location. You can also specify the shell explicitly:
 
 ```shell
-wget https://github.com/hpehl/wado/raw/main/completions/_wado -O /usr/local/share/zsh/site-functions/_wado
-autoload -U compinit && compinit
-autoload -U _wado
+wado completions fish --install
 ```
 
-### Fish
+To print the completion script to stdout (e.g. for manual setup or piping):
 
 ```shell
-wget https://github.com/hpehl/wado/raw/main/completions/wado.fish -O ~/.config/fish/completions/wado.fish
+wado completions fish
 ```
 
-### Elvish
-
-```shell
-wget https://github.com/hpehl/wado/raw/main/completions/wado.elv -O ~/.elvish/lib/wado.elv
-```
-
-### PowerShell
-
-```shell
-Invoke-WebRequest -Uri https://github.com/hpehl/wado/raw/main/completions/_wado.ps1 -OutFile "$HOME\.config\powershell\_wado.ps1"
-. "$HOME\.config\powershell\_wado.ps1"
-```
-
-</details>
+Supported shells: `bash`, `zsh`, `fish`, `elvish`, `powershell`.
 
 # Versions
 

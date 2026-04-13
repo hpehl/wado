@@ -14,6 +14,7 @@ categories = ["command-line-utilities"]
 [dependencies]
 anyhow = "1.0.102"
 clap = { version = "4.6.0", features = ["cargo"] }
+clap_complete = { version = "4.6.0", features = ["unstable-dynamic"] }
 comfy-table = "7.2.2"
 console = "0.16.3"
 futures = "0.3.32"
@@ -28,12 +29,6 @@ tokio = { version = "1.51.1", features = ["full"] }
 webbrowser = "1.2.0"
 which = "8.0.2"
 wildfly_container_versions = "39.0.2"
-
-[build-dependencies]
-anyhow = "1.0.102"
-clap = { version = "4.6.0", features = ["cargo"] }
-clap_complete = "4.6.0"
-diffy = "0.4.2"
 
 # use LTO for smaller binaries (that take longer to build)
 [profile.release]

@@ -2,7 +2,7 @@ mod app;
 mod args;
 mod build;
 mod cli;
-mod completion;
+mod completions;
 mod console;
 mod constants;
 mod container;
@@ -16,10 +16,11 @@ mod resources;
 mod standalone;
 mod topology;
 mod wildfly;
+mod wildfly_version;
 
 use crate::build::build;
 use crate::cli::cli;
-use crate::completion::version_completion;
+use crate::completions::completions;
 use crate::console::console;
 use crate::dc::{dc_start, dc_stop};
 use crate::image::images;
@@ -28,35 +29,39 @@ use crate::push::push;
 use crate::standalone::{standalone_start, standalone_stop};
 use crate::topology::{topology_start, topology_stop};
 use crate::wildfly::Server;
+use crate::wildfly_version::complete_versions;
 use anyhow::Result;
 use app::build_app;
-use clap::{Arg, Command, value_parser};
+use clap::value_parser;
+use clap_complete::engine::ArgValueCompleter;
 use hc::{hc_start, hc_stop};
 use std::path::PathBuf;
 use wildfly_container_versions::WildFlyContainer;
 
-//noinspection DuplicatedCode
-#[tokio::main]
-async fn main() -> Result<()> {
-    let matches = build_app()
+fn build_app_full() -> clap::Command {
+    build_app()
         .mut_subcommand("build", |sub_cmd| {
             sub_cmd.mut_arg("wildfly-version", |arg| {
                 arg.value_parser(parse_version_enumeration)
+                    .add(ArgValueCompleter::new(complete_versions))
             })
         })
         .mut_subcommand("push", |sub_cmd| {
             sub_cmd.mut_arg("wildfly-version", |arg| {
                 arg.value_parser(parse_version_enumeration)
+                    .add(ArgValueCompleter::new(complete_versions))
             })
         })
         .mut_subcommand("start", |sub_cmd| {
             sub_cmd.mut_arg("wildfly-version", |arg| {
                 arg.value_parser(parse_version_enumeration)
+                    .add(ArgValueCompleter::new(complete_versions))
             })
         })
         .mut_subcommand("stop", |sub_cmd| {
             sub_cmd.mut_arg("wildfly-version", |arg| {
                 arg.value_parser(parse_version_enumeration)
+                    .add(ArgValueCompleter::new(complete_versions))
             })
         })
         .mut_subcommand("dc", |sub_cmd| {
@@ -64,6 +69,7 @@ async fn main() -> Result<()> {
                 sub_sub_cmd
                     .mut_arg("wildfly-version", |arg| {
                         arg.value_parser(parse_version_enumeration)
+                            .add(ArgValueCompleter::new(complete_versions))
                     })
                     .mut_arg("server", |arg| arg.value_parser(parse_servers))
             })
@@ -72,6 +78,7 @@ async fn main() -> Result<()> {
             sub_cmd.mut_subcommand("stop", |sub_sub_cmd| {
                 sub_sub_cmd.mut_arg("wildfly-version", |arg| {
                     arg.value_parser(parse_version_enumeration)
+                        .add(ArgValueCompleter::new(complete_versions))
                 })
             })
         })
@@ -80,6 +87,7 @@ async fn main() -> Result<()> {
                 sub_sub_cmd
                     .mut_arg("wildfly-version", |arg| {
                         arg.value_parser(parse_version_enumeration)
+                            .add(ArgValueCompleter::new(complete_versions))
                     })
                     .mut_arg("server", |arg| arg.value_parser(parse_servers))
             })
@@ -88,6 +96,7 @@ async fn main() -> Result<()> {
             sub_cmd.mut_subcommand("stop", |sub_sub_cmd| {
                 sub_sub_cmd.mut_arg("wildfly-version", |arg| {
                     arg.value_parser(parse_version_enumeration)
+                        .add(ArgValueCompleter::new(complete_versions))
                 })
             })
         })
@@ -104,18 +113,23 @@ async fn main() -> Result<()> {
         .mut_subcommand("console", |sub_cmd| {
             sub_cmd.mut_arg("wildfly-version", |arg| {
                 arg.value_parser(parse_version_enumeration)
+                    .add(ArgValueCompleter::new(complete_versions))
             })
         })
         .mut_subcommand("cli", |sub_cmd| {
-            sub_cmd.mut_arg("wildfly-version", |arg| arg.value_parser(parse_version))
+            sub_cmd.mut_arg("wildfly-version", |arg| {
+                arg.value_parser(parse_version)
+                    .add(ArgValueCompleter::new(complete_versions))
+            })
         })
-        .subcommand(
-            Command::new("wildfly-version-completion")
-                .hide(true)
-                .arg(Arg::new("wildfly-version")),
-        )
-        .get_matches();
+}
 
+//noinspection DuplicatedCode
+#[tokio::main]
+async fn main() -> Result<()> {
+    clap_complete::CompleteEnv::with_factory(build_app_full).complete();
+
+    let matches = build_app_full().get_matches();
     match matches.subcommand() {
         Some(("build", m)) => build(m),
         Some(("push", m)) => push(m),
@@ -145,7 +159,7 @@ async fn main() -> Result<()> {
         Some(("ps", m)) => ps(m),
         Some(("console", m)) => console(m),
         Some(("cli", m)) => cli(m),
-        Some(("wildfly-version-completion", m)) => version_completion(m),
+        Some(("completions", m)) => completions(m),
 
         _ => unreachable!("Unknown subcommand"),
     }?;

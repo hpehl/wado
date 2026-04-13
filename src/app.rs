@@ -365,4 +365,16 @@ Not allowed when multiple versions are specified."))
                 .long("password")
                 .default_value("admin")
                 .help("The password to connect to the CLI")))
+
+        // completions
+        .subcommand(Command::new("completions")
+            .about("Generate and install shell completions")
+            .arg(Arg::new("shell")
+                .help("The shell to generate completions for [default: auto-detected]
+Supported shells: bash, zsh, fish, elvish, powershell"))
+            .arg(Arg::new("install")
+                .short('i')
+                .long("install")
+                .action(ArgAction::SetTrue)
+                .help("Install completions to the standard location for the shell")))
 }
