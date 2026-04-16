@@ -250,13 +250,14 @@ async fn build_containers(
         task.set_progress("building container...");
 
         let temp_dir = tempdir()?;
-        let mut child = dev_podman_build(
+        let mut child = crate::build::run_preconditions(dev_podman_build(
             admin_container,
             temp_dir.as_ref(),
             username_path,
             password_path,
             wildfly_dist,
-        )?
+        )?)
+        .await?
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
@@ -328,7 +329,7 @@ fn dev_podman_build(
     username_path: &Path,
     password_path: &Path,
     wildfly_dist: &Path,
-) -> anyhow::Result<tokio::process::Command> {
+) -> anyhow::Result<Vec<tokio::process::Command>> {
     // Copy WildFly distribution into context directory
     let context_wildfly = context_dir.join("wildfly");
     copy_dir_recursive(wildfly_dist, &context_wildfly)?;
@@ -343,7 +344,7 @@ fn dev_podman_build(
 
     let data = crate::build::base_template_data(admin_container);
     crate::build::render_dockerfile(context_dir, dockerfile, &data)?;
-    crate::build::container_build_command(
+    crate::build::container_build_commands(
         &admin_container.image_name(),
         &latest_platforms(),
         username_path,

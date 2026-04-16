@@ -2,7 +2,7 @@ use crate::args::{admin_containers_argument, username_password_argument};
 use crate::constants::{
     ADD_USER, ALLOWED_ORIGINS, ENTRYPOINT, LABEL_NAME, NO_AUTH, WILDFLY_ADMIN_CONTAINER,
 };
-use crate::container::{container_command, container_command_name, verify_container_command};
+use crate::container::{container_command, verify_container_command};
 use crate::progress::{CommandStatus, Progress, stdout_reader, summary};
 use crate::resources::{
     DOMAIN_CONTROLLER_DOCKERFILE, DOMAIN_CONTROLLER_ENTRYPOINT_SH, HOST_CONTROLLER_DOCKERFILE,
@@ -13,7 +13,6 @@ use clap::ArgMatches;
 use futures::executor::block_on;
 use indicatif::MultiProgress;
 use std::collections::HashMap;
-use std::env;
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
@@ -61,13 +60,13 @@ pub fn render_dockerfile(
     Ok(())
 }
 
-pub fn container_build_command(
+pub fn container_build_commands(
     image_name: &str,
     platforms: &[String],
     username_path: &Path,
     password_path: &Path,
     context_dir: &Path,
-) -> anyhow::Result<Command> {
+) -> anyhow::Result<Vec<Command>> {
     if platforms.is_empty() {
         let mut command = container_command()?;
         command
@@ -79,39 +78,46 @@ pub fn container_build_command(
             .arg("--tag")
             .arg(image_name)
             .arg(context_dir.as_os_str().to_str().unwrap());
-        Ok(command)
+        Ok(vec![command])
     } else {
-        let shell = if env::consts::OS == "windows" {
-            "cmd"
-        } else {
-            "sh"
-        };
-        let shell_flag = if env::consts::OS == "windows" {
-            "/C"
-        } else {
-            "-c"
-        };
-        let mut command = Command::new(shell);
-        command.arg(shell_flag).arg(format!(
-            "{command_name} manifest create --amend {image} && \
-             {command_name} build --platform {platforms} \
-                 --secret id=username,src={username} \
-                 --secret id=password,src={password} \
-                 --manifest {image} {context}",
-            command_name = container_command_name()?,
-            image = image_name,
-            platforms = platforms.join(","),
-            username = username_path.display(),
-            password = password_path.display(),
-            context = context_dir.display()
-        ));
-        Ok(command)
+        let mut manifest_cmd = container_command()?;
+        manifest_cmd
+            .arg("manifest")
+            .arg("create")
+            .arg("--amend")
+            .arg(image_name);
+
+        let mut build_cmd = container_command()?;
+        build_cmd
+            .arg("build")
+            .arg("--platform")
+            .arg(platforms.join(","))
+            .arg("--secret")
+            .arg(format!("id=username,src={}", username_path.display()))
+            .arg("--secret")
+            .arg(format!("id=password,src={}", password_path.display()))
+            .arg("--manifest")
+            .arg(image_name)
+            .arg(context_dir.as_os_str().to_str().unwrap());
+
+        Ok(vec![manifest_cmd, build_cmd])
     }
+}
+
+pub async fn run_preconditions(mut commands: Vec<Command>) -> anyhow::Result<Command> {
+    let last = commands.pop().ok_or_else(|| anyhow::anyhow!("no build commands"))?;
+    for mut cmd in commands {
+        let status = cmd.stdout(Stdio::null()).stderr(Stdio::null()).status().await?;
+        if !status.success() {
+            anyhow::bail!("Build preparation failed with {}", status);
+        }
+    }
+    Ok(last)
 }
 
 pub async fn run_builds_verbose(
     admin_containers: &[AdminContainer],
-    build_fn: impl Fn(&AdminContainer, &Path) -> anyhow::Result<Command>,
+    build_fn: impl Fn(&AdminContainer, &Path) -> anyhow::Result<Vec<Command>>,
 ) -> anyhow::Result<Vec<CommandStatus>> {
     let mut statuses = Vec::new();
 
@@ -120,7 +126,8 @@ pub async fn run_builds_verbose(
         println!("\n--- {} ---", image_name);
 
         let temp_dir = tempdir()?;
-        let status = build_fn(admin_container, temp_dir.as_ref())?
+        let status = run_preconditions(build_fn(admin_container, temp_dir.as_ref())?)
+            .await?
             .stdout(Stdio::inherit())
             .stderr(Stdio::inherit())
             .status()
@@ -241,12 +248,13 @@ async fn start_builds(
         );
 
         let temp_dir = tempdir()?;
-        let mut child = podman_build(
+        let mut child = run_preconditions(podman_build(
             &admin_container,
             temp_dir.as_ref(),
             username_path,
             password_path,
-        )?
+        )?)
+        .await?
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
@@ -287,7 +295,7 @@ fn podman_build(
     context_dir: &Path,
     username_path: &Path,
     password_path: &Path,
-) -> anyhow::Result<Command> {
+) -> anyhow::Result<Vec<Command>> {
     write_entrypoint(context_dir, &admin_container.server_type)?;
 
     let dockerfile = match admin_container.server_type {
@@ -309,7 +317,7 @@ fn podman_build(
     }
 
     render_dockerfile(context_dir, dockerfile, &data)?;
-    container_build_command(
+    container_build_commands(
         &admin_container.image_name(),
         &admin_container.wildfly_container.platforms,
         username_path,

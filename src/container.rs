@@ -305,13 +305,3 @@ pub fn container_command() -> anyhow::Result<Command> {
         bail!("podman or docker not found");
     }
 }
-
-pub fn container_command_name() -> anyhow::Result<&'static str> {
-    if which("podman").is_ok() {
-        Ok("podman")
-    } else if which("docker").is_ok() {
-        Ok("docker")
-    } else {
-        bail!("podman or docker not found");
-    }
-}

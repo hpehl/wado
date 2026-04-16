@@ -94,17 +94,19 @@ pattern exists for stable Dockerfiles.
 
 Shared `base_template_data()` now handles the common keys.
 
-### SEC-1: Shell injection surface in build commands (MEDIUM)
+### SEC-1: Shell injection surface in build commands (MEDIUM) **(RESOLVED)**
 
-**Files:** `src/build.rs:container_build_command()`, formerly also `src/dev/mod.rs`
+**Files:** `src/build.rs:container_build_commands()`, formerly also `src/dev/mod.rs`
 
-Multi-platform builds construct shell commands via `format!()` and pass them to
-`sh -c`. While interpolated values are currently derived from controlled sources,
-any future change introducing user-controlled values into paths or image names
-could create an injection vector.
+Multi-platform builds constructed shell commands via `format!()` and passed them to
+`sh -c`. While interpolated values were derived from controlled sources, any future
+change introducing user-controlled values could create an injection vector.
 
-**Suggestion:** Avoid the shell wrapper. Podman/buildah can do multi-platform
-builds without `sh -c` by using `--manifest` directly.
+**Fix:** Replaced the `sh -c` shell wrapper with direct `Command` argument construction.
+Multi-platform builds now use two separate commands (manifest create + build) with
+`.arg()` calls instead of shell string interpolation. Added `run_preconditions()`
+helper to run the manifest create command before spawning the build. Removed the
+now-unused `container_command_name()` function.
 
 ### SEC-2: Hardcoded default credentials (LOW)
 
