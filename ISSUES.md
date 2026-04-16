@@ -116,13 +116,19 @@ now-unused `container_command_name()` function.
 `admin/admin` used as defaults for username/password arguments. Acceptable for
 local development containers but worth documenting.
 
-### QUAL-1: `parse_server()` deep nesting (HIGH)
+### QUAL-1: `parse_server()` deep nesting (HIGH) **(RESOLVED)**
 
-**File:** `src/wildfly.rs:422-496`
+**File:** `src/wildfly.rs`
 
 75 lines with 6 levels of nesting and duplicated conditional patterns. The
 `parts[0].eq_ignore_ascii_case("start")` / `parts[0].parse::<u16>()` /
 `parts.remove(0)` pattern appears three times.
+
+**Fix:** Replaced deeply nested if/else tree with a flat sequential consumption
+pattern using slice `split_first()`. Each step (server group, offset, start)
+tries to consume the next part independently. Added `ServerGroup::parse()` helper
+to eliminate duplicated server group matching. Reduced from ~50 lines with 6 nesting
+levels to ~30 lines with max 2 levels.
 
 ### QUAL-2: `find_suggestions()` complexity (MEDIUM)
 

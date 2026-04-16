@@ -379,6 +379,20 @@ pub enum ServerGroup {
     OtherServerGroup,
 }
 
+impl ServerGroup {
+    fn parse(input: &str) -> Option<ServerGroup> {
+        if input.eq_ignore_ascii_case("msg") || input.eq_ignore_ascii_case("main-server-group") {
+            Some(ServerGroup::MainServerGroup)
+        } else if input.eq_ignore_ascii_case("osg")
+            || input.eq_ignore_ascii_case("other-server-group")
+        {
+            Some(ServerGroup::OtherServerGroup)
+        } else {
+            None
+        }
+    }
+}
+
 impl Display for ServerGroup {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -402,71 +416,53 @@ impl Server {
     }
 
     pub fn parse_server(input: &str) -> anyhow::Result<Server> {
-        let mut parts = input.split(':').collect::<Vec<&str>>();
-
+        let parts: Vec<&str> = input.split(':').collect();
         if parts.is_empty() {
             bail!("Invalid input format");
         }
 
-        let name = parts.remove(0).to_string();
+        let name = parts[0].to_string();
         if name.is_empty() {
             bail!("Invalid input format");
         }
 
         let mut server_group = ServerGroup::MainServerGroup;
-        let mut offset = 0;
+        let mut offset: u16 = 0;
         let mut autostart = false;
+        let mut remaining = &parts[1..];
 
-        if !parts.is_empty() {
-            if parts[0].eq_ignore_ascii_case("start") {
-                autostart = true;
-                parts.remove(0);
-            } else if let Ok(o) = parts[0].parse::<u16>() {
-                offset = o;
-                parts.remove(0);
-
-                if !parts.is_empty() && parts[0].eq_ignore_ascii_case("start") {
-                    autostart = true;
-                    parts.remove(0);
-                } else if !parts.is_empty() {
-                    bail!("Invalid input format");
-                }
-            } else {
-                let server_group_value = parts.remove(0).to_string();
-                if !server_group_value.is_empty() {
-                    if server_group_value.eq_ignore_ascii_case("msg")
-                        || server_group_value.eq_ignore_ascii_case("main-server-group")
-                    {
-                        server_group = ServerGroup::MainServerGroup;
-                    } else if server_group_value.eq_ignore_ascii_case("osg")
-                        || server_group_value.eq_ignore_ascii_case("other-server-group")
-                    {
-                        server_group = ServerGroup::OtherServerGroup;
-                    } else {
-                        bail!("Invalid server group: '{}'", server_group_value);
-                    }
-                }
-
-                if !parts.is_empty() {
-                    if parts[0].eq_ignore_ascii_case("start") {
-                        autostart = true;
-                        parts.remove(0);
-                    } else if let Ok(o) = parts[0].parse::<u16>() {
-                        offset = o;
-                        parts.remove(0);
-
-                        if !parts.is_empty() && parts[0].eq_ignore_ascii_case("start") {
-                            autostart = true;
-                            parts.remove(0);
-                        }
-                    } else if parts[0].eq_ignore_ascii_case("start") {
-                        autostart = true;
-                        parts.remove(0);
-                    } else {
-                        bail!("Invalid input format".to_string());
-                    }
-                }
+        // Try to consume server group
+        if let Some((&first, rest)) = remaining.split_first() {
+            if let Some(sg) = ServerGroup::parse(first) {
+                server_group = sg;
+                remaining = rest;
+            } else if !first.eq_ignore_ascii_case("start") && first.parse::<u16>().is_err() {
+                bail!("Invalid server group: '{}'", first);
             }
+        }
+
+        // Try to consume offset
+        if let Some((&first, rest)) = remaining.split_first() {
+            if let Ok(o) = first.parse::<u16>() {
+                offset = o;
+                remaining = rest;
+            } else if !first.eq_ignore_ascii_case("start") {
+                bail!("Invalid input format");
+            }
+        }
+
+        // Try to consume "start"
+        if let Some((&first, rest)) = remaining.split_first() {
+            if first.eq_ignore_ascii_case("start") {
+                autostart = true;
+                remaining = rest;
+            } else {
+                bail!("Invalid input format");
+            }
+        }
+
+        if !remaining.is_empty() {
+            bail!("Invalid input format");
         }
 
         Ok(Server {
