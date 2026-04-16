@@ -334,5 +334,67 @@ mod tests {
         assert!(suggestions.is_empty());
     }
 
-    // TODO Test commas
+    #[test]
+    fn test_find_suggestions_with_trailing_comma() {
+        let (prefix_0, prefix_1, suggestions) = find_suggestions(Some("26,"));
+        assert_eq!(prefix_0, "26,");
+        assert_eq!(prefix_1, "");
+        assert_eq!(
+            suggestions,
+            all_versions()
+                .iter()
+                .map(simple_version)
+                .collect::<Vec<String>>()
+        );
+    }
+
+    #[test]
+    fn test_find_suggestions_with_comma_and_token() {
+        let (prefix_0, prefix_1, suggestions) = find_suggestions(Some("26,2"));
+        assert_eq!(prefix_0, "26,");
+        assert_eq!(prefix_1, "");
+        assert_eq!(
+            suggestions,
+            all_versions()
+                .iter()
+                .map(simple_version)
+                .collect::<Vec<String>>()
+        );
+    }
+
+    #[test]
+    fn test_find_suggestions_with_comma_and_dots() {
+        let (prefix_0, prefix_1, suggestions) = find_suggestions(Some("26,..2"));
+        assert_eq!(prefix_0, "26,");
+        assert_eq!(prefix_1, "..2");
+        assert_eq!(
+            suggestions,
+            ["0", "1", "2", "3", "4", "5", "6", "6.1", "7", "8", "9"]
+        );
+    }
+
+    #[test]
+    fn test_find_suggestions_with_multiple_commas() {
+        let (prefix_0, prefix_1, suggestions) = find_suggestions(Some("10,26,..2"));
+        assert_eq!(prefix_0, "10,26,");
+        assert_eq!(prefix_1, "..2");
+        assert_eq!(
+            suggestions,
+            ["0", "1", "2", "3", "4", "5", "6", "6.1", "7", "8", "9"]
+        );
+    }
+
+    #[test]
+    fn test_find_suggestions_with_comma_and_x() {
+        let (prefix_0, prefix_1, suggestions) = find_suggestions(Some("26,3x"));
+        assert_eq!(prefix_0, "26,");
+        assert_eq!(prefix_1, "3x");
+        assert_eq!(
+            suggestions,
+            all_versions()
+                .iter()
+                .map(simple_version)
+                .collect::<Vec<String>>()
+        );
+    }
 }
