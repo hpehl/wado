@@ -1,6 +1,9 @@
-use crate::wildfly::{AdminContainer, Ports, Server};
+use crate::container::{stop_instances, verify_container_command};
+use crate::wildfly::{AdminContainer, Ports, Server, ServerType};
+use anyhow::bail;
 use clap::ArgMatches;
 use fs::read_to_string;
+use futures::executor::block_on;
 use std::fs;
 use wildfly_container_versions::WildFlyContainer;
 
@@ -110,6 +113,27 @@ pub fn versions_argument(matches: &ArgMatches) -> Vec<WildFlyContainer> {
         .get_one::<Vec<WildFlyContainer>>("wildfly-version")
         .expect("Argument <wildfly-version> expected!")
         .clone()
+}
+
+// ------------------------------------------------------ shared command helpers
+
+pub fn stop_command(server_type: ServerType, matches: &ArgMatches) -> anyhow::Result<()> {
+    verify_container_command()?;
+    let wildfly_containers = matches.get_one::<Vec<WildFlyContainer>>("wildfly-version");
+    let name = matches.get_one::<String>("name").map(|s| s.as_str());
+    block_on(stop_instances(server_type, wildfly_containers, name))
+}
+
+pub fn validate_single_version(matches: &ArgMatches, options: &[&str]) -> anyhow::Result<()> {
+    for option in options {
+        if matches.contains_id(option) {
+            bail!(
+                "Option <{}> is not allowed when multiple <wildfly-version> are specified!",
+                option
+            );
+        }
+    }
+    Ok(())
 }
 
 // ------------------------------------------------------ helpers

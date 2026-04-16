@@ -55,14 +55,9 @@ async fn start_push(admin_containers: Vec<AdminContainer>) -> anyhow::Result<Vec
     let mut commands = JoinSet::new();
 
     for admin_container in admin_containers {
-        // TODO dev build
-        if admin_container.wildfly_container.is_dev() {
-            continue;
-        }
-
         let progress = Progress::join(
             &multi_progress,
-            &admin_container.wildfly_container.short_version,
+            &admin_container.version_label(),
             &admin_container.image_name(),
         );
 

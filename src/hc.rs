@@ -1,5 +1,5 @@
 use crate::args::{
-    name_argument, operations_argument, parameters_argument, server_argument,
+    name_argument, operations_argument, parameters_argument, server_argument, stop_command,
     username_password_argument, versions_argument,
 };
 use crate::constants::{
@@ -8,7 +8,7 @@ use crate::constants::{
 };
 use crate::container::{
     add_servers, container_command, container_network, container_run, ensure_unique_names,
-    stop_instances, verify_container_command,
+    verify_container_command,
 };
 use crate::progress::summary;
 use crate::progress::{Progress, stderr_reader};
@@ -190,12 +190,5 @@ async fn create_secret(secret_name: &str, secret_value: &str) -> anyhow::Result<
 // ------------------------------------------------------ stop
 
 pub fn hc_stop(matches: &ArgMatches) -> anyhow::Result<()> {
-    verify_container_command()?;
-    let wildfly_containers = matches.get_one::<Vec<WildFlyContainer>>("wildfly-version");
-    let name = matches.get_one::<String>("name").map(|s| s.as_str());
-    block_on(stop_instances(
-        ServerType::HostController,
-        wildfly_containers,
-        name,
-    ))
+    stop_command(ServerType::HostController, matches)
 }

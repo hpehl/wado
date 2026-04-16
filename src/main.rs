@@ -7,6 +7,7 @@ mod console;
 mod constants;
 mod container;
 mod dc;
+mod dev;
 mod hc;
 mod image;
 mod progress;
@@ -131,7 +132,7 @@ async fn main() -> Result<()> {
 
     let matches = build_app_full().get_matches();
     match matches.subcommand() {
-        Some(("build", m)) => build(m),
+        Some(("build", m)) => build(m).await,
         Some(("push", m)) => push(m),
 
         Some(("start", m)) => standalone_start(m),

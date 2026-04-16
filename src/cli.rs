@@ -59,10 +59,12 @@ pub fn cli(matches: &ArgMatches) -> anyhow::Result<()> {
         .unwrap_or_default()
         .cloned()
         .collect::<Vec<_>>();
-    let temp_dir = temp_dir().join(format!(
-        "{}-cli-{}",
-        WILDFLY_ADMIN_CONTAINER, management_client.wildfly_container.identifier
-    ));
+    let dir_suffix = if management_client.wildfly_container.is_dev() {
+        "dev".to_string()
+    } else {
+        management_client.wildfly_container.identifier.to_string()
+    };
+    let temp_dir = temp_dir().join(format!("{}-cli-{}", WILDFLY_ADMIN_CONTAINER, dir_suffix));
 
     create_dir_all(&temp_dir)?;
     block_on(connect_to_cli(

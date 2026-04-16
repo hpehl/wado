@@ -1,7 +1,7 @@
 use std::env;
 use std::fs;
 use std::io::{self, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use anyhow::{Context, Result, bail};
@@ -106,7 +106,7 @@ fn home_dir() -> Option<PathBuf> {
         .map(PathBuf::from)
 }
 
-fn print_post_install_instructions(shell: &str, path: &PathBuf) {
+fn print_post_install_instructions(shell: &str, path: &Path) {
     match shell {
         "fish" => {
             println!("Fish completions are loaded automatically from this location.");

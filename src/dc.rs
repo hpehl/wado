@@ -1,23 +1,19 @@
 use crate::args::{
     name_argument, operations_argument, parameters_argument, port_argument, server_argument,
-    versions_argument,
+    stop_command, validate_single_version, versions_argument,
 };
 use crate::constants::{HOSTNAME_VARIABLE, WILDFLY_ADMIN_CONTAINER};
 use crate::container::{
-    add_servers, container_network, container_run, ensure_unique_names, stop_instances,
-    verify_container_command,
+    add_servers, container_network, container_run, ensure_unique_names, verify_container_command,
 };
-use crate::progress::summary;
-use crate::progress::{Progress, stderr_reader};
+use crate::progress::{Progress, stderr_reader, summary};
 use crate::wildfly::{AdminContainer, DomainController, Ports, Server, ServerType};
-use anyhow::bail;
 use clap::ArgMatches;
 use futures::executor::block_on;
 use indicatif::MultiProgress;
 use std::process::Stdio;
 use tokio::task::JoinSet;
 use tokio::time::Instant;
-use wildfly_container_versions::WildFlyContainer;
 
 // ------------------------------------------------------ start
 
@@ -34,20 +30,7 @@ pub fn dc_start(matches: &ArgMatches) -> anyhow::Result<()> {
             port_argument(matches, &wildfly_container),
         )]
     } else {
-        if matches.contains_id("name") {
-            bail!("Option <name> is not allowed when multiple <wildfly-version> are specified!");
-        }
-        if matches.contains_id("http") {
-            bail!("Option <http> is not allowed when multiple <wildfly-version> are specified!");
-        }
-        if matches.contains_id("management") {
-            bail!(
-                "Option <management> is not allowed when multiple <wildfly-version> are specified!"
-            );
-        }
-        if matches.contains_id("offset") {
-            bail!("Option <offset> is not allowed when multiple <wildfly-version> are specified!");
-        }
+        validate_single_version(matches, &["name", "http", "management", "offset"])?;
         let instances = wildfly_containers
             .iter()
             .map(|wildfly_container| {
@@ -123,12 +106,5 @@ async fn start_instances(
 // ------------------------------------------------------ stop
 
 pub fn dc_stop(matches: &ArgMatches) -> anyhow::Result<()> {
-    verify_container_command()?;
-    let wildfly_containers = matches.get_one::<Vec<WildFlyContainer>>("wildfly-version");
-    let name = matches.get_one::<String>("name").map(|s| s.as_str());
-    block_on(stop_instances(
-        ServerType::DomainController,
-        wildfly_containers,
-        name,
-    ))
+    stop_command(ServerType::DomainController, matches)
 }

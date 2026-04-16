@@ -1,3 +1,87 @@
+// ------------------------------------------------------ dev standalone
+// Dev Dockerfiles use a fixed base image (eclipse-temurin:21-jre) rather than the
+// templated {{base-image}} of stable builds, since dev builds always target the
+// latest WildFly which requires JDK 21.
+
+// language=Dockerfile
+pub static DEV_STANDALONE_DOCKERFILE: &str = r#"FROM eclipse-temurin:21-jre
+
+ENV JBOSS_HOME=/opt/jboss/wildfly
+ENV WILDFLY_VERSION=development
+
+RUN groupadd -r jboss && useradd -r -g jboss -m -d /opt/jboss jboss
+COPY wildfly $JBOSS_HOME
+
+LABEL maintainer="hpehl@redhat.com"
+LABEL {{label-name}}="{{label-value}}"
+
+USER root
+COPY {{entrypoint}} $JBOSS_HOME/bin/{{entrypoint}}
+RUN chmod +x $JBOSS_HOME/bin/{{entrypoint}}
+RUN {{{add-user}}}
+RUN sed -i {{{allowed-origins}}} $JBOSS_HOME/standalone/configuration/standalone*.xml
+RUN for conf in $JBOSS_HOME/standalone/configuration/standalone*.xml; do sed {{{no-auth}}} "${conf}" > "${conf%%.*}-no-auth.${conf#*.}"; done
+USER jboss
+
+EXPOSE 8080 9990
+ENTRYPOINT ["/opt/jboss/wildfly/bin/{{entrypoint}}", "-b", "0.0.0.0", "-bmanagement", "0.0.0.0"]
+CMD ["-c", "standalone.xml"]
+"#;
+
+// ------------------------------------------------------ dev domain controller
+
+// language=Dockerfile
+pub static DEV_DOMAIN_CONTROLLER_DOCKERFILE: &str = r#"FROM eclipse-temurin:21-jre
+
+ENV JBOSS_HOME=/opt/jboss/wildfly
+ENV WILDFLY_VERSION=development
+
+RUN groupadd -r jboss && useradd -r -g jboss -m -d /opt/jboss jboss
+COPY wildfly $JBOSS_HOME
+
+LABEL maintainer="hpehl@redhat.com"
+LABEL {{label-name}}="{{label-value}}"
+
+USER root
+COPY {{entrypoint}} $JBOSS_HOME/bin/{{entrypoint}}
+RUN chmod +x $JBOSS_HOME/bin/{{entrypoint}}
+RUN {{{add-user}}}
+RUN sed -e '/<servers>/,/<\/servers>/d' -e {{{allowed-origins}}} -i $JBOSS_HOME/domain/configuration/host*.xml
+RUN for conf in $JBOSS_HOME/domain/configuration/host*.xml; do sed {{{no-auth}}} "${conf}" > "${conf%%.*}-no-auth.${conf#*.}"; done
+USER jboss
+
+EXPOSE 8080 9990
+ENTRYPOINT ["/opt/jboss/wildfly/bin/{{entrypoint}}", "-b", "0.0.0.0", "-bmanagement", "0.0.0.0", "--host-config", "host-primary.xml"]
+CMD ["-c", "domain.xml"]
+"#;
+
+// ------------------------------------------------------ dev host controller
+
+// language=Dockerfile
+pub static DEV_HOST_CONTROLLER_DOCKERFILE: &str = r#"FROM eclipse-temurin:21-jre
+
+ENV JBOSS_HOME=/opt/jboss/wildfly
+ENV WILDFLY_VERSION=development
+
+RUN groupadd -r jboss && useradd -r -g jboss -m -d /opt/jboss jboss
+COPY wildfly $JBOSS_HOME
+
+LABEL maintainer="hpehl@redhat.com"
+LABEL {{label-name}}="{{label-value}}"
+
+USER root
+COPY {{entrypoint}} $JBOSS_HOME/bin/{{entrypoint}}
+RUN chmod +x $JBOSS_HOME/bin/{{entrypoint}}
+RUN {{{add-user}}}
+RUN sed -e '/<servers>/,/<\/servers>/d' -e {{{allowed-origins}}} -i $JBOSS_HOME/domain/configuration/host*.xml
+RUN for conf in $JBOSS_HOME/domain/configuration/host*.xml; do sed {{{no-auth}}} "${conf}" > "${conf%%.*}-no-auth.${conf#*.}"; done
+USER jboss
+
+EXPOSE 8080 9990
+ENTRYPOINT ["/opt/jboss/wildfly/bin/{{entrypoint}}", "-b", "0.0.0.0", "-bmanagement", "0.0.0.0", "--host-config", "host-secondary.xml"]
+CMD ["-c", "domain.xml"]
+"#;
+
 // ------------------------------------------------------ standalone
 
 // language=Dockerfile

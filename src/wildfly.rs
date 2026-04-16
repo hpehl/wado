@@ -105,35 +105,54 @@ impl AdminContainer {
                 result.insert(ac.image_name(), ac.clone());
             });
         });
+        if let Ok(dev) = WildFlyContainer::version("dev") {
+            AdminContainer::all_types(dev).iter().for_each(|ac| {
+                result.insert(ac.image_name(), ac.clone());
+            });
+        }
         result
     }
 
     pub fn from_identifier(identifier: String) -> Option<AdminContainer> {
-        // TODO Support 'dev' identifier
         if identifier.contains('-') {
             let parts = identifier.split('-').collect::<Vec<&str>>();
             if parts.len() == 2
                 && let Ok(server_type) = ServerType::from_str(parts[0])
-                && let Ok(identifier) = parts[1].parse::<u16>()
-                && let Ok(wildfly_container) = WildFlyContainer::lookup(identifier)
             {
-                return Some(AdminContainer {
-                    wildfly_container,
-                    server_type,
-                    local_image: false,
-                    in_use: false,
-                });
+                if parts[1] == "dev" {
+                    if let Ok(wildfly_container) = WildFlyContainer::version("dev") {
+                        return Some(AdminContainer {
+                            wildfly_container,
+                            server_type,
+                            local_image: false,
+                            in_use: false,
+                        });
+                    }
+                } else if let Ok(id) = parts[1].parse::<u16>()
+                    && let Ok(wildfly_container) = WildFlyContainer::lookup(id)
+                {
+                    return Some(AdminContainer {
+                        wildfly_container,
+                        server_type,
+                        local_image: false,
+                        in_use: false,
+                    });
+                }
             }
         }
         None
     }
 
     pub fn identifier(&self) -> String {
-        format!(
-            "{}-{}",
-            self.server_type.short_name(),
-            self.wildfly_container.identifier
-        )
+        if self.wildfly_container.is_dev() {
+            format!("{}-dev", self.server_type.short_name())
+        } else {
+            format!(
+                "{}-{}",
+                self.server_type.short_name(),
+                self.wildfly_container.identifier
+            )
+        }
     }
 
     pub fn image_name(&self) -> String {
@@ -154,6 +173,14 @@ impl AdminContainer {
                 "{}:{}.{}",
                 base_name, self.wildfly_container.version, self.wildfly_container.suffix
             )
+        }
+    }
+
+    pub fn version_label(&self) -> String {
+        if self.wildfly_container.is_dev() {
+            "dev".to_string()
+        } else {
+            self.wildfly_container.short_version.clone()
         }
     }
 
@@ -549,14 +576,23 @@ impl ManagementClient {
     }
 
     fn urls(version: &Version) -> (String, String) {
+        // Version(0,0,0) is the sentinel for dev builds - use the latest stable core version
+        let effective_version = if *version == Version::new(0, 0, 0) {
+            VERSIONS
+                .last_key_value()
+                .map(|(_, wfc)| wfc.core_version.clone())
+                .unwrap_or_else(|| version.clone())
+        } else {
+            version.clone()
+        };
         (
             format!(
                 "https://repo1.maven.org/maven2/org/wildfly/core/wildfly-cli/{v}.Final/wildfly-cli-{v}.Final-client.jar",
-                v = version
+                v = effective_version
             ),
             format!(
                 "https://raw.githubusercontent.com/wildfly/wildfly-core/refs/tags/{}.Final/core-feature-pack/common/src/main/resources/content/bin/jboss-cli.xml",
-                version
+                effective_version
             ),
         )
     }
