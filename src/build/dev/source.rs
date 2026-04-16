@@ -29,16 +29,19 @@ fn build_maven_command(
     volume_name: &str,
 ) -> anyhow::Result<Command> {
     let maven_extra = maven_args.join(" ");
-    let script = format!(
-        "git clone --depth 1 -b {} {} /build && \
+    let script = "git clone --depth 1 -b \"$WADO_BRANCH\" \"$WADO_REPO\" /build && \
          cd /build && \
-         mvn -B install -DskipTests -Denforcer.skip=true {}",
-        branch, repo_url, maven_extra
-    );
+         mvn -B install -DskipTests -Denforcer.skip=true $WADO_MAVEN_ARGS";
 
     let mut cmd = container_command()?;
     cmd.arg("run")
         .arg("--rm")
+        .arg("-e")
+        .arg(format!("WADO_BRANCH={}", branch))
+        .arg("-e")
+        .arg(format!("WADO_REPO={}", repo_url))
+        .arg("-e")
+        .arg(format!("WADO_MAVEN_ARGS={}", maven_extra))
         .arg("-v")
         .arg(format!("{}:/build", volume_name))
         .arg("-v")

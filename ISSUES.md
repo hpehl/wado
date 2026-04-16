@@ -27,14 +27,6 @@ tuple with minor filtering variations.
 ~1000-character single line with the same sed pattern repeated 3 times (for three
 different XML attributes). Hard to read and maintain.
 
-### SEC-3: Shell injection surface in `build_maven_command()` (MEDIUM)
-
-**File:** `src/build/dev/source.rs:32-36`
-
-`format!()` interpolates `branch` and `repo_url` into a shell script string
-passed to `sh -c`. No sanitization of shell metacharacters. Blast radius is
-limited since the command runs inside a throwaway container.
-
 ### QUAL-8: Unnecessary `echo` process in `create_secret()` (LOW)
 
 **File:** `src/hc.rs:162-167`
