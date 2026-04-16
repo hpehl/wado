@@ -56,28 +56,10 @@ pub struct AdminContainer {
 }
 
 impl AdminContainer {
-    pub fn standalone(wildfly_container: WildFlyContainer) -> AdminContainer {
+    pub fn new(wildfly_container: WildFlyContainer, server_type: ServerType) -> AdminContainer {
         AdminContainer {
             wildfly_container,
-            server_type: ServerType::Standalone,
-            local_image: false,
-            in_use: false,
-        }
-    }
-
-    pub fn domain_controller(wildfly_container: WildFlyContainer) -> AdminContainer {
-        AdminContainer {
-            wildfly_container,
-            server_type: ServerType::DomainController,
-            local_image: false,
-            in_use: false,
-        }
-    }
-
-    pub fn host_controller(wildfly_container: WildFlyContainer) -> AdminContainer {
-        AdminContainer {
-            wildfly_container,
-            server_type: ServerType::HostController,
+            server_type,
             local_image: false,
             in_use: false,
         }
@@ -85,16 +67,16 @@ impl AdminContainer {
 
     pub fn domain(wildfly_container: WildFlyContainer) -> Vec<AdminContainer> {
         vec![
-            AdminContainer::domain_controller(wildfly_container.clone()),
-            AdminContainer::host_controller(wildfly_container.clone()),
+            AdminContainer::new(wildfly_container.clone(), ServerType::DomainController),
+            AdminContainer::new(wildfly_container.clone(), ServerType::HostController),
         ]
     }
 
     pub fn all_types(wildfly_container: WildFlyContainer) -> Vec<AdminContainer> {
         vec![
-            AdminContainer::standalone(wildfly_container.clone()),
-            AdminContainer::domain_controller(wildfly_container.clone()),
-            AdminContainer::host_controller(wildfly_container.clone()),
+            AdminContainer::new(wildfly_container.clone(), ServerType::Standalone),
+            AdminContainer::new(wildfly_container.clone(), ServerType::DomainController),
+            AdminContainer::new(wildfly_container.clone(), ServerType::HostController),
         ]
     }
 

@@ -16,7 +16,7 @@ pub fn admin_containers_argument(matches: &ArgMatches) -> Vec<AdminContainer> {
         .iter()
         .flat_map(|wc| {
             if standalone {
-                vec![AdminContainer::standalone(wc.clone())]
+                vec![AdminContainer::new(wc.clone(), ServerType::Standalone)]
             } else if domain {
                 AdminContainer::domain(wc.clone())
             } else {

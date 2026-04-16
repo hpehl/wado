@@ -56,17 +56,15 @@ spawn child + stderr reader, then `summary()`. The core loop body is repeated
 three times (~120 lines total). The command setup differs per server type, making
 a clean extraction non-trivial.
 
-### DUP-6: Container runtime detection x3 (MEDIUM)
+### DUP-6: Container runtime detection x3 (MEDIUM) **(RESOLVED)**
 
-**File:** `src/container.rs:285-317`
+**File:** `src/container.rs`
 
-Three functions independently probe for podman/docker:
-- `verify_container_command()` returns `PathBuf`
-- `container_command()` returns `Command`
-- `container_command_name()` returns `&'static str`
+Three functions independently probed for podman/docker. `container_command_name()` was
+already removed in the SEC-1 fix.
 
-**Suggestion:** A single `detect_runtime() -> Result<(&'static str, PathBuf)>` that
-the others wrap.
+**Fix:** Extracted `detect_runtime() -> Result<PathBuf>` as a single probe.
+`verify_container_command()` and `container_command()` now delegate to it.
 
 ### DUP-7: Domain model struct boilerplate (MEDIUM)
 
@@ -75,12 +73,15 @@ the others wrap.
 `StandaloneInstance`, `DomainController`, `HostController` share `admin_container`
 and `name` fields, identical `HasWildFlyContainer` impls, and the same `copy()` pattern.
 
-### DUP-8: AdminContainer constructors (LOW)
+### DUP-8: AdminContainer constructors (LOW) **(RESOLVED)**
 
-**File:** `src/wildfly.rs:59-84`
+**File:** `src/wildfly.rs`
 
-`standalone()`, `domain_controller()`, `host_controller()` differ only in the
-`ServerType` variant. Could be a single `fn new(wc, server_type)`.
+`standalone()`, `domain_controller()`, `host_controller()` differed only in the
+`ServerType` variant.
+
+**Fix:** Replaced all three with `AdminContainer::new(wc, server_type)`. Updated all
+callers in `args.rs`, `standalone.rs`, `dc.rs`, and `hc.rs`.
 
 ### DUP-9: Dockerfile template preamble (LOW)
 

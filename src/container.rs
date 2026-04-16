@@ -282,26 +282,16 @@ pub async fn stop_instances(
 
 // ------------------------------------------------------ verify functions
 
+fn detect_runtime() -> Result<PathBuf, Error> {
+    which("podman")
+        .or_else(|_| which("docker"))
+        .map_err(|_| anyhow::anyhow!("podman or docker not found"))
+}
+
 pub fn verify_container_command() -> Result<PathBuf, Error> {
-    match which("podman") {
-        Ok(p) => Ok(p),
-        Err(_) => match which("docker") {
-            Ok(p) => Ok(p),
-            Err(_) => {
-                bail!("podman or docker not found");
-            }
-        },
-    }
+    detect_runtime()
 }
 
 pub fn container_command() -> anyhow::Result<Command> {
-    if let Ok(podman_path) = which("podman") {
-        let command = Command::new(podman_path);
-        Ok(command)
-    } else if let Ok(docker_path) = which("docker") {
-        let command = Command::new(docker_path);
-        Ok(command)
-    } else {
-        bail!("podman or docker not found");
-    }
+    detect_runtime().map(Command::new)
 }
