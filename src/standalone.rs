@@ -17,7 +17,8 @@ pub fn standalone_start(matches: &ArgMatches) -> anyhow::Result<()> {
     let wildfly_containers = versions_argument(matches);
     let instances = if wildfly_containers.len() == 1 {
         let wildfly_container = wildfly_containers[0].clone();
-        let admin_container = AdminContainer::new(wildfly_container.clone(), ServerType::Standalone);
+        let admin_container =
+            AdminContainer::new(wildfly_container.clone(), ServerType::Standalone);
         vec![StandaloneInstance::new(
             admin_container.clone(),
             name_argument("name", matches, || admin_container.container_name()),
@@ -28,7 +29,8 @@ pub fn standalone_start(matches: &ArgMatches) -> anyhow::Result<()> {
         let instances = wildfly_containers
             .iter()
             .map(|wildfly_container| {
-                let admin_container = AdminContainer::new(wildfly_container.clone(), ServerType::Standalone);
+                let admin_container =
+                    AdminContainer::new(wildfly_container.clone(), ServerType::Standalone);
                 StandaloneInstance::new(
                     admin_container.clone(),
                     admin_container.container_name(),
@@ -52,11 +54,7 @@ async fn start_instances(
 ) -> anyhow::Result<()> {
     container_network().await?;
     run_instances(&instances, |instance| {
-        let mut command = container_run(
-            &instance.name,
-            Some(&instance.ports),
-            operations.clone(),
-        );
+        let mut command = container_run(&instance.name, Some(&instance.ports), operations.clone());
         command
             .arg(instance.admin_container.image_name())
             .args(parameters.clone());

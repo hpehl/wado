@@ -15,10 +15,7 @@ use std::process::Stdio;
 use tempfile::tempdir;
 use tokio::process::Command;
 
-pub(super) fn write_entrypoint(
-    context_dir: &Path,
-    server_type: &ServerType,
-) -> anyhow::Result<()> {
+pub(super) fn write_entrypoint(context_dir: &Path, server_type: &ServerType) -> anyhow::Result<()> {
     let entrypoint_path = context_dir.join(format!("{}-entrypoint.sh", WILDFLY_ADMIN_CONTAINER));
     let mut entrypoint_file = File::create(entrypoint_path)?;
     let entrypoint_content = match server_type {
@@ -62,11 +59,19 @@ pub(super) fn dockerfile_data(
             data.insert("is-standalone", "true".to_string());
         }
         ServerType::DomainController => {
-            let name = if use_legacy_names { "master" } else { "primary" };
+            let name = if use_legacy_names {
+                "master"
+            } else {
+                "primary"
+            };
             data.insert("host-config", format!("host-{}.xml", name));
         }
         ServerType::HostController => {
-            let name = if use_legacy_names { "slave" } else { "secondary" };
+            let name = if use_legacy_names {
+                "slave"
+            } else {
+                "secondary"
+            };
             data.insert("host-config", format!("host-{}.xml", name));
         }
     }

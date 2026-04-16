@@ -25,12 +25,14 @@ pub fn hc_start(matches: &ArgMatches) -> anyhow::Result<()> {
 
     let wildfly_containers = versions_argument(matches);
     let wildfly_container = wildfly_containers[0].clone();
-    let admin_container_dc = AdminContainer::new(wildfly_container.clone(), ServerType::DomainController);
+    let admin_container_dc =
+        AdminContainer::new(wildfly_container.clone(), ServerType::DomainController);
     let dc_name = name_argument("domain-controller", matches, || {
         admin_container_dc.container_name()
     });
     let instances = if wildfly_containers.len() == 1 {
-        let admin_container_hc = AdminContainer::new(wildfly_container.clone(), ServerType::HostController);
+        let admin_container_hc =
+            AdminContainer::new(wildfly_container.clone(), ServerType::HostController);
         vec![HostController::new(
             admin_container_hc.clone(),
             name_argument("name", matches, || admin_container_hc.container_name()),
@@ -50,7 +52,8 @@ pub fn hc_start(matches: &ArgMatches) -> anyhow::Result<()> {
         let instances = wildfly_containers
             .iter()
             .map(|wildfly_container| {
-                let admin_container = AdminContainer::new(wildfly_container.clone(), ServerType::HostController);
+                let admin_container =
+                    AdminContainer::new(wildfly_container.clone(), ServerType::HostController);
                 HostController::new(
                     admin_container.clone(),
                     admin_container.container_name(),

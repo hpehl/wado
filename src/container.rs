@@ -4,7 +4,9 @@ use crate::constants::{
 };
 use crate::progress::{Progress, stderr_reader, summary};
 use crate::wildfly::ServerType::{DomainController, Standalone};
-use crate::wildfly::{ContainerConfig, ContainerInstance, HasWildFlyContainer, Ports, Server, ServerType};
+use crate::wildfly::{
+    ContainerConfig, ContainerInstance, HasWildFlyContainer, Ports, Server, ServerType,
+};
 use anyhow::{Error, bail};
 use futures::future::join_all;
 use indicatif::MultiProgress;
@@ -48,7 +50,9 @@ pub async fn container_network() -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn container_ports(container_instance: &ContainerInstance) -> anyhow::Result<ContainerInstance> {
+async fn container_ports(
+    container_instance: &ContainerInstance,
+) -> anyhow::Result<ContainerInstance> {
     let mut command = container_command()?;
     command.arg("inspect")
         .arg("--format")
@@ -203,10 +207,7 @@ pub fn add_servers(mut command: Command, hostname: &str, servers: Vec<Server>) -
     command
 }
 
-pub async fn run_instances<T, F>(
-    instances: &[T],
-    build_command: F,
-) -> anyhow::Result<()>
+pub async fn run_instances<T, F>(instances: &[T], build_command: F) -> anyhow::Result<()>
 where
     T: ContainerConfig,
     F: Fn(&T) -> Command,
