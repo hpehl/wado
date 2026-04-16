@@ -1,6 +1,10 @@
 mod source;
 mod task;
 
+use super::common::{
+    base_template_data, container_build_commands, render_dockerfile, run_builds_verbose,
+    run_preconditions, write_entrypoint,
+};
 use crate::args::username_password_argument;
 use crate::container::container_command;
 use crate::progress::CommandStatus;
@@ -52,7 +56,7 @@ struct DevBuildConfig<'a> {
 
 // ------------------------------------------------------ build dev
 
-pub async fn build_dev(
+pub(in crate::build) async fn build_dev(
     matches: &ArgMatches,
     admin_containers: Vec<AdminContainer>,
 ) -> anyhow::Result<()> {
@@ -250,7 +254,7 @@ async fn build_containers(
         task.set_progress("building container...");
 
         let temp_dir = tempdir()?;
-        let mut child = crate::build::run_preconditions(dev_podman_build(
+        let mut child = run_preconditions(dev_podman_build(
             admin_container,
             temp_dir.as_ref(),
             username_path,
@@ -315,7 +319,7 @@ async fn build_containers_verbose(
     password_path: &Path,
     wildfly_dist: &Path,
 ) -> anyhow::Result<Vec<CommandStatus>> {
-    crate::build::run_builds_verbose(&admin_containers, |ac, dir| {
+    run_builds_verbose(&admin_containers, |ac, dir| {
         dev_podman_build(ac, dir, username_path, password_path, wildfly_dist)
     })
     .await
@@ -334,7 +338,7 @@ fn dev_podman_build(
     let context_wildfly = context_dir.join("wildfly");
     copy_dir_recursive(wildfly_dist, &context_wildfly)?;
 
-    crate::build::write_entrypoint(context_dir, &admin_container.server_type)?;
+    write_entrypoint(context_dir, &admin_container.server_type)?;
 
     let dockerfile = match admin_container.server_type {
         ServerType::Standalone => DEV_STANDALONE_DOCKERFILE,
@@ -342,9 +346,9 @@ fn dev_podman_build(
         ServerType::HostController => DEV_HOST_CONTROLLER_DOCKERFILE,
     };
 
-    let data = crate::build::base_template_data(admin_container);
-    crate::build::render_dockerfile(context_dir, dockerfile, &data)?;
-    crate::build::container_build_commands(
+    let data = base_template_data(admin_container);
+    render_dockerfile(context_dir, dockerfile, &data)?;
+    container_build_commands(
         &admin_container.image_name(),
         &latest_platforms(),
         username_path,

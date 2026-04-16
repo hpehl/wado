@@ -7,7 +7,6 @@ mod console;
 mod constants;
 mod container;
 mod dc;
-mod dev;
 mod hc;
 mod image;
 mod progress;
