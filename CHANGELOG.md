@@ -20,6 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unify start instance async boilerplate with generic `run_instances()` function
 - Consolidate domain model struct impls with `ContainerConfig` trait and macro
 - Consolidate six Dockerfile templates into one parameterized template
+- Simplify `find_suggestions()` by extracting prefix parsing, version helpers, and removing repeated tuple construction
+- Replace ~1000-char `NO_AUTH` constant with `sed_remove_auth!()` macro to define sed patterns once
+- Write secret values directly to stdin instead of spawning an `echo` process in `create_secret()`
 
 ### Fixed
 

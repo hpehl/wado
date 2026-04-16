@@ -15,8 +15,7 @@ use anyhow::bail;
 use clap::ArgMatches;
 use futures::executor::block_on;
 use std::process::Stdio;
-use tokio::process::Command;
-use tokio::{join, try_join};
+use tokio::try_join;
 use wildfly_container_versions::WildFlyContainer;
 
 // ------------------------------------------------------ start
@@ -125,31 +124,21 @@ async fn start_instances(
 }
 
 async fn create_secret(secret_name: &str, secret_value: &str) -> anyhow::Result<()> {
-    let mut echo = Command::new("echo")
-        .arg("-n")
-        .arg(secret_value)
-        .stdout(Stdio::piped())
-        .spawn()
-        .expect("Failed to spawn echo");
-    let podman_secret_stdin: Stdio = echo
-        .stdout
-        .take()
-        .unwrap()
-        .try_into()
-        .expect("Failed to convert to stdio");
     let mut podman_secret = container_command()?
         .arg("secret")
         .arg("create")
         .arg("--replace")
         .arg(secret_name)
         .arg("-")
-        .stdin(podman_secret_stdin)
+        .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .spawn()
         .expect("Failed to spawn podman secret");
-    let (echo_result, podman_secret_result) = join!(echo.wait(), podman_secret.wait());
-    echo_result?;
-    podman_secret_result?;
+    if let Some(mut stdin) = podman_secret.stdin.take() {
+        use tokio::io::AsyncWriteExt;
+        stdin.write_all(secret_value.as_bytes()).await?;
+    }
+    podman_secret.wait().await?;
     Ok(())
 }
 

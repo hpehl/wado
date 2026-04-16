@@ -15,150 +15,99 @@ pub fn complete_versions(current: &OsStr) -> Vec<CompletionCandidate> {
 }
 
 fn find_suggestions(parameter: Option<&str>) -> (String, String, Vec<String>) {
-    if let Some(parameter) = parameter {
-        let (prefix, token) = if let Some(last_comma_pos) = parameter.rfind(',') {
-            if last_comma_pos < parameter.len() - 1 {
-                let (first, last) = parameter.split_at(last_comma_pos + 1);
-                (first, last)
-            } else {
-                (parameter, "")
-            }
-        } else {
-            ("", parameter)
-        };
+    let (prefix, token) = parse_prefix_token(parameter);
 
-        if token.ends_with('x') {
-            (
-                prefix.to_string(),
-                token.to_string(),
-                all_versions()
-                    .iter()
-                    .map(simple_version)
-                    .collect::<Vec<String>>(),
-            )
-        } else if token == ".." {
-            (
-                prefix.to_string(),
-                token.to_string(),
-                all_versions()
-                    .iter()
-                    .skip(1)
-                    .map(simple_version)
-                    .collect::<Vec<String>>(),
-            )
-        } else if token.starts_with("..") {
-            let after_dots = token.chars().skip(2).collect::<String>();
-            find_after_dots(prefix, token, after_dots.as_str(), &Version::new(0, 0, 0))
-        } else if token.ends_with("..") {
-            let before_dots = token.chars().take(token.len() - 2).collect::<String>();
-            if let Ok(version) =
-                WildFlyContainer::version(before_dots.as_str()).map(|wfc| wfc.version)
-            {
-                (
-                    prefix.to_string(),
-                    token.to_string(),
-                    all_versions()
-                        .iter()
-                        .filter(|v| {
-                            if v.major == version.major {
-                                v.minor > version.minor
-                            } else {
-                                v.major > version.major
-                            }
-                        })
-                        .map(simple_version)
-                        .collect::<Vec<String>>(),
-                )
-            } else {
-                (prefix.to_string(), token.to_string(), vec![])
-            }
-        } else if token.contains("..") {
-            let before_dots = token.split("..").next().unwrap_or("");
-            if let Ok(version) = WildFlyContainer::version(before_dots).map(|wfc| wfc.version) {
-                let after_dots = token.split("..").nth(1).unwrap_or("");
-                find_after_dots(prefix, token, after_dots, &version)
-            } else {
-                (prefix.to_string(), token.to_string(), vec![])
-            }
-        } else {
-            (
-                prefix.to_string(),
-                "".to_string(),
-                all_versions()
-                    .iter()
-                    .map(simple_version)
-                    .collect::<Vec<String>>(),
-            )
-        }
+    let (out_token, suggestions): (&str, Vec<String>) = if token.ends_with('x') {
+        (token, all_simple_versions())
+    } else if token == ".." {
+        let versions = all_simple_versions().into_iter().skip(1).collect();
+        (token, versions)
+    } else if let Some(after) = token.strip_prefix("..") {
+        (token, suggest_after_dots(after, &Version::new(0, 0, 0)))
+    } else if let Some(before) = token.strip_suffix("..") {
+        let versions = parse_version(before)
+            .map(|v| versions_after(&v))
+            .unwrap_or_default();
+        (token, versions)
+    } else if token.contains("..") {
+        let (before, after) = token.split_once("..").unwrap_or(("", ""));
+        let versions = parse_version(before)
+            .map(|v| suggest_after_dots(after, &v))
+            .unwrap_or_default();
+        (token, versions)
     } else {
-        (
-            "".to_string(),
-            "".to_string(),
-            all_versions()
-                .iter()
-                .map(simple_version)
-                .collect::<Vec<String>>(),
-        )
+        ("", all_simple_versions())
+    };
+
+    (prefix.to_string(), out_token.to_string(), suggestions)
+}
+
+fn parse_prefix_token(parameter: Option<&str>) -> (&str, &str) {
+    match parameter {
+        Some(param) => match param.rfind(',') {
+            Some(pos) if pos < param.len() - 1 => param.split_at(pos + 1),
+            Some(_) => (param, ""),
+            None => ("", param),
+        },
+        None => ("", ""),
     }
 }
 
-fn find_after_dots(
-    prefix: &str,
-    token: &str,
-    after_dots: &str,
-    start_after: &Version,
-) -> (String, String, Vec<String>) {
+fn parse_version(input: &str) -> Option<Version> {
+    WildFlyContainer::version(input).ok().map(|wfc| wfc.version)
+}
+
+fn versions_after(start: &Version) -> Vec<String> {
+    all_versions()
+        .iter()
+        .filter(|v| {
+            if v.major == start.major {
+                v.minor > start.minor
+            } else {
+                v.major > start.major
+            }
+        })
+        .map(simple_version)
+        .collect()
+}
+
+fn suggest_after_dots(after_dots: &str, start_after: &Version) -> Vec<String> {
     if WildFlyContainer::version(after_dots).is_ok() {
-        (prefix.to_string(), token.to_string(), vec![])
-    } else if let Ok(number) = after_dots.parse::<u64>() {
-        match number {
-            1..=9 => (
-                prefix.to_string(),
-                token.to_string(),
-                all_versions()
-                    .iter()
-                    .skip_while(|v| v <= &start_after)
-                    .filter(|v| v.major >= (number * 10) && v.major < ((number + 1) * 10))
-                    .map(simple_version)
-                    .map(|v| v.strip_prefix(after_dots).unwrap_or(&v).to_string())
-                    .collect::<Vec<String>>(),
-            ),
-            10.. => (
-                prefix.to_string(),
-                token.to_string(),
-                all_versions()
-                    .iter()
-                    .skip_while(|v| v <= &start_after)
-                    .filter(|v| v.major == number && v.minor > 0)
-                    .map(simple_version)
-                    .map(|v| v.strip_prefix(after_dots).unwrap_or(&v).to_string())
-                    .collect::<Vec<String>>(),
-            ),
-            _ => (prefix.to_string(), token.to_string(), vec![]),
-        }
-    } else if after_dots.ends_with('.') {
-        if let Ok(number) = &after_dots[0..after_dots.len() - 1].parse::<u64>() {
-            (
-                prefix.to_string(),
-                token.to_string(),
-                all_versions()
-                    .iter()
-                    .skip_while(|v| v <= &start_after)
-                    .filter(|v| v.major == *number && v.minor > 0)
-                    .map(simple_version)
-                    .map(|v| v.strip_prefix(after_dots).unwrap_or(&v).to_string())
-                    .collect::<Vec<String>>(),
-            )
-        } else {
-            (prefix.to_string(), token.to_string(), vec![])
-        }
+        return vec![];
+    }
+
+    let major_number = after_dots
+        .strip_suffix('.')
+        .unwrap_or(after_dots)
+        .parse::<u64>()
+        .ok();
+
+    if let Some(number) = major_number {
+        let versions = all_versions();
+        let filtered: Vec<String> = versions
+            .iter()
+            .skip_while(|v| v <= &start_after)
+            .filter(|v| match number {
+                1..=9 if !after_dots.ends_with('.') => {
+                    v.major >= (number * 10) && v.major < ((number + 1) * 10)
+                }
+                _ => v.major == number && v.minor > 0,
+            })
+            .map(simple_version)
+            .map(|v| v.strip_prefix(after_dots).unwrap_or(&v).to_string())
+            .collect();
+        filtered
     } else {
-        (prefix.to_string(), token.to_string(), vec![])
+        vec![]
     }
 }
 
 fn all_versions() -> Vec<Version> {
     VERSIONS.values().map(|wfc| wfc.version.clone()).collect()
+}
+
+fn all_simple_versions() -> Vec<String> {
+    all_versions().iter().map(simple_version).collect()
 }
 
 fn simple_version(version: &Version) -> String {
