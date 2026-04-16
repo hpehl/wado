@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Dev container support for building from WildFly and HAL source branches
+- Add comma-separated version completion tests
 
 ### Changed
 
@@ -22,7 +23,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Consolidate six Dockerfile templates into one parameterized template
 - Simplify `find_suggestions()` by extracting prefix parsing, version helpers, and removing repeated tuple construction
 - Replace ~1000-char `NO_AUTH` constant with `sed_remove_auth!()` macro to define sed patterns once
-- Replace TODO comment with comma-separated version completion tests
 - Write secret values directly to stdin instead of spawning an `echo` process in `create_secret()`
 
 ### Fixed
