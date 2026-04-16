@@ -35,13 +35,6 @@ different XML attributes). Hard to read and maintain.
 passed to `sh -c`. No sanitization of shell metacharacters. Blast radius is
 limited since the command runs inside a throwaway container.
 
-### QUAL-7: Silent error swallowing in `push.rs` (MEDIUM)
-
-**File:** `src/push.rs:35-38`
-
-When a chunk push fails, the error is discarded with only a comment. No logging
-or user notification. Users have no way to know a push partially failed.
-
 ### QUAL-8: Unnecessary `echo` process in `create_secret()` (LOW)
 
 **File:** `src/hc.rs:162-167`

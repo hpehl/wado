@@ -32,8 +32,8 @@ fn push_chunks(admin_containers: &[AdminContainer], chunk_size: u16) -> anyhow::
             Ok(status) => {
                 all_status.extend(status);
             }
-            Err(_) => {
-                // ignore the error and continue with the next chunk
+            Err(e) => {
+                eprintln!("Chunk push failed: {}", e);
                 continue;
             }
         };
