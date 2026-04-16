@@ -13,6 +13,30 @@ pub trait HasWildFlyContainer {
     fn wildfly_container(&self) -> &WildFlyContainer;
 }
 
+pub trait ContainerConfig: HasWildFlyContainer + Clone {
+    fn admin_container(&self) -> &AdminContainer;
+    fn name(&self) -> &str;
+}
+
+macro_rules! impl_container_instance {
+    ($type:ty) => {
+        impl ContainerConfig for $type {
+            fn admin_container(&self) -> &AdminContainer {
+                &self.admin_container
+            }
+            fn name(&self) -> &str {
+                &self.name
+            }
+        }
+
+        impl HasWildFlyContainer for $type {
+            fn wildfly_container(&self) -> &WildFlyContainer {
+                &self.admin_container.wildfly_container
+            }
+        }
+    };
+}
+
 // ------------------------------------------------------ server type
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd)]
@@ -245,11 +269,7 @@ impl StandaloneInstance {
     }
 }
 
-impl HasWildFlyContainer for StandaloneInstance {
-    fn wildfly_container(&self) -> &WildFlyContainer {
-        &self.admin_container.wildfly_container
-    }
-}
+impl_container_instance!(StandaloneInstance);
 
 // ------------------------------------------------------ domain controller
 
@@ -278,11 +298,7 @@ impl DomainController {
     }
 }
 
-impl HasWildFlyContainer for DomainController {
-    fn wildfly_container(&self) -> &WildFlyContainer {
-        &self.admin_container.wildfly_container
-    }
-}
+impl_container_instance!(DomainController);
 
 // ------------------------------------------------------ host controller
 
@@ -315,11 +331,7 @@ impl HostController {
     }
 }
 
-impl HasWildFlyContainer for HostController {
-    fn wildfly_container(&self) -> &WildFlyContainer {
-        &self.admin_container.wildfly_container
-    }
-}
+impl_container_instance!(HostController);
 
 // ------------------------------------------------------ container instance
 

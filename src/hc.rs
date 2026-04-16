@@ -8,19 +8,14 @@ use crate::constants::{
 };
 use crate::container::{
     add_servers, container_command, container_network, container_run, ensure_unique_names,
-    verify_container_command,
+    run_instances, verify_container_command,
 };
-use crate::progress::summary;
-use crate::progress::{Progress, stderr_reader};
 use crate::wildfly::{AdminContainer, HostController, Server, ServerType};
 use anyhow::bail;
 use clap::ArgMatches;
 use futures::executor::block_on;
-use indicatif::MultiProgress;
 use std::process::Stdio;
 use tokio::process::Command;
-use tokio::task::JoinSet;
-use tokio::time::Instant;
 use tokio::{join, try_join};
 use wildfly_container_versions::WildFlyContainer;
 
@@ -95,24 +90,13 @@ async fn start_instances(
     operations: Vec<String>,
     parameters: Vec<String>,
 ) -> anyhow::Result<()> {
-    let count = instances.len();
-    let instant = Instant::now();
-    let multi_progress = MultiProgress::new();
-    let mut commands = JoinSet::new();
-
     try_join!(
         container_network(),
         create_secret("username", username),
         create_secret("password", password)
     )?;
-    for hc in instances {
-        let progress = Progress::new(
-            &hc.admin_container.wildfly_container.short_version,
-            &hc.admin_container.image_name(),
-        );
-        multi_progress.add(progress.bar.clone());
-
-        let mut command = container_run(&hc.name, None, operations.clone());
+    run_instances(&instances, |instance| {
+        let mut command = container_run(&instance.name, None, operations.clone());
         command
             .arg(format!(
                 "--secret=username,type=env,target={}",
@@ -125,37 +109,19 @@ async fn start_instances(
             .arg("--network")
             .arg(WILDFLY_ADMIN_CONTAINER)
             .arg("--env")
-            .arg(format!("{}={}", HOSTNAME_VARIABLE, hc.name))
+            .arg(format!("{}={}", HOSTNAME_VARIABLE, instance.name))
             .arg("--env")
             .arg(format!(
                 "{}={}",
-                DOMAIN_CONTROLLER_VARIABLE, hc.domain_controller
+                DOMAIN_CONTROLLER_VARIABLE, instance.domain_controller
             ));
-        command = add_servers(command, hc.name.as_str(), servers.clone());
+        let mut command = add_servers(command, &instance.name, servers.clone());
         command
-            .arg(hc.admin_container.image_name())
+            .arg(instance.admin_container.image_name())
             .args(parameters.clone());
-
-        let mut child = command
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-            .expect("Unable to run podman-run.");
-
-        let stderr = stderr_reader(&mut child);
-        let progress_clone = progress.clone();
-        commands.spawn(async move {
-            let output = child.wait_with_output().await;
-            progress.finish(output, Some(&hc.name))
-        });
-        tokio::spawn(async move {
-            progress_clone.trace_progress(stderr).await;
-        });
-    }
-
-    let status = commands.join_all().await;
-    summary("Started", "container", count, instant, status);
-    Ok(())
+        command
+    })
+    .await
 }
 
 async fn create_secret(secret_name: &str, secret_value: &str) -> anyhow::Result<()> {

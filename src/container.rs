@@ -2,9 +2,9 @@ use crate::constants::{
     BOOTSTRAP_OPERATIONS_VARIABLE, LABEL_NAME, SERVERS_VARIABLE, WILDFLY_ADMIN_CONTAINER,
     WILDFLY_ADMIN_CONTAINER_REPOSITORY,
 };
-use crate::progress::{Progress, summary};
+use crate::progress::{Progress, stderr_reader, summary};
 use crate::wildfly::ServerType::{DomainController, Standalone};
-use crate::wildfly::{ContainerInstance, HasWildFlyContainer, Ports, Server, ServerType};
+use crate::wildfly::{ContainerConfig, ContainerInstance, HasWildFlyContainer, Ports, Server, ServerType};
 use anyhow::{Error, bail};
 use futures::future::join_all;
 use indicatif::MultiProgress;
@@ -201,6 +201,48 @@ pub fn add_servers(mut command: Command, hostname: &str, servers: Vec<Server>) -
             .arg(format!("{}={}", SERVERS_VARIABLE, server_ops.join(",")));
     }
     command
+}
+
+pub async fn run_instances<T, F>(
+    instances: &[T],
+    build_command: F,
+) -> anyhow::Result<()>
+where
+    T: ContainerConfig,
+    F: Fn(&T) -> Command,
+{
+    let count = instances.len();
+    let instant = Instant::now();
+    let multi_progress = MultiProgress::new();
+    let mut commands = JoinSet::new();
+
+    for instance in instances {
+        let progress = Progress::new(
+            &instance.admin_container().wildfly_container.short_version,
+            &instance.admin_container().image_name(),
+        );
+        multi_progress.add(progress.bar.clone());
+        let mut child = build_command(instance)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("Unable to run podman-run.");
+
+        let stderr = stderr_reader(&mut child);
+        let name = instance.name().to_string();
+        let progress_clone = progress.clone();
+        commands.spawn(async move {
+            let output = child.wait_with_output().await;
+            progress.finish(output, Some(&name))
+        });
+        tokio::spawn(async move {
+            progress_clone.trace_progress(stderr).await;
+        });
+    }
+
+    let status = commands.join_all().await;
+    summary("Started", "container", count, instant, status);
+    Ok(())
 }
 
 pub async fn get_instance(

@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replace mutation with immutable patterns in container port mapping and image listing
 - Flatten `parse_server()` deep nesting with sequential consumption
 - Deduplicate container runtime detection and `AdminContainer` constructors
+- Unify start instance async boilerplate with generic `run_instances()` function
+- Consolidate domain model struct impls with `ContainerConfig` trait and macro
+- Consolidate six Dockerfile templates into one parameterized template
 
 ### Fixed
 

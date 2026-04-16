@@ -2,16 +2,14 @@ mod source;
 mod task;
 
 use super::common::{
-    base_template_data, container_build_commands, render_dockerfile, run_builds_verbose,
+    container_build_commands, dockerfile_data, render_dockerfile, run_builds_verbose,
     run_preconditions, write_entrypoint,
 };
 use crate::args::username_password_argument;
 use crate::container::container_command;
 use crate::progress::CommandStatus;
-use crate::resources::{
-    DEV_DOMAIN_CONTROLLER_DOCKERFILE, DEV_HOST_CONTROLLER_DOCKERFILE, DEV_STANDALONE_DOCKERFILE,
-};
-use crate::wildfly::{AdminContainer, ServerType};
+use crate::resources::DOCKERFILE;
+use crate::wildfly::AdminContainer;
 use clap::ArgMatches;
 use console::{Emoji, style};
 use indicatif::{HumanDuration, MultiProgress};
@@ -340,14 +338,8 @@ fn dev_podman_build(
 
     write_entrypoint(context_dir, &admin_container.server_type)?;
 
-    let dockerfile = match admin_container.server_type {
-        ServerType::Standalone => DEV_STANDALONE_DOCKERFILE,
-        ServerType::DomainController => DEV_DOMAIN_CONTROLLER_DOCKERFILE,
-        ServerType::HostController => DEV_HOST_CONTROLLER_DOCKERFILE,
-    };
-
-    let data = base_template_data(admin_container);
-    render_dockerfile(context_dir, dockerfile, &data)?;
+    let data = dockerfile_data(admin_container, true);
+    render_dockerfile(context_dir, DOCKERFILE, &data)?;
     container_build_commands(
         &admin_container.image_name(),
         &latest_platforms(),

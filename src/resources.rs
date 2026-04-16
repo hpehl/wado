@@ -1,16 +1,24 @@
-// ------------------------------------------------------ dev standalone
-// Dev Dockerfiles use a fixed base image (eclipse-temurin:21-jre) rather than the
-// templated {{base-image}} of stable builds, since dev builds always target the
-// latest WildFly which requires JDK 21.
+// ------------------------------------------------------ dockerfile
+
+// Unified Dockerfile template for all server types and build modes (dev/stable).
+// Conditionals:
+//   is-dev        — set for dev builds (adds JDK base image, ENV, user setup, COPY wildfly)
+//   is-standalone — set for standalone server type (uses standalone config paths)
+//   host-config   — set for DC/HC (e.g. "host-primary.xml"), controls ENTRYPOINT/CMD
+//   base-image    — set for stable builds (the upstream WildFly image)
 
 // language=Dockerfile
-pub static DEV_STANDALONE_DOCKERFILE: &str = r#"FROM eclipse-temurin:21-jre
+pub static DOCKERFILE: &str = r#"{{#if is-dev~}}
+FROM eclipse-temurin:21-jre
 
 ENV JBOSS_HOME=/opt/jboss/wildfly
 ENV WILDFLY_VERSION=development
 
 RUN groupadd -r jboss && useradd -r -g jboss -m -d /opt/jboss jboss
 COPY wildfly $JBOSS_HOME
+{{~else~}}
+FROM {{base-image}}
+{{~/if}}
 
 LABEL maintainer="hpehl@redhat.com"
 LABEL {{label-name}}="{{label-value}}"
@@ -19,89 +27,26 @@ USER root
 COPY {{entrypoint}} $JBOSS_HOME/bin/{{entrypoint}}
 RUN chmod +x $JBOSS_HOME/bin/{{entrypoint}}
 RUN {{{add-user}}}
+{{#if is-standalone~}}
 RUN sed -i {{{allowed-origins}}} $JBOSS_HOME/standalone/configuration/standalone*.xml
 RUN for conf in $JBOSS_HOME/standalone/configuration/standalone*.xml; do sed {{{no-auth}}} "${conf}" > "${conf%%.*}-no-auth.${conf#*.}"; done
+{{~else~}}
+RUN sed -e '/<servers>/,/<\/servers>/d' -e {{{allowed-origins}}} -i $JBOSS_HOME/domain/configuration/host*.xml
+RUN for conf in $JBOSS_HOME/domain/configuration/host*.xml; do sed {{{no-auth}}} "${conf}" > "${conf%%.*}-no-auth.${conf#*.}"; done
+{{~/if}}
 USER jboss
 
 EXPOSE 8080 9990
+{{#if host-config~}}
+ENTRYPOINT ["/opt/jboss/wildfly/bin/{{entrypoint}}", "-b", "0.0.0.0", "-bmanagement", "0.0.0.0", "--host-config", "{{host-config}}"]
+CMD ["-c", "domain.xml"]
+{{~else~}}
 ENTRYPOINT ["/opt/jboss/wildfly/bin/{{entrypoint}}", "-b", "0.0.0.0", "-bmanagement", "0.0.0.0"]
 CMD ["-c", "standalone.xml"]
-"#;
-
-// ------------------------------------------------------ dev domain controller
-
-// language=Dockerfile
-pub static DEV_DOMAIN_CONTROLLER_DOCKERFILE: &str = r#"FROM eclipse-temurin:21-jre
-
-ENV JBOSS_HOME=/opt/jboss/wildfly
-ENV WILDFLY_VERSION=development
-
-RUN groupadd -r jboss && useradd -r -g jboss -m -d /opt/jboss jboss
-COPY wildfly $JBOSS_HOME
-
-LABEL maintainer="hpehl@redhat.com"
-LABEL {{label-name}}="{{label-value}}"
-
-USER root
-COPY {{entrypoint}} $JBOSS_HOME/bin/{{entrypoint}}
-RUN chmod +x $JBOSS_HOME/bin/{{entrypoint}}
-RUN {{{add-user}}}
-RUN sed -e '/<servers>/,/<\/servers>/d' -e {{{allowed-origins}}} -i $JBOSS_HOME/domain/configuration/host*.xml
-RUN for conf in $JBOSS_HOME/domain/configuration/host*.xml; do sed {{{no-auth}}} "${conf}" > "${conf%%.*}-no-auth.${conf#*.}"; done
-USER jboss
-
-EXPOSE 8080 9990
-ENTRYPOINT ["/opt/jboss/wildfly/bin/{{entrypoint}}", "-b", "0.0.0.0", "-bmanagement", "0.0.0.0", "--host-config", "host-primary.xml"]
-CMD ["-c", "domain.xml"]
-"#;
-
-// ------------------------------------------------------ dev host controller
-
-// language=Dockerfile
-pub static DEV_HOST_CONTROLLER_DOCKERFILE: &str = r#"FROM eclipse-temurin:21-jre
-
-ENV JBOSS_HOME=/opt/jboss/wildfly
-ENV WILDFLY_VERSION=development
-
-RUN groupadd -r jboss && useradd -r -g jboss -m -d /opt/jboss jboss
-COPY wildfly $JBOSS_HOME
-
-LABEL maintainer="hpehl@redhat.com"
-LABEL {{label-name}}="{{label-value}}"
-
-USER root
-COPY {{entrypoint}} $JBOSS_HOME/bin/{{entrypoint}}
-RUN chmod +x $JBOSS_HOME/bin/{{entrypoint}}
-RUN {{{add-user}}}
-RUN sed -e '/<servers>/,/<\/servers>/d' -e {{{allowed-origins}}} -i $JBOSS_HOME/domain/configuration/host*.xml
-RUN for conf in $JBOSS_HOME/domain/configuration/host*.xml; do sed {{{no-auth}}} "${conf}" > "${conf%%.*}-no-auth.${conf#*.}"; done
-USER jboss
-
-EXPOSE 8080 9990
-ENTRYPOINT ["/opt/jboss/wildfly/bin/{{entrypoint}}", "-b", "0.0.0.0", "-bmanagement", "0.0.0.0", "--host-config", "host-secondary.xml"]
-CMD ["-c", "domain.xml"]
+{{~/if}}
 "#;
 
 // ------------------------------------------------------ standalone
-
-// language=Dockerfile
-pub static STANDALONE_DOCKERFILE: &str = r#"FROM {{base-image}}
-
-LABEL maintainer="hpehl@redhat.com"
-LABEL {{label-name}}="{{label-value}}"
-
-USER root
-COPY {{entrypoint}} $JBOSS_HOME/bin/{{entrypoint}}
-RUN chmod +x $JBOSS_HOME/bin/{{entrypoint}}
-RUN {{{add-user}}}
-RUN sed -i {{{allowed-origins}}} $JBOSS_HOME/standalone/configuration/standalone*.xml
-RUN for conf in $JBOSS_HOME/standalone/configuration/standalone*.xml; do sed {{{no-auth}}} "${conf}" > "${conf%%.*}-no-auth.${conf#*.}"; done
-USER jboss
-
-EXPOSE 8080 9990
-ENTRYPOINT ["/opt/jboss/wildfly/bin/{{entrypoint}}", "-b", "0.0.0.0", "-bmanagement", "0.0.0.0"]
-CMD ["-c", "standalone.xml"]
-"#;
 
 // language=shell script
 pub static STANDALONE_ENTRYPOINT_SH: &str = r#"#!/bin/sh
@@ -121,25 +66,6 @@ $JBOSS_HOME/bin/standalone.sh $@
 "#;
 
 // ------------------------------------------------------ domain controller
-
-// language=Dockerfile
-pub static DOMAIN_CONTROLLER_DOCKERFILE: &str = r#"FROM {{base-image}}
-
-LABEL maintainer="hpehl@redhat.com"
-LABEL {{label-name}}="{{label-value}}"
-
-USER root
-COPY {{entrypoint}} $JBOSS_HOME/bin/{{entrypoint}}
-RUN chmod +x $JBOSS_HOME/bin/{{entrypoint}}
-RUN {{{add-user}}}
-RUN sed -e '/<servers>/,/<\/servers>/d' -e {{{allowed-origins}}} -i $JBOSS_HOME/domain/configuration/host*.xml
-RUN for conf in $JBOSS_HOME/domain/configuration/host*.xml; do sed {{{no-auth}}} "${conf}" > "${conf%%.*}-no-auth.${conf#*.}"; done
-USER jboss
-
-EXPOSE 8080 9990
-ENTRYPOINT ["/opt/jboss/wildfly/bin/{{entrypoint}}", "-b", "0.0.0.0", "-bmanagement", "0.0.0.0", "--host-config", "host-{{primary}}.xml"]
-CMD ["-c", "domain.xml"]
-"#;
 
 // language=shell script
 pub static DOMAIN_CONTROLLER_ENTRYPOINT_SH: &str = r#"#!/bin/sh
@@ -168,25 +94,6 @@ $JBOSS_HOME/bin/domain.sh $@
 "#;
 
 // ------------------------------------------------------ host controller
-
-// language=Dockerfile
-pub static HOST_CONTROLLER_DOCKERFILE: &str = r#"FROM {{base-image}}
-
-LABEL maintainer="hpehl@redhat.com"
-LABEL {{label-name}}="{{label-value}}"
-
-USER root
-COPY {{entrypoint}} $JBOSS_HOME/bin/{{entrypoint}}
-RUN chmod +x $JBOSS_HOME/bin/{{entrypoint}}
-RUN {{{add-user}}}
-RUN sed -e '/<servers>/,/<\/servers>/d' -e {{{allowed-origins}}} -i $JBOSS_HOME/domain/configuration/host*.xml
-RUN for conf in $JBOSS_HOME/domain/configuration/host*.xml; do sed {{{no-auth}}} "${conf}" > "${conf%%.*}-no-auth.${conf#*.}"; done
-USER jboss
-
-EXPOSE 8080 9990
-ENTRYPOINT ["/opt/jboss/wildfly/bin/{{entrypoint}}", "-b", "0.0.0.0", "-bmanagement", "0.0.0.0", "--host-config", "host-{{secondary}}.xml"]
-CMD ["-c", "domain.xml"]
-"#;
 
 // language=shell script
 pub static HOST_CONTROLLER_ENTRYPOINT_SH: &str = r#"#!/bin/sh

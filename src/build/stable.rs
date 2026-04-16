@@ -1,13 +1,11 @@
 use super::common::{
-    base_template_data, container_build_commands, render_dockerfile, run_builds_verbose,
+    container_build_commands, dockerfile_data, render_dockerfile, run_builds_verbose,
     run_preconditions, write_entrypoint,
 };
 use crate::args::username_password_argument;
 use crate::progress::{CommandStatus, Progress, stdout_reader, summary};
-use crate::resources::{
-    DOMAIN_CONTROLLER_DOCKERFILE, HOST_CONTROLLER_DOCKERFILE, STANDALONE_DOCKERFILE,
-};
-use crate::wildfly::{AdminContainer, ServerType};
+use crate::resources::DOCKERFILE;
+use crate::wildfly::AdminContainer;
 use clap::ArgMatches;
 use futures::executor::block_on;
 use indicatif::MultiProgress;
@@ -137,25 +135,8 @@ fn podman_build(
 ) -> anyhow::Result<Vec<Command>> {
     write_entrypoint(context_dir, &admin_container.server_type)?;
 
-    let dockerfile = match admin_container.server_type {
-        ServerType::Standalone => STANDALONE_DOCKERFILE,
-        ServerType::DomainController => DOMAIN_CONTROLLER_DOCKERFILE,
-        ServerType::HostController => HOST_CONTROLLER_DOCKERFILE,
-    };
-
-    let mut data = base_template_data(admin_container);
-    data.insert("base-image", admin_container.wildfly_container.image_name());
-    if !admin_container.wildfly_container.is_dev()
-        && admin_container.wildfly_container.version.major < 27
-    {
-        data.insert("primary", "master".to_string());
-        data.insert("secondary", "slave".to_string());
-    } else {
-        data.insert("primary", "primary".to_string());
-        data.insert("secondary", "secondary".to_string());
-    }
-
-    render_dockerfile(context_dir, dockerfile, &data)?;
+    let data = dockerfile_data(admin_container, false);
+    render_dockerfile(context_dir, DOCKERFILE, &data)?;
     container_build_commands(
         &admin_container.image_name(),
         &admin_container.wildfly_container.platforms,

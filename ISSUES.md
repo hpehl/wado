@@ -2,112 +2,9 @@
 
 Found during a full-project code review on 2026-04-16 using Claude Code.
 The review covered all Rust source files in `src/` and focused on code duplication,
-security, and code quality. Issues marked **(RESOLVED)** were fixed in the same session.
-
-## Resolved
-
-### DUP-1: `podman_build()` vs `dev_podman_build()` (HIGH) **(RESOLVED)**
-
-**Files:** `src/build.rs`, `src/dev/mod.rs`
-
-Both functions duplicated entrypoint writing, Handlebars template rendering, and
-multi-platform build command construction (~80 lines).
-
-**Fix:** Extracted `write_entrypoint()`, `base_template_data()`, `render_dockerfile()`,
-and `container_build_command()` as shared helpers in `build.rs`. Both `podman_build()`
-and `dev_podman_build()` now delegate to these helpers.
-
-### DUP-2: Verbose build loops (HIGH) **(RESOLVED)**
-
-**Files:** `src/build.rs:start_builds_verbose()`, `src/dev/mod.rs:build_containers_verbose()`
-
-Identical verbose build loops (~40 lines each) with the same success/error output pattern.
-
-**Fix:** Extracted `run_builds_verbose()` in `build.rs` that takes a closure for the
-build command. Both callers now delegate with a one-liner.
-
-### DUP-3: Stop functions (MEDIUM) **(RESOLVED)**
-
-**Files:** `src/standalone.rs`, `src/dc.rs`, `src/hc.rs`
-
-All three stop functions were identical except for the `ServerType` variant (~10 lines x3).
-
-**Fix:** Extracted `stop_command(server_type, matches)` in `args.rs`. Each stop function
-now delegates in a single line.
-
-### DUP-4: Multi-version validation guards (MEDIUM) **(RESOLVED)**
-
-**Files:** `src/standalone.rs`, `src/dc.rs`
-
-Same four `matches.contains_id()` checks with identical bail messages (~10 lines x2).
-
-**Fix:** Extracted `validate_single_version(matches, &[...])` in `args.rs`. Each caller
-now validates with a single line.
+security, and code quality.
 
 ## Open
-
-### DUP-5: Start instance async boilerplate (MEDIUM)
-
-**Files:** `src/standalone.rs:68-113`, `src/dc.rs:72-121`, `src/hc.rs:90-158`
-
-All three `start_instances` functions follow the same async pattern: create
-`MultiProgress` + `JoinSet`, call `container_network()`, loop with `Progress` +
-spawn child + stderr reader, then `summary()`. The core loop body is repeated
-three times (~120 lines total). The command setup differs per server type, making
-a clean extraction non-trivial.
-
-### DUP-6: Container runtime detection x3 (MEDIUM) **(RESOLVED)**
-
-**File:** `src/container.rs`
-
-Three functions independently probed for podman/docker. `container_command_name()` was
-already removed in the SEC-1 fix.
-
-**Fix:** Extracted `detect_runtime() -> Result<PathBuf>` as a single probe.
-`verify_container_command()` and `container_command()` now delegate to it.
-
-### DUP-7: Domain model struct boilerplate (MEDIUM)
-
-**File:** `src/wildfly.rs:241-340`
-
-`StandaloneInstance`, `DomainController`, `HostController` share `admin_container`
-and `name` fields, identical `HasWildFlyContainer` impls, and the same `copy()` pattern.
-
-### DUP-8: AdminContainer constructors (LOW) **(RESOLVED)**
-
-**File:** `src/wildfly.rs`
-
-`standalone()`, `domain_controller()`, `host_controller()` differed only in the
-`ServerType` variant.
-
-**Fix:** Replaced all three with `AdminContainer::new(wc, server_type)`. Updated all
-callers in `args.rs`, `standalone.rs`, `dc.rs`, and `hc.rs`.
-
-### DUP-9: Dockerfile template preamble (LOW)
-
-**File:** `src/resources.rs`
-
-The three dev Dockerfiles share identical 8-line preambles. The DC and HC dev
-Dockerfiles differ only in `host-primary.xml` vs `host-secondary.xml`. Same
-pattern exists for stable Dockerfiles.
-
-### DUP-10: Template data HashMap construction (MEDIUM) **(RESOLVED as part of DUP-1)**
-
-Shared `base_template_data()` now handles the common keys.
-
-### SEC-1: Shell injection surface in build commands (MEDIUM) **(RESOLVED)**
-
-**Files:** `src/build.rs:container_build_commands()`, formerly also `src/dev/mod.rs`
-
-Multi-platform builds constructed shell commands via `format!()` and passed them to
-`sh -c`. While interpolated values were derived from controlled sources, any future
-change introducing user-controlled values could create an injection vector.
-
-**Fix:** Replaced the `sh -c` shell wrapper with direct `Command` argument construction.
-Multi-platform builds now use two separate commands (manifest create + build) with
-`.arg()` calls instead of shell string interpolation. Added `run_preconditions()`
-helper to run the manifest create command before spawning the build. Removed the
-now-unused `container_command_name()` function.
 
 ### SEC-2: Hardcoded default credentials (LOW)
 
@@ -116,20 +13,6 @@ now-unused `container_command_name()` function.
 `admin/admin` used as defaults for username/password arguments. Acceptable for
 local development containers but worth documenting.
 
-### QUAL-1: `parse_server()` deep nesting (HIGH) **(RESOLVED)**
-
-**File:** `src/wildfly.rs`
-
-75 lines with 6 levels of nesting and duplicated conditional patterns. The
-`parts[0].eq_ignore_ascii_case("start")` / `parts[0].parse::<u16>()` /
-`parts.remove(0)` pattern appears three times.
-
-**Fix:** Replaced deeply nested if/else tree with a flat sequential consumption
-pattern using slice `split_first()`. Each step (server group, offset, start)
-tries to consume the next part independently. Added `ServerGroup::parse()` helper
-to eliminate duplicated server group matching. Reduced from ~50 lines with 6 nesting
-levels to ~30 lines with max 2 levels.
-
 ### QUAL-2: `find_suggestions()` complexity (MEDIUM)
 
 **File:** `src/wildfly_version.rs:17-103`
@@ -137,35 +20,35 @@ levels to ~30 lines with max 2 levels.
 87 lines with 7 branches, most building the same `(prefix, token, filtered_versions)`
 tuple with minor filtering variations.
 
-### QUAL-3: Mutation of `ContainerInstance` (MEDIUM) **(RESOLVED)**
-
-**File:** `src/container.rs`
-
-`container_ports()` took `&mut ContainerInstance` and mutated `.ports` in place.
-
-**Fix:** Changed `container_ports()` to take `&ContainerInstance` and return a new
-`ContainerInstance` with ports set using the `..clone()` spread pattern. Updated
-`container_ps()` to collect results from the futures, and simplified `get_instance()`
-to directly return the result.
-
-### QUAL-4: Mutation of `HashMap<String, AdminContainer>` (MEDIUM) **(RESOLVED)**
-
-**File:** `src/image.rs`
-
-`local_images()` and `images_in_use()` mutated `AdminContainer` structs inside
-the HashMap by setting `local_image` and `in_use` fields in place.
-
-**Fix:** Replaced the two mutating functions with `local_image_names()` and
-`image_names_in_use()` that return `HashSet<String>`. The `images()` function
-now maps over all containers, creating new `AdminContainer` values with the
-`local_image` and `in_use` flags set via struct update syntax (`..ac`).
-
 ### QUAL-5: `NO_AUTH` constant (LOW)
 
 **File:** `src/constants.rs:16`
 
 ~1000-character single line with the same sed pattern repeated 3 times (for three
 different XML attributes). Hard to read and maintain.
+
+### SEC-3: Shell injection surface in `build_maven_command()` (MEDIUM)
+
+**File:** `src/build/dev/source.rs:32-36`
+
+`format!()` interpolates `branch` and `repo_url` into a shell script string
+passed to `sh -c`. No sanitization of shell metacharacters. Blast radius is
+limited since the command runs inside a throwaway container.
+
+### QUAL-7: Silent error swallowing in `push.rs` (MEDIUM)
+
+**File:** `src/push.rs:35-38`
+
+When a chunk push fails, the error is discarded with only a comment. No logging
+or user notification. Users have no way to know a push partially failed.
+
+### QUAL-8: Unnecessary `echo` process in `create_secret()` (LOW)
+
+**File:** `src/hc.rs:162-167`
+
+Spawns an `echo -n` process to pipe a value to `podman secret create`. Could
+write directly to stdin, eliminating the extra process. Not a security issue
+since `Command::arg()` is safe from shell injection.
 
 ### QUAL-6: TODO comment (LOW)
 

@@ -43,6 +43,37 @@ pub(super) fn base_template_data(
     data
 }
 
+pub(super) fn dockerfile_data(
+    admin_container: &AdminContainer,
+    is_dev: bool,
+) -> HashMap<&'static str, String> {
+    let mut data = base_template_data(admin_container);
+
+    if is_dev {
+        data.insert("is-dev", "true".to_string());
+    } else {
+        data.insert("base-image", admin_container.wildfly_container.image_name());
+    }
+
+    let use_legacy_names = !admin_container.wildfly_container.is_dev()
+        && admin_container.wildfly_container.version.major < 27;
+    match admin_container.server_type {
+        ServerType::Standalone => {
+            data.insert("is-standalone", "true".to_string());
+        }
+        ServerType::DomainController => {
+            let name = if use_legacy_names { "master" } else { "primary" };
+            data.insert("host-config", format!("host-{}.xml", name));
+        }
+        ServerType::HostController => {
+            let name = if use_legacy_names { "slave" } else { "secondary" };
+            data.insert("host-config", format!("host-{}.xml", name));
+        }
+    }
+
+    data
+}
+
 pub(super) fn render_dockerfile(
     context_dir: &Path,
     template: &str,

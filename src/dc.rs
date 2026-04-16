@@ -4,16 +4,12 @@ use crate::args::{
 };
 use crate::constants::{HOSTNAME_VARIABLE, WILDFLY_ADMIN_CONTAINER};
 use crate::container::{
-    add_servers, container_network, container_run, ensure_unique_names, verify_container_command,
+    add_servers, container_network, container_run, ensure_unique_names, run_instances,
+    verify_container_command,
 };
-use crate::progress::{Progress, stderr_reader, summary};
 use crate::wildfly::{AdminContainer, DomainController, Ports, Server, ServerType};
 use clap::ArgMatches;
 use futures::executor::block_on;
-use indicatif::MultiProgress;
-use std::process::Stdio;
-use tokio::task::JoinSet;
-use tokio::time::Instant;
 
 // ------------------------------------------------------ start
 
@@ -58,49 +54,21 @@ async fn start_instances(
     operations: Vec<String>,
     parameters: Vec<String>,
 ) -> anyhow::Result<()> {
-    let count = instances.len();
-    let instant = Instant::now();
-    let multi_progress = MultiProgress::new();
-    let mut commands = JoinSet::new();
-
     container_network().await?;
-    for instance in instances {
-        let progress = Progress::new(
-            &instance.admin_container.wildfly_container.short_version,
-            &instance.admin_container.image_name(),
-        );
-        multi_progress.add(progress.bar.clone());
-
+    run_instances(&instances, |instance| {
         let mut command = container_run(&instance.name, Some(&instance.ports), operations.clone());
         command
             .arg("--network")
             .arg(WILDFLY_ADMIN_CONTAINER)
             .arg("--env")
             .arg(format!("{}={}", HOSTNAME_VARIABLE, instance.name));
-        command = add_servers(command, instance.name.as_str(), servers.clone());
+        let mut command = add_servers(command, &instance.name, servers.clone());
         command
             .arg(instance.admin_container.image_name())
             .args(parameters.clone());
-        let mut child = command
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-            .expect("Unable to run podman-run.");
-
-        let stderr = stderr_reader(&mut child);
-        let progress_clone = progress.clone();
-        commands.spawn(async move {
-            let output = child.wait_with_output().await;
-            progress.finish(output, Some(&instance.name))
-        });
-        tokio::spawn(async move {
-            progress_clone.trace_progress(stderr).await;
-        });
-    }
-
-    let status = commands.join_all().await;
-    summary("Started", "container", count, instant, status);
-    Ok(())
+        command
+    })
+    .await
 }
 
 // ------------------------------------------------------ stop
