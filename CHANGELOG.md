@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.14] - 2026-04-16
+
+### Added
+
+- Dev container support for building from WildFly and HAL source branches
+
+### Changed
+
+- Extract shared build helpers into `build/common.rs` and unify build module structure
+- Replace mutation with immutable patterns in container port mapping and image listing
+- Flatten `parse_server()` deep nesting with sequential consumption
+- Deduplicate container runtime detection and `AdminContainer` constructors
+
+### Fixed
+
+- Eliminate shell injection surface in multi-platform build commands
+
 ## [0.2.13] - 2026-04-13
 
 ### Changed
@@ -175,6 +192,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - First release 🎉
+
+[0.2.14]: https://github.com/hpehl/wado/compare/v0.2.13...v0.2.14
+
+[0.2.13]: https://github.com/hpehl/wado/compare/v0.2.12...v0.2.13
 
 [0.2.12]: https://github.com/hpehl/wado/compare/v0.2.11...v0.2.12
 
