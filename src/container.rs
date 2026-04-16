@@ -48,7 +48,7 @@ pub async fn container_network() -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn container_ports(container_instance: &mut ContainerInstance) -> anyhow::Result<()> {
+async fn container_ports(container_instance: &ContainerInstance) -> anyhow::Result<ContainerInstance> {
     let mut command = container_command()?;
     command.arg("inspect")
         .arg("--format")
@@ -59,18 +59,23 @@ async fn container_ports(container_instance: &mut ContainerInstance) -> anyhow::
         .stderr(Stdio::piped())
         .spawn()?;
     let output = child.wait_with_output().await?;
-    if output.status.success() {
+    let ports = if output.status.success() {
         let output = String::from_utf8(output.stdout)?;
-        let ports = output.trim().split("|").collect::<Vec<&str>>();
-        if ports.len() == 2 {
-            let http = ports[0].parse::<u16>()?;
-            let management = ports[1].parse::<u16>()?;
-            container_instance.ports = Some(Ports { http, management });
+        let parts = output.trim().split("|").collect::<Vec<&str>>();
+        if parts.len() == 2 {
+            let http = parts[0].parse::<u16>()?;
+            let management = parts[1].parse::<u16>()?;
+            Some(Ports { http, management })
+        } else {
+            container_instance.ports.clone()
         }
     } else {
-        container_instance.ports = None;
-    }
-    Ok(())
+        None
+    };
+    Ok(ContainerInstance {
+        ports,
+        ..container_instance.clone()
+    })
 }
 
 pub async fn container_ps(
@@ -125,8 +130,9 @@ pub async fn container_ps(
     });
 
     if resolve_ports {
-        let futures = instances.iter_mut().map(container_ports);
-        join_all(futures).await;
+        let futures = instances.iter().map(container_ports);
+        let results = join_all(futures).await;
+        instances = results.into_iter().filter_map(|r| r.ok()).collect();
     }
     Ok(instances)
 }
@@ -240,9 +246,7 @@ pub async fn get_instance(
         };
         bail!("{} found {}", what, why)
     }
-    let mci = &mut instances[0].clone();
-    container_ports(mci).await?;
-    Ok(mci.clone())
+    container_ports(&instances[0]).await
 }
 
 pub async fn stop_instances(

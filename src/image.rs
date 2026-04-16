@@ -4,14 +4,24 @@ use comfy_table::presets::UTF8_BORDERS_ONLY;
 use comfy_table::{Cell, Color, ContentArrangement, Table};
 use console::style;
 use futures::executor::block_on;
-use std::collections::HashMap;
+use std::collections::HashSet;
 use std::process::Stdio;
 
 pub fn images() -> anyhow::Result<()> {
-    let mut images = AdminContainer::all_versions_by_image_name();
-    block_on(local_images(&mut images))?;
-    block_on(images_in_use(&mut images))?;
-    let mut image_values = images.values().collect::<Vec<_>>();
+    let all = AdminContainer::all_versions_by_image_name();
+    let local = block_on(local_image_names())?;
+    let in_use = block_on(image_names_in_use())?;
+    let mut image_values: Vec<AdminContainer> = all
+        .into_values()
+        .map(|ac| {
+            let name = ac.image_name();
+            AdminContainer {
+                local_image: local.contains(&name),
+                in_use: in_use.contains(&name),
+                ..ac
+            }
+        })
+        .collect();
     image_values.sort();
 
     let mut table = Table::new();
@@ -19,7 +29,7 @@ pub fn images() -> anyhow::Result<()> {
         .load_preset(UTF8_BORDERS_ONLY)
         .set_content_arrangement(ContentArrangement::Dynamic)
         .set_header(vec!["Version", "Type", "Image"]);
-    for image in image_values {
+    for image in &image_values {
         let cells = vec![
             Cell::new(&image.wildfly_container.version).fg(Color::DarkMagenta),
             Cell::new(image.server_type.short_name()).fg(Color::DarkCyan),
@@ -42,7 +52,7 @@ pub fn images() -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn local_images(images: &mut HashMap<String, AdminContainer>) -> anyhow::Result<()> {
+async fn local_image_names() -> anyhow::Result<HashSet<String>> {
     let mut command = container_images();
     let child = command
         .stdout(Stdio::piped())
@@ -50,15 +60,10 @@ async fn local_images(images: &mut HashMap<String, AdminContainer>) -> anyhow::R
         .spawn()?;
     let output = child.wait_with_output().await?;
     let output = String::from_utf8(output.stdout)?;
-    for line in output.lines() {
-        if let Some(image) = images.get_mut(line) {
-            image.local_image = true
-        }
-    }
-    Ok(())
+    Ok(output.lines().map(String::from).collect())
 }
 
-async fn images_in_use(images: &mut HashMap<String, AdminContainer>) -> anyhow::Result<()> {
+async fn image_names_in_use() -> anyhow::Result<HashSet<String>> {
     let instances = container_ps(
         vec![
             ServerType::Standalone,
@@ -70,10 +75,8 @@ async fn images_in_use(images: &mut HashMap<String, AdminContainer>) -> anyhow::
         false,
     )
     .await?;
-    for instance in instances {
-        if let Some(image) = images.get_mut(&instance.admin_container.image_name()) {
-            image.in_use = true
-        }
-    }
-    Ok(())
+    Ok(instances
+        .iter()
+        .map(|i| i.admin_container.image_name())
+        .collect())
 }

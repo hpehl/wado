@@ -137,19 +137,28 @@ levels to ~30 lines with max 2 levels.
 87 lines with 7 branches, most building the same `(prefix, token, filtered_versions)`
 tuple with minor filtering variations.
 
-### QUAL-3: Mutation of `ContainerInstance` (MEDIUM)
+### QUAL-3: Mutation of `ContainerInstance` (MEDIUM) **(RESOLVED)**
 
-**File:** `src/container.rs:51-73`
+**File:** `src/container.rs`
 
-`container_ports()` takes `&mut ContainerInstance` and mutates `.ports` in place.
-Should return a new `ContainerInstance` with ports set (immutable pattern).
+`container_ports()` took `&mut ContainerInstance` and mutated `.ports` in place.
 
-### QUAL-4: Mutation of `HashMap<String, AdminContainer>` (MEDIUM)
+**Fix:** Changed `container_ports()` to take `&ContainerInstance` and return a new
+`ContainerInstance` with ports set using the `..clone()` spread pattern. Updated
+`container_ps()` to collect results from the futures, and simplified `get_instance()`
+to directly return the result.
 
-**File:** `src/image.rs:45-79`
+### QUAL-4: Mutation of `HashMap<String, AdminContainer>` (MEDIUM) **(RESOLVED)**
 
-`local_images()` and `images_in_use()` mutate `AdminContainer` structs inside
+**File:** `src/image.rs`
+
+`local_images()` and `images_in_use()` mutated `AdminContainer` structs inside
 the HashMap by setting `local_image` and `in_use` fields in place.
+
+**Fix:** Replaced the two mutating functions with `local_image_names()` and
+`image_names_in_use()` that return `HashSet<String>`. The `images()` function
+now maps over all containers, creating new `AdminContainer` values with the
+`local_image` and `in_use` flags set via struct update syntax (`..ac`).
 
 ### QUAL-5: `NO_AUTH` constant (LOW)
 
