@@ -30,10 +30,10 @@ RUN {{{add-user}}}
 {{#if is-standalone~}}
 RUN sed -i {{{allowed-origins}}} $JBOSS_HOME/standalone/configuration/standalone*.xml
 RUN for conf in $JBOSS_HOME/standalone/configuration/standalone*.xml; do sed {{{no-auth}}} "${conf}" > "${conf%%.*}-no-auth.${conf#*.}"; done
-{{~else~}}
+{{else}}
 RUN sed -e '/<servers>/,/<\/servers>/d' -e {{{allowed-origins}}} -i $JBOSS_HOME/domain/configuration/host*.xml
 RUN for conf in $JBOSS_HOME/domain/configuration/host*.xml; do sed {{{no-auth}}} "${conf}" > "${conf%%.*}-no-auth.${conf#*.}"; done
-{{~/if}}
+{{/if}}
 USER jboss
 
 EXPOSE 8080 9990
