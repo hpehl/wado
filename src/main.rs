@@ -128,11 +128,9 @@ fn build_app_full() -> clap::Command {
         })
         .mut_subcommand("cli", |sub_cmd| {
             sub_cmd.mut_arg("wildfly-version", |arg| {
-                arg.value_parser(parse_version)
-                    .add(ArgValueCompleter::new(complete_running_versions(vec![
-                        Standalone,
-                        DomainController,
-                    ])))
+                arg.value_parser(parse_version).add(ArgValueCompleter::new(
+                    complete_running_versions(vec![Standalone, DomainController]),
+                ))
             })
         })
 }
