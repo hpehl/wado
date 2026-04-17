@@ -107,7 +107,11 @@ fn all_versions() -> Vec<Version> {
 }
 
 fn all_simple_versions() -> Vec<String> {
-    all_versions().iter().map(simple_version).collect()
+    let mut versions: Vec<String> = all_versions().iter().map(simple_version).collect();
+    if WildFlyContainer::version("dev").is_ok() {
+        versions.push("dev".to_string());
+    }
+    versions
 }
 
 fn simple_version(version: &Version) -> String {
@@ -129,13 +133,7 @@ mod tests {
         let (prefix_0, prefix_1, suggestions) = find_suggestions(None);
         assert_eq!(prefix_0, "");
         assert_eq!(prefix_1, "");
-        assert_eq!(
-            suggestions,
-            all_versions()
-                .iter()
-                .map(simple_version)
-                .collect::<Vec<String>>()
-        );
+        assert_eq!(suggestions, all_simple_versions());
     }
 
     #[test]
@@ -143,13 +141,7 @@ mod tests {
         let (prefix_0, prefix_1, suggestions) = find_suggestions(Some("--foo"));
         assert_eq!(prefix_0, "");
         assert_eq!(prefix_1, "");
-        assert_eq!(
-            suggestions,
-            all_versions()
-                .iter()
-                .map(simple_version)
-                .collect::<Vec<String>>()
-        );
+        assert_eq!(suggestions, all_simple_versions());
     }
 
     #[test]
@@ -157,13 +149,7 @@ mod tests {
         let (prefix_0, prefix_1, suggestions) = find_suggestions(Some("3x"));
         assert_eq!(prefix_0, "");
         assert_eq!(prefix_1, "3x");
-        assert_eq!(
-            suggestions,
-            all_versions()
-                .iter()
-                .map(simple_version)
-                .collect::<Vec<String>>()
-        );
+        assert_eq!(suggestions, all_simple_versions());
     }
 
     #[test]
@@ -171,14 +157,8 @@ mod tests {
         let (prefix_0, prefix_1, suggestions) = find_suggestions(Some(".."));
         assert_eq!(prefix_0, "");
         assert_eq!(prefix_1, "..");
-        assert_eq!(
-            suggestions,
-            all_versions()
-                .iter()
-                .skip(1)
-                .map(simple_version)
-                .collect::<Vec<String>>()
-        );
+        let expected: Vec<String> = all_simple_versions().into_iter().skip(1).collect();
+        assert_eq!(suggestions, expected);
     }
 
     #[test]
@@ -339,13 +319,7 @@ mod tests {
         let (prefix_0, prefix_1, suggestions) = find_suggestions(Some("26,"));
         assert_eq!(prefix_0, "26,");
         assert_eq!(prefix_1, "");
-        assert_eq!(
-            suggestions,
-            all_versions()
-                .iter()
-                .map(simple_version)
-                .collect::<Vec<String>>()
-        );
+        assert_eq!(suggestions, all_simple_versions());
     }
 
     #[test]
@@ -353,13 +327,7 @@ mod tests {
         let (prefix_0, prefix_1, suggestions) = find_suggestions(Some("26,2"));
         assert_eq!(prefix_0, "26,");
         assert_eq!(prefix_1, "");
-        assert_eq!(
-            suggestions,
-            all_versions()
-                .iter()
-                .map(simple_version)
-                .collect::<Vec<String>>()
-        );
+        assert_eq!(suggestions, all_simple_versions());
     }
 
     #[test]
@@ -389,12 +357,6 @@ mod tests {
         let (prefix_0, prefix_1, suggestions) = find_suggestions(Some("26,3x"));
         assert_eq!(prefix_0, "26,");
         assert_eq!(prefix_1, "3x");
-        assert_eq!(
-            suggestions,
-            all_versions()
-                .iter()
-                .map(simple_version)
-                .collect::<Vec<String>>()
-        );
+        assert_eq!(suggestions, all_simple_versions());
     }
 }
