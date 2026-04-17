@@ -62,7 +62,9 @@ async fn start_push(admin_containers: Vec<AdminContainer>) -> anyhow::Result<Vec
         );
 
         let mut command = container_command()?;
-        if !admin_container.wildfly_container.platforms.is_empty() {
+        if admin_container.wildfly_container.is_dev()
+            || !admin_container.wildfly_container.platforms.is_empty()
+        {
             command.arg("manifest");
         }
         command.arg("push").arg(admin_container.image_name());

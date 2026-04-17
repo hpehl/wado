@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-04-17
+
+### Fixed
+
+- Fix dev container push using `podman push` instead of `podman manifest push`
+
 ## [0.3.0] - 2026-04-17
 
 ### Added
@@ -201,6 +207,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - First release 🎉
+
+[0.3.1]: https://github.com/hpehl/wado/compare/v0.3.0...v0.3.1
 
 [0.2.14]: https://github.com/hpehl/wado/compare/v0.2.13...v0.2.14
 
