@@ -72,8 +72,10 @@ pub fn hc_start(matches: &ArgMatches) -> anyhow::Result<()> {
                 )
             })
             .collect::<Vec<_>>();
-        let running_counts =
-            block_on(running_counts(ServerType::HostController, &wildfly_containers))?;
+        let running_counts = block_on(running_counts(
+            ServerType::HostController,
+            &wildfly_containers,
+        ))?;
         ensure_unique_names(&instances, HostController::copy, |wc| {
             *running_counts.get(&wc.identifier).unwrap_or(&0)
         })

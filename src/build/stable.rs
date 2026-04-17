@@ -3,7 +3,7 @@ use super::common::{
     run_preconditions, write_entrypoint,
 };
 use crate::args::username_password_argument;
-use crate::progress::{stdout_reader, summary, CommandStatus, Progress};
+use crate::progress::{CommandStatus, Progress, stdout_reader, summary};
 use crate::resources::DOCKERFILE;
 use crate::wildfly::AdminContainer;
 use clap::ArgMatches;

@@ -4,9 +4,9 @@ use crate::container::{container_ps, get_instance};
 use crate::progress::Progress;
 use crate::wildfly::ManagementClient;
 use crate::wildfly::ServerType::{DomainController, Standalone};
-use anyhow::{anyhow, bail, Context};
+use anyhow::{Context, anyhow, bail};
 use clap::ArgMatches;
-use fs::{create_dir_all, File};
+use fs::{File, create_dir_all};
 use futures::executor::block_on;
 use std::env::temp_dir;
 use std::fs;
@@ -29,8 +29,10 @@ pub fn cli(matches: &ArgMatches) -> anyhow::Result<()> {
         } else {
             None
         };
-        let instance =
-            block_on(get_instance(wildfly_containers.map(|v| v.as_slice()), Some(name)))?;
+        let instance = block_on(get_instance(
+            wildfly_containers.map(|v| v.as_slice()),
+            Some(name),
+        ))?;
         ManagementClient::from_container_instance(&instance)
     } else if let Some(wildfly_container) = matches.get_one::<WildFlyContainer>("wildfly-version") {
         ManagementClient::custom_port(

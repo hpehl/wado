@@ -54,8 +54,10 @@ pub fn dc_start(matches: &ArgMatches) -> anyhow::Result<()> {
                 )
             })
             .collect::<Vec<_>>();
-        let running_counts =
-            block_on(running_counts(ServerType::DomainController, &wildfly_containers))?;
+        let running_counts = block_on(running_counts(
+            ServerType::DomainController,
+            &wildfly_containers,
+        ))?;
         ensure_unique_names(&instances, DomainController::copy, |wc| {
             *running_counts.get(&wc.identifier).unwrap_or(&0)
         })

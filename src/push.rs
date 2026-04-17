@@ -1,6 +1,6 @@
 use crate::args::admin_containers_argument;
 use crate::container::{container_command, verify_container_command};
-use crate::progress::{stderr_reader, summary, CommandStatus, Progress};
+use crate::progress::{CommandStatus, Progress, stderr_reader, summary};
 use crate::wildfly::AdminContainer;
 use clap::ArgMatches;
 use futures::executor::block_on;

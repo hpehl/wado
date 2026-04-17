@@ -7,11 +7,11 @@ use super::common::{
 };
 use crate::args::username_password_argument;
 use crate::container::container_command;
-use crate::progress::{stdout_reader, CommandStatus, Progress};
+use crate::progress::{CommandStatus, Progress, stdout_reader};
 use crate::resources::DOCKERFILE;
 use crate::wildfly::AdminContainer;
 use clap::ArgMatches;
-use console::{style, Emoji};
+use console::{Emoji, style};
 use indicatif::{HumanDuration, MultiProgress};
 use source::{
     clone_and_build_repos, clone_and_build_repos_verbose, extract_hal_jar, extract_wildfly_dist,
