@@ -8,7 +8,7 @@ use crate::constants::{
 };
 use crate::container::{
     add_servers, container_command, container_network, container_run, ensure_unique_names,
-    run_instances, verify_container_command,
+    run_instances, running_counts, running_instance_count, verify_container_command,
 };
 use crate::wildfly::{AdminContainer, HostController, Server, ServerType};
 use anyhow::bail;
@@ -30,14 +30,25 @@ pub fn hc_start(matches: &ArgMatches) -> anyhow::Result<()> {
     let dc_name = name_argument("domain-controller", matches, || {
         admin_container_dc.container_name()
     });
+    let has_custom_name = matches.get_one::<String>("name").is_some();
     let instances = if wildfly_containers.len() == 1 {
         let admin_container_hc =
             AdminContainer::new(wildfly_container.clone(), ServerType::HostController);
-        vec![HostController::new(
+        let mut instance = HostController::new(
             admin_container_hc.clone(),
             name_argument("name", matches, || admin_container_hc.container_name()),
             dc_name.to_string(),
-        )]
+        );
+        if !has_custom_name {
+            let count = block_on(running_instance_count(
+                ServerType::HostController,
+                &wildfly_container,
+            ))?;
+            if count > 0 {
+                instance = instance.copy(count);
+            }
+        }
+        vec![instance]
     } else {
         if matches.contains_id("name") {
             bail!("Option <name> is not allowed when multiple <wildfly-version> are specified!");
@@ -61,7 +72,11 @@ pub fn hc_start(matches: &ArgMatches) -> anyhow::Result<()> {
                 )
             })
             .collect::<Vec<_>>();
-        ensure_unique_names(&instances, HostController::copy)
+        let running_counts =
+            block_on(running_counts(ServerType::HostController, &wildfly_containers))?;
+        ensure_unique_names(&instances, HostController::copy, |wc| {
+            *running_counts.get(&wc.identifier).unwrap_or(&0)
+        })
     };
     let (username, password) = username_password_argument(matches);
     let mut parameters = parameters_argument(matches);

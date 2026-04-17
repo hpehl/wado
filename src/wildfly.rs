@@ -39,7 +39,7 @@ macro_rules! impl_container_instance {
 
 // ------------------------------------------------------ server type
 
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub enum ServerType {
     Standalone,
     DomainController,

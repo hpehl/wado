@@ -10,6 +10,7 @@ use crate::wildfly::{
 use anyhow::{bail, Error};
 use futures::future::join_all;
 use indicatif::MultiProgress;
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::process::Stdio;
 use tokio::process::Command;
@@ -84,7 +85,7 @@ async fn container_ports(
 
 pub async fn container_ps(
     server_types: Vec<ServerType>,
-    wildfly_containers: Option<&Vec<WildFlyContainer>>,
+    wildfly_containers: Option<&[WildFlyContainer]>,
     name: Option<&str>,
     resolve_ports: bool,
 ) -> anyhow::Result<Vec<ContainerInstance>> {
@@ -174,7 +175,11 @@ pub fn container_stop(name: &str) -> Command {
 
 // ------------------------------------------------------ higher functions
 
-pub fn ensure_unique_names<T>(items: &[T], copy_fn: fn(&T, u16) -> T) -> Vec<T>
+pub fn ensure_unique_names<T>(
+    items: &[T],
+    copy_fn: fn(&T, u16) -> T,
+    running_count_fn: impl Fn(&WildFlyContainer) -> u16,
+) -> Vec<T>
 where
     T: Clone,
     T: HasWildFlyContainer,
@@ -183,15 +188,51 @@ where
         items.chunk_by(|a, b| a.wildfly_container().identifier == b.wildfly_container().identifier);
     let mut unique_names = vec![];
     for chunk in chunks {
-        if chunk.len() > 1 {
+        let running = running_count_fn(chunk[0].wildfly_container());
+        if chunk.len() > 1 || running > 0 {
             for (index, item) in chunk.iter().enumerate() {
-                unique_names.push(copy_fn(item, index as u16));
+                unique_names.push(copy_fn(item, running + index as u16));
             }
         } else {
             unique_names.push(chunk[0].clone());
         }
     }
     unique_names
+}
+
+pub async fn running_instance_count(
+    server_type: ServerType,
+    wildfly_container: &WildFlyContainer,
+) -> anyhow::Result<u16> {
+    let instances = container_ps(
+        vec![server_type],
+        Some(std::slice::from_ref(wildfly_container)),
+        None,
+        false,
+    )
+    .await?;
+    Ok(instances.len() as u16)
+}
+
+pub async fn running_counts(
+    server_type: ServerType,
+    wildfly_containers: &[WildFlyContainer],
+) -> anyhow::Result<HashMap<u16, u16>> {
+    let mut seen = HashSet::new();
+    let unique: Vec<_> = wildfly_containers
+        .iter()
+        .filter(|wc| seen.insert(wc.identifier))
+        .collect();
+    let futures: Vec<_> = unique
+        .iter()
+        .map(|wc| running_instance_count(server_type, wc))
+        .collect();
+    let results = join_all(futures).await;
+    let mut counts = HashMap::new();
+    for (wc, result) in unique.iter().zip(results) {
+        counts.insert(wc.identifier, result?);
+    }
+    Ok(counts)
 }
 
 pub fn add_servers(mut command: Command, hostname: &str, servers: Vec<Server>) -> Command {
@@ -250,7 +291,7 @@ where
 }
 
 pub async fn get_instance(
-    wildfly_containers: Option<&Vec<WildFlyContainer>>,
+    wildfly_containers: Option<&[WildFlyContainer]>,
     name: Option<&str>,
 ) -> anyhow::Result<ContainerInstance> {
     let instances = container_ps(
@@ -297,7 +338,7 @@ pub async fn get_instance(
 
 pub async fn stop_instances(
     server_type: ServerType,
-    wildfly_containers: Option<&Vec<WildFlyContainer>>,
+    wildfly_containers: Option<&[WildFlyContainer]>,
     name: Option<&str>,
 ) -> anyhow::Result<()> {
     let instances = container_ps(vec![server_type], wildfly_containers, name, false).await?;

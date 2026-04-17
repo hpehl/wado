@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dev container support for building from WildFly and HAL source branches
 - Add comma-separated version completion tests
 
+### Added
+
+- Auto-increment container names and ports when starting duplicate versions (e.g., `wado start dev` twice, or `wado start dev` then `wado start 2xdev`)
+
 ### Changed
 
 - Extract shared build helpers into `build/common.rs` and unify build module structure

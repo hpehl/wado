@@ -29,7 +29,8 @@ pub fn cli(matches: &ArgMatches) -> anyhow::Result<()> {
         } else {
             None
         };
-        let instance = block_on(get_instance(wildfly_containers, Some(name)))?;
+        let instance =
+            block_on(get_instance(wildfly_containers.map(|v| v.as_slice()), Some(name)))?;
         ManagementClient::from_container_instance(&instance)
     } else if let Some(wildfly_container) = matches.get_one::<WildFlyContainer>("wildfly-version") {
         ManagementClient::custom_port(

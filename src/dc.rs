@@ -5,7 +5,7 @@ use crate::args::{
 use crate::constants::{HOSTNAME_VARIABLE, WILDFLY_ADMIN_CONTAINER};
 use crate::container::{
     add_servers, container_network, container_run, ensure_unique_names, run_instances,
-    verify_container_command,
+    running_counts, running_instance_count, verify_container_command,
 };
 use crate::wildfly::{AdminContainer, DomainController, Ports, Server, ServerType};
 use clap::ArgMatches;
@@ -17,15 +17,29 @@ pub fn dc_start(matches: &ArgMatches) -> anyhow::Result<()> {
     verify_container_command()?;
 
     let wildfly_containers = versions_argument(matches);
+    let has_custom_name = matches.get_one::<String>("name").is_some();
+    let has_custom_ports = matches.get_one::<u16>("http").is_some()
+        || matches.get_one::<u16>("management").is_some()
+        || matches.get_one::<u16>("offset").is_some();
     let instances = if wildfly_containers.len() == 1 {
         let wildfly_container = wildfly_containers[0].clone();
         let admin_container =
             AdminContainer::new(wildfly_container.clone(), ServerType::DomainController);
-        vec![DomainController::new(
+        let mut instance = DomainController::new(
             admin_container.clone(),
             name_argument("name", matches, || admin_container.container_name()),
             port_argument(matches, &wildfly_container),
-        )]
+        );
+        if !has_custom_name && !has_custom_ports {
+            let count = block_on(running_instance_count(
+                ServerType::DomainController,
+                &wildfly_container,
+            ))?;
+            if count > 0 {
+                instance = instance.copy(count);
+            }
+        }
+        vec![instance]
     } else {
         validate_single_version(matches, &["name", "http", "management", "offset"])?;
         let instances = wildfly_containers
@@ -40,7 +54,11 @@ pub fn dc_start(matches: &ArgMatches) -> anyhow::Result<()> {
                 )
             })
             .collect::<Vec<_>>();
-        ensure_unique_names(&instances, DomainController::copy)
+        let running_counts =
+            block_on(running_counts(ServerType::DomainController, &wildfly_containers))?;
+        ensure_unique_names(&instances, DomainController::copy, |wc| {
+            *running_counts.get(&wc.identifier).unwrap_or(&0)
+        })
     };
     block_on(start_instances(
         instances,

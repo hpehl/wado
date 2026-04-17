@@ -23,7 +23,10 @@ fn get_management_clients(matches: &ArgMatches) -> anyhow::Result<Vec<Management
         {
             bail!("Option <name> is not allowed when multiple <wildfly-version> are specified!");
         }
-        let instance = block_on(get_instance(wildfly_containers, Some(name)))?;
+        let instance = block_on(get_instance(
+            wildfly_containers.map(|v| v.as_slice()),
+            Some(name),
+        ))?;
         Ok(vec![ManagementClient::from_container_instance(&instance)])
     } else if let Some(wildfly_containers) =
         matches.get_one::<Vec<WildFlyContainer>>("wildfly-version")

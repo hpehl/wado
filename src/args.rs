@@ -121,7 +121,11 @@ pub fn stop_command(server_type: ServerType, matches: &ArgMatches) -> anyhow::Re
     verify_container_command()?;
     let wildfly_containers = matches.get_one::<Vec<WildFlyContainer>>("wildfly-version");
     let name = matches.get_one::<String>("name").map(|s| s.as_str());
-    block_on(stop_instances(server_type, wildfly_containers, name))
+    block_on(stop_instances(
+        server_type,
+        wildfly_containers.map(|v| v.as_slice()),
+        name,
+    ))
 }
 
 pub fn validate_single_version(matches: &ArgMatches, options: &[&str]) -> anyhow::Result<()> {
