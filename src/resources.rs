@@ -9,12 +9,18 @@
 
 // language=Dockerfile
 pub static DOCKERFILE: &str = r#"{{#if is-dev~}}
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:21-ubi9-minimal
+
+RUN microdnf update -y && \
+    microdnf install --best --nodocs -y unzip && \
+    microdnf clean all
+
+RUN groupadd -r jboss -g 1000 && useradd -u 1000 -r -g jboss -m -d /opt/jboss -s /sbin/nologin -c "JBoss user" jboss && \
+    chmod 755 /opt/jboss
 
 ENV JBOSS_HOME=/opt/jboss/wildfly
 ENV WILDFLY_VERSION=development
 
-RUN groupadd -r jboss && useradd -r -g jboss -m -d /opt/jboss jboss
 COPY wildfly $JBOSS_HOME
 {{~else~}}
 FROM {{base-image}}
@@ -34,6 +40,11 @@ RUN for conf in $JBOSS_HOME/standalone/configuration/standalone*.xml; do sed {{{
 RUN sed -e '/<servers>/,/<\/servers>/d' -e {{{allowed-origins}}} -i $JBOSS_HOME/domain/configuration/host*.xml
 RUN for conf in $JBOSS_HOME/domain/configuration/host*.xml; do sed {{{no-auth}}} "${conf}" > "${conf%%.*}-no-auth.${conf#*.}"; done
 {{/if}}
+{{#if is-dev~}}
+RUN chown -R jboss:0 ${JBOSS_HOME} && \
+    chmod -R g+rw ${JBOSS_HOME}
+ENV LAUNCH_JBOSS_IN_BACKGROUND=true
+{{/if~}}
 USER jboss
 
 EXPOSE 8080 9990
@@ -49,7 +60,7 @@ CMD ["-c", "standalone.xml"]
 // ------------------------------------------------------ standalone
 
 // language=shell script
-pub static STANDALONE_ENTRYPOINT_SH: &str = r#"#!/bin/sh
+pub static STANDALONE_ENTRYPOINT_SH: &str = r#"#!/bin/bash
 
 if [[ ! -z $WADO_BOOTSTRAP_OPERATIONS ]]; then
     $JBOSS_HOME/bin/standalone.sh $@ --admin-only &
@@ -68,7 +79,7 @@ $JBOSS_HOME/bin/standalone.sh $@
 // ------------------------------------------------------ domain controller
 
 // language=shell script
-pub static DOMAIN_CONTROLLER_ENTRYPOINT_SH: &str = r#"#!/bin/sh
+pub static DOMAIN_CONTROLLER_ENTRYPOINT_SH: &str = r#"#!/bin/bash
 
 $JBOSS_HOME/bin/domain.sh $@ --admin-only &
 until `$JBOSS_HOME/bin/jboss-cli.sh -c "/host=primary:read-attribute(name=host-state)" 2> /dev/null | grep -q running`; do
@@ -96,7 +107,7 @@ $JBOSS_HOME/bin/domain.sh $@
 // ------------------------------------------------------ host controller
 
 // language=shell script
-pub static HOST_CONTROLLER_ENTRYPOINT_SH: &str = r#"#!/bin/sh
+pub static HOST_CONTROLLER_ENTRYPOINT_SH: &str = r#"#!/bin/bash
 
 $JBOSS_HOME/bin/domain.sh $@ --admin-only &
 until `$JBOSS_HOME/bin/jboss-cli.sh -c "/host=$HOSTNAME:read-attribute(name=host-state)" 2> /dev/null | grep -q running`; do

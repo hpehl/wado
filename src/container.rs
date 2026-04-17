@@ -2,12 +2,12 @@ use crate::constants::{
     BOOTSTRAP_OPERATIONS_VARIABLE, LABEL_NAME, SERVERS_VARIABLE, WILDFLY_ADMIN_CONTAINER,
     WILDFLY_ADMIN_CONTAINER_REPOSITORY,
 };
-use crate::progress::{Progress, stderr_reader, summary};
+use crate::progress::{stderr_reader, summary, Progress};
 use crate::wildfly::ServerType::{DomainController, Standalone};
 use crate::wildfly::{
     ContainerConfig, ContainerInstance, HasWildFlyContainer, Ports, Server, ServerType,
 };
-use anyhow::{Error, bail};
+use anyhow::{bail, Error};
 use futures::future::join_all;
 use indicatif::MultiProgress;
 use std::path::PathBuf;
@@ -219,7 +219,10 @@ where
 
     for instance in instances {
         let progress = Progress::new(
-            &instance.admin_container().wildfly_container.short_version,
+            &instance
+                .admin_container()
+                .wildfly_container
+                .display_version(),
             &instance.admin_container().image_name(),
         );
         multi_progress.add(progress.bar.clone());
@@ -269,8 +272,8 @@ pub async fn get_instance(
                 name,
                 wildfly_containers
                     .iter()
-                    .map(|x| x.short_version.as_str())
-                    .collect::<Vec<&str>>()
+                    .map(|x| x.display_version())
+                    .collect::<Vec<String>>()
                     .join(", ")
             )
         } else if let (Some(name), None) = (name, wildfly_containers) {
@@ -280,8 +283,8 @@ pub async fn get_instance(
                 "for version '{}'",
                 wildfly_containers
                     .iter()
-                    .map(|x| x.short_version.as_str())
-                    .collect::<Vec<&str>>()
+                    .map(|x| x.display_version())
+                    .collect::<Vec<String>>()
                     .join(", ")
             )
         } else {
@@ -305,7 +308,7 @@ pub async fn stop_instances(
 
     for instance in instances {
         let progress = Progress::new(
-            &instance.admin_container.wildfly_container.short_version,
+            &instance.admin_container.wildfly_container.display_version(),
             &instance.admin_container.image_name(),
         );
         multi_progress.add(progress.bar.clone());

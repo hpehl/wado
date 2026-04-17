@@ -7,11 +7,11 @@ use super::common::{
 };
 use crate::args::username_password_argument;
 use crate::container::container_command;
-use crate::progress::CommandStatus;
+use crate::progress::{stdout_reader, CommandStatus, Progress};
 use crate::resources::DOCKERFILE;
 use crate::wildfly::AdminContainer;
 use clap::ArgMatches;
-use console::{Emoji, style};
+use console::{style, Emoji};
 use indicatif::{HumanDuration, MultiProgress};
 use source::{
     clone_and_build_repos, clone_and_build_repos_verbose, extract_hal_jar, extract_wildfly_dist,
@@ -22,9 +22,8 @@ use std::fs::File;
 use std::io::Write;
 use std::path::Path;
 use std::process::Stdio;
-use task::DevTask;
 use tempfile::tempdir;
-use tokio::io::{AsyncBufReadExt, BufReader};
+use tokio::task::JoinSet;
 use tokio::time::Instant;
 use wildfly_container_versions::VERSIONS;
 
@@ -244,16 +243,19 @@ async fn build_containers(
     password_path: &Path,
     wildfly_dist: &Path,
 ) -> anyhow::Result<Vec<CommandStatus>> {
-    let multi = MultiProgress::new();
-    let mut statuses = Vec::new();
+    let multi_progress = MultiProgress::new();
+    let mut commands = JoinSet::new();
 
-    for admin_container in &admin_containers {
-        let mut task = DevTask::new(&multi, &admin_container.image_name());
-        task.set_progress("building container...");
+    for admin_container in admin_containers {
+        let progress = Progress::join(
+            &multi_progress,
+            &admin_container.wildfly_container.display_version(),
+            &admin_container.image_name(),
+        );
 
         let temp_dir = tempdir()?;
         let mut child = run_preconditions(dev_podman_build(
-            admin_container,
+            &admin_container,
             temp_dir.as_ref(),
             username_path,
             password_path,
@@ -265,48 +267,22 @@ async fn build_containers(
         .spawn()
         .map_err(|e| anyhow::anyhow!("Unable to run container build: {}", e))?;
 
-        let stdout = child.stdout.take().expect("No stdout handle");
-        let mut stdout_lines = BufReader::new(stdout).lines();
-        while let Some(line) = stdout_lines.next_line().await? {
-            task.append_line(&line);
-            let trimmed = line.trim();
-            if let Some(step) = trimmed.strip_prefix("STEP ")
-                && let Some(colon_pos) = step.find(':')
-            {
-                task.set_progress(&format!("STEP {}", &step[..colon_pos]));
-            }
-        }
-
-        let output = child.wait_with_output().await;
-        match output {
-            Ok(output) => {
-                if output.status.success() {
-                    task.finish_success(None);
-                    statuses.push(CommandStatus::success(&admin_container.image_name()));
-                } else {
-                    let err = format!("exit code {}", output.status.code().unwrap_or(-1));
-                    task.finish_error(&err);
-                    task.print_errors();
-                    statuses.push(CommandStatus::error(
-                        &admin_container.image_name(),
-                        String::from_utf8_lossy(&output.stderr)
-                            .replace('\n', " ")
-                            .as_str(),
-                    ));
-                }
-            }
-            Err(e) => {
-                let err = format!("failed: {}", e);
-                task.finish_error(&err);
-                task.print_errors();
-                statuses.push(CommandStatus::error(&admin_container.image_name(), &err));
-            }
-        }
-
-        temp_dir.close()?;
+        let stdout = stdout_reader(&mut child);
+        let progress_clone = progress.clone();
+        commands.spawn(async move {
+            let output = child.wait_with_output().await;
+            let status = progress.finish(output, None);
+            temp_dir
+                .close()
+                .expect("Unable to close temporary directory.");
+            status
+        });
+        tokio::spawn(async move {
+            progress_clone.trace_progress(stdout).await;
+        });
     }
 
-    Ok(statuses)
+    Ok(commands.join_all().await)
 }
 
 // ------------------------------------------------------ container build (verbose)

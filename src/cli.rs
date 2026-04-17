@@ -4,9 +4,9 @@ use crate::container::{container_ps, get_instance};
 use crate::progress::Progress;
 use crate::wildfly::ManagementClient;
 use crate::wildfly::ServerType::{DomainController, Standalone};
-use anyhow::{Context, anyhow, bail};
+use anyhow::{anyhow, bail, Context};
 use clap::ArgMatches;
-use fs::{File, create_dir_all};
+use fs::{create_dir_all, File};
 use futures::executor::block_on;
 use std::env::temp_dir;
 use std::fs;
@@ -84,7 +84,7 @@ async fn connect_to_cli(
     parameters: Vec<String>,
 ) -> anyhow::Result<()> {
     let progress = Progress::new(
-        &management_client.wildfly_container.short_version,
+        &management_client.wildfly_container.display_version(),
         &management_client.wildfly_container.image_name(),
     );
 

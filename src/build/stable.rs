@@ -3,7 +3,7 @@ use super::common::{
     run_preconditions, write_entrypoint,
 };
 use crate::args::username_password_argument;
-use crate::progress::{CommandStatus, Progress, stdout_reader, summary};
+use crate::progress::{stdout_reader, summary, CommandStatus, Progress};
 use crate::resources::DOCKERFILE;
 use crate::wildfly::AdminContainer;
 use clap::ArgMatches;
@@ -80,7 +80,7 @@ async fn start_builds(
     for admin_container in admin_containers {
         let progress = Progress::join(
             &multi_progress,
-            &admin_container.version_label(),
+            &admin_container.wildfly_container.display_version(),
             &admin_container.image_name(),
         );
 

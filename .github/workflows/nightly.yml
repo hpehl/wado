@@ -23,22 +23,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-
       - uses: dtolnay/rust-toolchain@stable
-
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 21
-
       - name: Build wado
         run: cargo build --release
-
       - name: Login to Quay.io
         run: podman login -u ${{ secrets.QUAY_USERNAME }} -p ${{ secrets.QUAY_PASSWORD }} quay.io
-
       - name: Build dev containers
         run: ./target/release/wado build dev
-
       - name: Push dev containers
         run: ./target/release/wado push dev

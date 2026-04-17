@@ -28,7 +28,8 @@ pub fn ps(matches: &ArgMatches) -> anyhow::Result<()> {
         .set_header(vec!["Version", "Type", "Name", "Ports", "Status", "ID"]);
     for instance in instances {
         table.add_row(vec![
-            Cell::new(&instance.admin_container.wildfly_container.version).fg(Color::DarkMagenta),
+            Cell::new(instance.admin_container.wildfly_container.display_version())
+                .fg(Color::DarkMagenta),
             Cell::new(instance.admin_container.server_type.short_name()).fg(Color::DarkCyan),
             Cell::new(instance.name).fg(Color::DarkYellow),
             if let Some(ports) = instance.ports {

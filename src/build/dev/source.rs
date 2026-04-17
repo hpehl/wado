@@ -11,8 +11,8 @@ use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
 
 const MAVEN_CACHE_VOLUME: &str = "wado-maven-cache";
-pub(super) const WILDFLY_BUILD_IMAGE: &str = "maven:3.9-eclipse-temurin-21";
-pub(super) const HAL_BUILD_IMAGE: &str = "maven:3.9-eclipse-temurin-11";
+const WILDFLY_BUILD_IMAGE: &str = "maven:3.9-eclipse-temurin-21";
+const HAL_BUILD_IMAGE: &str = "maven:3.9-eclipse-temurin-11";
 
 const WILDFLY_REPO: &str = "https://github.com/wildfly/wildfly.git";
 const WILDFLY_MAVEN_ARGS: &[&str] = &["-pl", "dist", "-am"];

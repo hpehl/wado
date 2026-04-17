@@ -5,7 +5,7 @@ use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::fmt::{Debug, Display};
 use std::str::FromStr;
-use wildfly_container_versions::{VERSIONS, WildFlyContainer};
+use wildfly_container_versions::{WildFlyContainer, VERSIONS};
 
 // ------------------------------------------------------ traits
 
@@ -179,14 +179,6 @@ impl AdminContainer {
                 "{}:{}.{}",
                 base_name, self.wildfly_container.version, self.wildfly_container.suffix
             )
-        }
-    }
-
-    pub fn version_label(&self) -> String {
-        if self.wildfly_container.is_dev() {
-            "dev".to_string()
-        } else {
-            self.wildfly_container.short_version.clone()
         }
     }
 

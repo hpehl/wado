@@ -1,6 +1,6 @@
 use crate::args::admin_containers_argument;
 use crate::container::{container_command, verify_container_command};
-use crate::progress::{CommandStatus, Progress, stderr_reader, summary};
+use crate::progress::{stderr_reader, summary, CommandStatus, Progress};
 use crate::wildfly::AdminContainer;
 use clap::ArgMatches;
 use futures::executor::block_on;
@@ -57,7 +57,7 @@ async fn start_push(admin_containers: Vec<AdminContainer>) -> anyhow::Result<Vec
     for admin_container in admin_containers {
         let progress = Progress::join(
             &multi_progress,
-            &admin_container.version_label(),
+            &admin_container.wildfly_container.display_version(),
             &admin_container.image_name(),
         );
 
