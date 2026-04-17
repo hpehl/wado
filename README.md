@@ -14,6 +14,7 @@ The container names and published ports follow default values based on the WildF
 - [Containers](#containers)
 - [Commands](#commands)
     - [Build](#build)
+        - [Dev Build](#dev-build)
     - [Standalone](#standalone)
         - [Start](#start)
         - [Stop](#stop)
@@ -118,6 +119,18 @@ this [BNF](https://bnfplayground.pauliankline.com/?bnf=%3Cexpression%3E%20%3A%3A
 All supported versions are
 listed [here](https://github.com/hpehl/wildfly-container-versions?tab=readme-ov-file#supported-versions).
 
+## Dev Version
+
+In addition to released versions, the special keyword `dev` can be used to build WildFly from source. Dev builds clone
+and compile the [WildFly](https://github.com/wildfly/wildfly) and [HAL console](https://github.com/hal/console)
+repositories from GitHub, integrate the console into the WildFly distribution, and build container images from the
+result. See [Build](#build) for details.
+
+Dev containers use the name `wado-<type>-dev` (e.g., `wado-sa-dev`) and the ports `8000` / `9000`.
+
+> [!NOTE]
+> Dev builds cannot be mixed with versioned builds. Use `wado build dev` or `wado build <versions>`, but not both.
+
 # Images
 
 The images are based on the official WildFly images, are hosted at https://quay.io/organization/wado, and come in three
@@ -158,7 +171,7 @@ Domain and host controller images are changed so that no servers are configured.
 The default name for containers is `wado-<type>-<version>[-index]`
 
 - Type: `sa|dc|hc` - standalone, domain or host controller
-- Version: `<major><minor>`
+- Version: `<major><minor>` or `dev` for dev builds
 - Index: If multiple containers of the same version and type are used, a zero-based index is added to the name.
 
 ## Ports
@@ -173,7 +186,7 @@ So for WildFly 34, the port mappings are 8340 and 9340, and for WildFly 26.1, th
 If multiple containers of the same version are used, the port is increased by one from the second container onwards.
 
 ```shell
-wado start 26.1,28..30,2x32,3x35
+wado start 26.1,28..30,2x32,3x35,dev
 ```
 
 | Version | Name          | HTTP | Management |
@@ -187,6 +200,7 @@ wado start 26.1,28..30,2x32,3x35
 | 35      | wado-sa-350-0 | 8350 | 9350       |
 | 35      | wado-sa-350-1 | 8351 | 9351       |
 | 35      | wado-sa-350-2 | 8352 | 9352       |
+| dev     | wado-sa-dev   | 8000 | 9000       |
 
 # Commands
 
@@ -231,7 +245,7 @@ are available at https://quay.io/organization/wado. If you want to change the us
 own local image.
 
 ```shell
-Build WildFly images
+Build images
 
 Usage: wado build [OPTIONS] <wildfly-version>
 
@@ -239,13 +253,16 @@ Arguments:
   <wildfly-version>  A single WildFly version or version range
 
 Options:
-  -u, --username <username>  The username of the management user [default: admin]
-  -p, --password <password>  The password of the management user [default: admin]
-      --standalone           Build standalone images only
-      --domain               Build domain controller and host controller images only
-      --chunks <chunks>      Build the images in chunks of this size. If not specified, the images are built in one go.
-  -h, --help                 Print help
-  -V, --version              Print version
+  -u, --username <username>              The username of the management user [default: admin]
+  -p, --password <password>              The password of the management user [default: admin]
+      --standalone                       Build standalone images only
+      --domain                           Build domain controller and host controller images only
+      --chunks <chunks>                  Build the images in chunks of this size. If not specified, the images are built in one go.
+      --wildfly-branch <wildfly-branch>  The WildFly branch to build from (only used for dev builds) [default: main]
+      --hal-branch <hal-branch>          The HAL console branch to build from (only used for dev builds) [default: main]
+  -v, --verbose                          Print build output directly to stdout instead of using progress spinners (useful for CI)
+  -h, --help                             Print help
+  -V, --version                          Print version
 ```
 
 **Examples**
@@ -256,8 +273,24 @@ wado build 34 --username alice --password "Admin#70365"
 wado build 10,23,34 --standalone
 wado build 20..29 --domain
 wado build 10,20..29,34
-wado build .. --chuncks 5
+wado build .. --chunks 5
 ```
+
+### Dev Build
+
+Use `dev` as the version to build WildFly from source. This clones and compiles both the WildFly and HAL console
+repositories, integrates the console into the distribution, and builds container images from the result.
+
+```shell
+wado build dev
+wado build dev --standalone
+wado build dev --wildfly-branch my-feature-branch
+wado build dev --hal-branch my-console-branch
+wado build dev --verbose
+```
+
+The `--wildfly-branch` and `--hal-branch` options control which branch to build from (both default to `main`).
+Use `--verbose` to see the full Maven build output instead of progress spinners.
 
 ## Standalone
 
