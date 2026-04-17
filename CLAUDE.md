@@ -27,11 +27,22 @@ The crate is both a library (`src/lib.rs`) and a binary (`src/main.rs`).
 - **`main.rs`** - Entry point. Builds the full CLI with clap, wires up argument parsers and version completers, dispatches subcommands. Uses `#[tokio::main]` for async runtime.
 - **`app.rs`** - Defines the CLI structure (subcommands, args, flags) using clap's builder API. Separated from `main.rs` so `lib.rs` can reuse it without the parser/completer wiring.
 - **`wildfly.rs`** - Core domain model: `ServerType` (sa/dc/hc), `AdminContainer`, `Ports`, `StandaloneInstance`, `DomainController`, `HostController`, `ContainerInstance`, `Server`, `ManagementClient`. Contains the `Server::parse_server()` parser and all unit tests.
-- **`container.rs`** - Orchestrates podman/docker commands: build, run, stop, ps, network, inspect. Detects container runtime via `which`. All container operations are async (tokio).
-- **`build.rs`** - Image build logic. Renders Dockerfiles from Handlebars templates, manages secrets for credentials, supports chunked parallel builds.
+- **`container.rs`** - Orchestrates podman/docker commands: run, stop, ps, network, inspect. Detects container runtime via `which`. Handles auto-incrementing container names/ports for duplicate versions (`ensure_unique_names`, `running_counts`). All container operations are async (tokio).
+- **`standalone.rs`** - Standalone server start/stop logic. Builds `StandaloneInstance` from CLI args.
+- **`dc.rs`** - Domain controller start/stop logic. Builds `DomainController` from CLI args.
+- **`hc.rs`** - Host controller start/stop logic. Builds `HostController` from CLI args, connects to a running domain controller.
+- **`build/`** - Image build logic (module directory: `mod.rs`, `common.rs`, `stable.rs`, `dev.rs`). Renders Dockerfiles from Handlebars templates, manages secrets for credentials, supports chunked parallel builds. Separate paths for stable and dev image builds.
+- **`cli.rs`** - JBoss CLI integration. Downloads and runs `jboss-cli` against running containers.
+- **`console.rs`** - Opens the WildFly management console in a browser for running containers.
+- **`ps.rs`** - Lists running wado containers in a formatted table.
+- **`image.rs`** - Lists local wado images with status (local, in-use).
+- **`push.rs`** - Pushes built images to the container registry, supports chunked parallel pushes.
+- **`progress.rs`** - Progress bar utilities for long-running container operations.
+- **`topology.rs`** - Topology subcommand (not yet implemented).
 - **`resources.rs`** - Embedded Dockerfile templates and entrypoint shell scripts for all three server types (standalone, domain controller, host controller).
 - **`constants.rs`** - Container naming, labels, environment variables, sed expressions for XML config modifications.
 - **`args.rs`** - Shared argument extraction helpers used across subcommands.
+- **`completions.rs`** - Shell completion generation for bash, zsh, fish, etc.
 - **`wildfly_version.rs`** - Shell completion logic for WildFly version arguments.
 
 ### External Dependency
