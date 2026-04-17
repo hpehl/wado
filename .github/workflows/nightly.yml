@@ -36,6 +36,6 @@ jobs:
       - name: Build wado
         run: cargo build --release
       - name: Build dev containers
-        run: ./target/release/wado build dev
+        run: ./target/release/wado build dev --verbose
       - name: Push dev containers
         run: ./target/release/wado push dev
