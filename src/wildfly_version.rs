@@ -19,6 +19,21 @@ pub fn complete_versions(current: &OsStr) -> Vec<CompletionCandidate> {
         .collect()
 }
 
+pub fn complete_running_names(
+    server_types: Vec<ServerType>,
+) -> impl Fn(&OsStr) -> Vec<CompletionCandidate> {
+    move |_current: &OsStr| {
+        let instances = block_on(container_ps(server_types.clone(), None, None, false));
+        match instances {
+            Ok(instances) => instances
+                .iter()
+                .map(|i| CompletionCandidate::new(i.name.clone()))
+                .collect(),
+            Err(_) => vec![],
+        }
+    }
+}
+
 pub fn complete_running_versions(
     server_types: Vec<ServerType>,
 ) -> impl Fn(&OsStr) -> Vec<CompletionCandidate> {

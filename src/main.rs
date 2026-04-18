@@ -30,7 +30,7 @@ use crate::standalone::{standalone_start, standalone_stop};
 use crate::topology::{topology_start, topology_stop};
 use crate::wildfly::Server;
 use crate::wildfly::ServerType::{DomainController, HostController, Standalone};
-use crate::wildfly_version::{complete_running_versions, complete_versions};
+use crate::wildfly_version::{complete_running_names, complete_running_versions, complete_versions};
 use anyhow::Result;
 use app::build_app;
 use clap::value_parser;
@@ -60,12 +60,18 @@ fn build_app_full() -> clap::Command {
             })
         })
         .mut_subcommand("stop", |sub_cmd| {
-            sub_cmd.mut_arg("wildfly-version", |arg| {
-                arg.value_parser(parse_version_enumeration)
-                    .add(ArgValueCompleter::new(complete_running_versions(vec![
+            sub_cmd
+                .mut_arg("wildfly-version", |arg| {
+                    arg.value_parser(parse_version_enumeration)
+                        .add(ArgValueCompleter::new(complete_running_versions(vec![
+                            Standalone,
+                        ])))
+                })
+                .mut_arg("name", |arg| {
+                    arg.add(ArgValueCompleter::new(complete_running_names(vec![
                         Standalone,
                     ])))
-            })
+                })
         })
         .mut_subcommand("dc", |sub_cmd| {
             sub_cmd.mut_subcommand("start", |sub_sub_cmd| {
@@ -79,12 +85,18 @@ fn build_app_full() -> clap::Command {
         })
         .mut_subcommand("dc", |sub_cmd| {
             sub_cmd.mut_subcommand("stop", |sub_sub_cmd| {
-                sub_sub_cmd.mut_arg("wildfly-version", |arg| {
-                    arg.value_parser(parse_version_enumeration)
-                        .add(ArgValueCompleter::new(complete_running_versions(vec![
+                sub_sub_cmd
+                    .mut_arg("wildfly-version", |arg| {
+                        arg.value_parser(parse_version_enumeration)
+                            .add(ArgValueCompleter::new(complete_running_versions(vec![
+                                DomainController,
+                            ])))
+                    })
+                    .mut_arg("name", |arg| {
+                        arg.add(ArgValueCompleter::new(complete_running_names(vec![
                             DomainController,
                         ])))
-                })
+                    })
             })
         })
         .mut_subcommand("hc", |sub_cmd| {
@@ -95,16 +107,27 @@ fn build_app_full() -> clap::Command {
                             .add(ArgValueCompleter::new(complete_versions))
                     })
                     .mut_arg("server", |arg| arg.value_parser(parse_servers))
+                    .mut_arg("domain-controller", |arg| {
+                        arg.add(ArgValueCompleter::new(complete_running_names(vec![
+                            DomainController,
+                        ])))
+                    })
             })
         })
         .mut_subcommand("hc", |sub_cmd| {
             sub_cmd.mut_subcommand("stop", |sub_sub_cmd| {
-                sub_sub_cmd.mut_arg("wildfly-version", |arg| {
-                    arg.value_parser(parse_version_enumeration)
-                        .add(ArgValueCompleter::new(complete_running_versions(vec![
+                sub_sub_cmd
+                    .mut_arg("wildfly-version", |arg| {
+                        arg.value_parser(parse_version_enumeration)
+                            .add(ArgValueCompleter::new(complete_running_versions(vec![
+                                HostController,
+                            ])))
+                    })
+                    .mut_arg("name", |arg| {
+                        arg.add(ArgValueCompleter::new(complete_running_names(vec![
                             HostController,
                         ])))
-                })
+                    })
             })
         })
         .mut_subcommand("topology", |sub_cmd| {
@@ -118,20 +141,34 @@ fn build_app_full() -> clap::Command {
             })
         })
         .mut_subcommand("console", |sub_cmd| {
-            sub_cmd.mut_arg("wildfly-version", |arg| {
-                arg.value_parser(parse_version_enumeration)
-                    .add(ArgValueCompleter::new(complete_running_versions(vec![
+            sub_cmd
+                .mut_arg("wildfly-version", |arg| {
+                    arg.value_parser(parse_version_enumeration)
+                        .add(ArgValueCompleter::new(complete_running_versions(vec![
+                            Standalone,
+                            DomainController,
+                        ])))
+                })
+                .mut_arg("name", |arg| {
+                    arg.add(ArgValueCompleter::new(complete_running_names(vec![
                         Standalone,
                         DomainController,
                     ])))
-            })
+                })
         })
         .mut_subcommand("cli", |sub_cmd| {
-            sub_cmd.mut_arg("wildfly-version", |arg| {
-                arg.value_parser(parse_version).add(ArgValueCompleter::new(
-                    complete_running_versions(vec![Standalone, DomainController]),
-                ))
-            })
+            sub_cmd
+                .mut_arg("wildfly-version", |arg| {
+                    arg.value_parser(parse_version).add(ArgValueCompleter::new(
+                        complete_running_versions(vec![Standalone, DomainController]),
+                    ))
+                })
+                .mut_arg("name", |arg| {
+                    arg.add(ArgValueCompleter::new(complete_running_names(vec![
+                        Standalone,
+                        DomainController,
+                    ])))
+                })
         })
 }
 
