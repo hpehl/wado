@@ -1,13 +1,8 @@
-use std::collections::BTreeSet;
 use std::ffi::OsStr;
 
 use clap_complete::engine::CompletionCandidate;
-use futures::executor::block_on;
 use semver::Version;
 use wildfly_container_versions::{VERSIONS, WildFlyContainer};
-
-use crate::container::container_ps;
-use crate::wildfly::ServerType;
 
 pub fn complete_versions(current: &OsStr) -> Vec<CompletionCandidate> {
     let input = current.to_str().unwrap_or("");
@@ -17,45 +12,6 @@ pub fn complete_versions(current: &OsStr) -> Vec<CompletionCandidate> {
         .iter()
         .map(|s| CompletionCandidate::new(format!("{}{}{}", prefix_0, prefix_1, s)))
         .collect()
-}
-
-pub fn complete_running_names(
-    server_types: Vec<ServerType>,
-) -> impl Fn(&OsStr) -> Vec<CompletionCandidate> {
-    move |_current: &OsStr| {
-        let instances = block_on(container_ps(server_types.clone(), None, None, false));
-        match instances {
-            Ok(instances) => instances
-                .iter()
-                .map(|i| CompletionCandidate::new(i.name.clone()))
-                .collect(),
-            Err(_) => vec![],
-        }
-    }
-}
-
-pub fn complete_running_versions(
-    server_types: Vec<ServerType>,
-) -> impl Fn(&OsStr) -> Vec<CompletionCandidate> {
-    move |current: &OsStr| {
-        let input = current.to_str().unwrap_or("");
-        let (prefix, _token) =
-            parse_prefix_token(if input.is_empty() { None } else { Some(input) });
-        let instances = block_on(container_ps(server_types.clone(), None, None, false));
-        match instances {
-            Ok(instances) => {
-                let versions: BTreeSet<String> = instances
-                    .iter()
-                    .map(|i| i.admin_container.wildfly_container.display_version())
-                    .collect();
-                versions
-                    .iter()
-                    .map(|v| CompletionCandidate::new(format!("{}{}", prefix, v)))
-                    .collect()
-            }
-            Err(_) => vec![],
-        }
-    }
 }
 
 fn find_suggestions(parameter: Option<&str>) -> (String, String, Vec<String>) {
@@ -86,7 +42,7 @@ fn find_suggestions(parameter: Option<&str>) -> (String, String, Vec<String>) {
     (prefix.to_string(), out_token.to_string(), suggestions)
 }
 
-fn parse_prefix_token(parameter: Option<&str>) -> (&str, &str) {
+pub fn parse_prefix_token(parameter: Option<&str>) -> (&str, &str) {
     match parameter {
         Some(param) => match param.rfind(',') {
             Some(pos) if pos < param.len() - 1 => param.split_at(pos + 1),
