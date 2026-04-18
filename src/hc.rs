@@ -115,7 +115,12 @@ async fn start_instances(
         create_secret("password", password)
     )?;
     run_instances(&instances, |instance| {
-        let mut command = container_run(&instance.name, None, operations.clone(), instance.admin_container.wildfly_container.is_dev());
+        let mut command = container_run(
+            &instance.name,
+            None,
+            operations.clone(),
+            instance.admin_container.wildfly_container.is_dev(),
+        );
         command
             .arg(format!(
                 "--secret=username,type=env,target={}",

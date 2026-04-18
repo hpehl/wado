@@ -142,7 +142,12 @@ pub async fn container_ps(
     Ok(instances)
 }
 
-pub fn container_run(name: &str, ports: Option<&Ports>, operations: Vec<String>, dev: bool) -> Command {
+pub fn container_run(
+    name: &str,
+    ports: Option<&Ports>,
+    operations: Vec<String>,
+    dev: bool,
+) -> Command {
     let mut command = container_command().expect("Unable to run docker run/podman run.");
     command
         .arg("run")

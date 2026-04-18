@@ -72,7 +72,12 @@ async fn start_instances(
 ) -> anyhow::Result<()> {
     container_network().await?;
     run_instances(&instances, |instance| {
-        let mut command = container_run(&instance.name, Some(&instance.ports), operations.clone(), instance.admin_container.wildfly_container.is_dev());
+        let mut command = container_run(
+            &instance.name,
+            Some(&instance.ports),
+            operations.clone(),
+            instance.admin_container.wildfly_container.is_dev(),
+        );
         command
             .arg(instance.admin_container.image_name())
             .args(parameters.clone());
