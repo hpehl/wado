@@ -142,7 +142,7 @@ pub async fn container_ps(
     Ok(instances)
 }
 
-pub fn container_run(name: &str, ports: Option<&Ports>, operations: Vec<String>) -> Command {
+pub fn container_run(name: &str, ports: Option<&Ports>, operations: Vec<String>, dev: bool) -> Command {
     let mut command = container_command().expect("Unable to run docker run/podman run.");
     command
         .arg("run")
@@ -150,6 +150,9 @@ pub fn container_run(name: &str, ports: Option<&Ports>, operations: Vec<String>)
         .arg("--detach")
         .arg("--name")
         .arg(name);
+    if dev {
+        command.arg("--pull=always");
+    }
     if let Some(ports) = ports {
         command
             .arg("--publish")
