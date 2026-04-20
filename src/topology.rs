@@ -8,9 +8,7 @@ use crate::container::{
 };
 use crate::hc::create_secret;
 use crate::topology_model::TopologySetup;
-use crate::wildfly::{
-    AdminContainer, DomainController, HostController, Ports, Server, ServerType,
-};
+use crate::wildfly::{AdminContainer, DomainController, HostController, Ports, Server, ServerType};
 use clap::ArgMatches;
 use futures::executor::block_on;
 use std::collections::HashMap;
@@ -25,14 +23,10 @@ pub fn topology_start(matches: &ArgMatches) -> anyhow::Result<()> {
 
     let dc_host = setup.dc_host();
     let dc_version = dc_host.effective_version(setup.version);
-    let dc_wf = WildFlyContainer::version(&dc_version.to_string())
-        .map_err(|e| anyhow::anyhow!("{}", e))?;
+    let dc_wf =
+        WildFlyContainer::version(&dc_version.to_string()).map_err(|e| anyhow::anyhow!("{}", e))?;
     let dc_admin = AdminContainer::new(dc_wf.clone(), ServerType::DomainController);
-    let dc = DomainController::new(
-        dc_admin,
-        dc_host.name.clone(),
-        Ports::default_ports(&dc_wf),
-    );
+    let dc = DomainController::new(dc_admin, dc_host.name.clone(), Ports::default_ports(&dc_wf));
     let dc_servers: Vec<Server> = dc_host.servers.iter().map(|s| s.to_server()).collect();
 
     let mut hc_server_map: HashMap<String, Vec<Server>> = HashMap::new();

@@ -1,5 +1,5 @@
 use crate::wildfly::{Server, ServerGroup};
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use serde::Deserialize;
 use std::collections::HashSet;
 use std::path::Path;
@@ -68,8 +68,9 @@ impl TopologySetup {
 
         for host in &self.hosts {
             if let Some(v) = host.version {
-                self.resolve_version(v)
-                    .with_context(|| format!("Unknown WildFly version {} for host '{}'", v, host.name))?;
+                self.resolve_version(v).with_context(|| {
+                    format!("Unknown WildFly version {} for host '{}'", v, host.name)
+                })?;
             }
             for server in &host.servers {
                 if ServerGroup::parse_group(&server.group).is_none() {
@@ -97,8 +98,7 @@ impl TopologySetup {
     }
 
     fn resolve_version(&self, version: u16) -> anyhow::Result<WildFlyContainer> {
-        WildFlyContainer::version(&version.to_string())
-            .map_err(|e| anyhow::anyhow!("{}", e))
+        WildFlyContainer::version(&version.to_string()).map_err(|e| anyhow::anyhow!("{}", e))
     }
 }
 
@@ -206,7 +206,12 @@ hosts:
         let setup: TopologySetup = serde_yml::from_str(yaml).unwrap();
         let result = setup.validate();
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("No domain controller"));
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("No domain controller")
+        );
     }
 
     #[test]
@@ -222,7 +227,12 @@ hosts:
         let setup: TopologySetup = serde_yml::from_str(yaml).unwrap();
         let result = setup.validate();
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Multiple domain controllers"));
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("Multiple domain controllers")
+        );
     }
 
     #[test]
@@ -238,7 +248,12 @@ hosts:
         let setup: TopologySetup = serde_yml::from_str(yaml).unwrap();
         let result = setup.validate();
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Duplicate host name"));
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("Duplicate host name")
+        );
     }
 
     #[test]
@@ -256,7 +271,12 @@ hosts:
         let setup: TopologySetup = serde_yml::from_str(yaml).unwrap();
         let result = setup.validate();
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Invalid server group"));
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("Invalid server group")
+        );
     }
 
     #[test]
@@ -269,7 +289,10 @@ hosts:
         };
         let server = setup.to_server();
         assert_eq!(server.name, "server-one");
-        assert_eq!(server.server_group, crate::wildfly::ServerGroup::MainServerGroup);
+        assert_eq!(
+            server.server_group,
+            crate::wildfly::ServerGroup::MainServerGroup
+        );
         assert_eq!(server.offset, 100);
         assert!(server.autostart);
     }
@@ -283,7 +306,10 @@ hosts:
             auto_start: false,
         };
         let server = setup.to_server();
-        assert_eq!(server.server_group, crate::wildfly::ServerGroup::OtherServerGroup);
+        assert_eq!(
+            server.server_group,
+            crate::wildfly::ServerGroup::OtherServerGroup
+        );
         assert_eq!(server.offset, 200);
         assert!(!server.autostart);
     }
