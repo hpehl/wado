@@ -353,10 +353,7 @@ hosts:
             auto_start: false,
         };
         let server = setup.to_server();
-        assert_eq!(
-            server.server_group,
-            crate::wildfly::ServerGroup::OtherServerGroup
-        );
+        assert_eq!(server.server_group, ServerGroup::OtherServerGroup);
         assert_eq!(server.offset, 200);
         assert!(!server.autostart);
     }
