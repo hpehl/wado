@@ -12,8 +12,7 @@ use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
 
 static HAL_JAR_REGEX: LazyLock<regex::Regex> = LazyLock::new(|| {
-    regex::Regex::new(r#"path="hal-console-[^"]*-resources\.jar""#)
-        .expect("invalid HAL jar regex")
+    regex::Regex::new(r#"path="hal-console-[^"]*-resources\.jar""#).expect("invalid HAL jar regex")
 });
 
 const MAVEN_CACHE_VOLUME: &str = "wado-maven-cache";
@@ -397,7 +396,10 @@ async fn extract_from_volume(
         .status()
         .await
     {
-        eprintln!("Warning: failed to remove container {}: {}", container_name, e);
+        eprintln!(
+            "Warning: failed to remove container {}: {}",
+            container_name, e
+        );
     }
 
     if !cp_status.success() {
