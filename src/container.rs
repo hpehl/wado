@@ -417,7 +417,7 @@ async fn ps_instances(
     for line in output.lines() {
         let parts: Vec<&str> = line.split('|').collect();
         if parts.len() == 4
-            && let Ok(instance) = ContainerInstance::new(parts[0], parts[1], parts[2], parts[3])
+            && let Ok(instance) = ContainerInstance::new(parts[1], parts[0], parts[2], parts[3])
             && predicate(&instance)
         {
             instances.push(instance);
