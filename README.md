@@ -538,17 +538,6 @@ wado hc stop --all
 
 ### Topology
 
-> [!WARNING]
-> The topology commands are not yet implemented.
-> You can work around with the `dc` and `hc` commands though:
->
-> ```shell
-> wado dc start 35 -n dc -s s1,s2,s3,s4:osg,s5:osg
-> wado hc start 32,33,2x35 -d dc -s s1,s2,s3:osg
-> wado console 35
-> ```
-> Open http://localhost:9350/console/index.html#runtime;path=domain-browse-by~topology
-
 #### Start
 
 ```shell
@@ -582,7 +571,8 @@ Options:
 The topology setup is a YAML file like this:
 
 ```yaml
-version: 34
+name: my-topology
+version: 39
 hosts:
   - name: dc
     domain-controller: true
@@ -601,7 +591,7 @@ hosts:
         group: other-server-group
         offset: 300
   - name: host2
-    version: 33
+    version: 38
     servers:
       - name: server-one
         group: main-server-group
@@ -611,8 +601,7 @@ hosts:
       - name: server-three
         group: other-server-group
         offset: 200
-  - name: host3
-    servers:
+  - servers:
       - name: server-one
         group: main-server-group
       - name: server-two
