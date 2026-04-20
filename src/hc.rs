@@ -148,7 +148,7 @@ async fn start_instances(
     .await
 }
 
-async fn create_secret(secret_name: &str, secret_value: &str) -> anyhow::Result<()> {
+pub(crate) async fn create_secret(secret_name: &str, secret_value: &str) -> anyhow::Result<()> {
     let mut podman_secret = container_command()?
         .arg("secret")
         .arg("create")

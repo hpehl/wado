@@ -29,6 +29,8 @@ tokio = { version = "1.52.0", features = ["full"] }
 webbrowser = "1.2.0"
 which = "8.0.2"
 wildfly_container_versions = "39.0.5"
+serde = { version = "1", features = ["derive"] }
+serde_yml = "0.0.12"
 
 # use LTO for smaller binaries (that take longer to build)
 [profile.release]

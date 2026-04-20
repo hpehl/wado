@@ -384,7 +384,7 @@ pub enum ServerGroup {
 }
 
 impl ServerGroup {
-    fn parse(input: &str) -> Option<ServerGroup> {
+    pub fn parse_group(input: &str) -> Option<ServerGroup> {
         if input.eq_ignore_ascii_case("msg") || input.eq_ignore_ascii_case("main-server-group") {
             Some(ServerGroup::MainServerGroup)
         } else if input.eq_ignore_ascii_case("osg")
@@ -437,7 +437,7 @@ impl Server {
 
         // Try to consume server group
         if let Some((&first, rest)) = remaining.split_first() {
-            if let Some(sg) = ServerGroup::parse(first) {
+            if let Some(sg) = ServerGroup::parse_group(first) {
                 server_group = sg;
                 remaining = rest;
             } else if !first.eq_ignore_ascii_case("start") && first.parse::<u16>().is_err() {

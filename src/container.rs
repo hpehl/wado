@@ -379,6 +379,33 @@ pub async fn stop_instances(
     Ok(())
 }
 
+pub async fn stop_containers_by_name(names: &[String]) -> anyhow::Result<()> {
+    let count = names.len();
+    let instant = Instant::now();
+    let multi_progress = MultiProgress::new();
+    let mut commands = JoinSet::new();
+
+    for name in names {
+        let progress = Progress::new(name, name);
+        multi_progress.add(progress.bar.clone());
+        let mut command = container_stop(name);
+        let child = command
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("Unable to run podman-stop.");
+        let name = name.clone();
+        commands.spawn(async move {
+            let output = child.wait_with_output().await;
+            progress.finish(output, Some(&name))
+        });
+    }
+
+    let status = commands.join_all().await;
+    summary("Stopped", "container", count, instant, status);
+    Ok(())
+}
+
 // ------------------------------------------------------ verify functions
 
 fn detect_runtime() -> Result<PathBuf, Error> {
