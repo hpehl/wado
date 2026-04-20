@@ -308,7 +308,7 @@ stop all running host controllers of that version."))))
                 .about("Stop a topology")
                 .arg(Arg::new("setup")
                     .required(true)
-                    .help("The topology setup"))))
+                    .help("The topology name or the topology setup file"))))
 
         // images
         .subcommand(Command::new("images")

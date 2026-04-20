@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-04-20
+
+### Added
+
+- Topology support: define multi-host domain topologies in YAML and start/stop
+  them as a unit with `topology start` and `topology stop`
+- Topology containers are labeled for discovery, so `topology stop` can find
+  running containers by topology name without requiring the setup file
+- Support for unnamed hosts in topology setups with automatic container name
+  and port assignment
+
+### Changed
+
+- Refactor `container_ps` into reusable `ps_instances` helper
+- Extract `build_server_map` and `build_host_controllers` for clearer topology
+  orchestration
+
 ## [0.3.5] - 2026-04-18
 
 ### Fixed
@@ -237,6 +254,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - First release 🎉
+
+[0.4.0]: https://github.com/hpehl/wado/compare/v0.3.5...v0.4.0
 
 [0.3.5]: https://github.com/hpehl/wado/compare/v0.3.4...v0.3.5
 

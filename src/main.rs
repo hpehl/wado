@@ -138,11 +138,6 @@ fn build_app_full() -> clap::Command {
                 sub_sub_cmd.mut_arg("setup", |arg| arg.value_parser(value_parser!(PathBuf)))
             })
         })
-        .mut_subcommand("topology", |sub_cmd| {
-            sub_cmd.mut_subcommand("stop", |sub_sub_cmd| {
-                sub_sub_cmd.mut_arg("setup", |arg| arg.value_parser(value_parser!(PathBuf)))
-            })
-        })
         .mut_subcommand("console", |sub_cmd| {
             sub_cmd
                 .mut_arg("wildfly-version", |arg| {

@@ -120,6 +120,7 @@ async fn start_instances(
             None,
             operations.clone(),
             instance.admin_container.wildfly_container.is_dev(),
+            None,
         );
         command
             .arg(format!(

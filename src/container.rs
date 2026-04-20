@@ -1,13 +1,13 @@
 use crate::constants::{
-    BOOTSTRAP_OPERATIONS_VARIABLE, LABEL_NAME, SERVERS_VARIABLE, WILDFLY_ADMIN_CONTAINER,
-    WILDFLY_ADMIN_CONTAINER_REPOSITORY,
+    BOOTSTRAP_OPERATIONS_VARIABLE, LABEL_NAME, SERVERS_VARIABLE, TOPOLOGY_LABEL_NAME,
+    WILDFLY_ADMIN_CONTAINER, WILDFLY_ADMIN_CONTAINER_REPOSITORY,
 };
-use crate::progress::{Progress, stderr_reader, summary};
+use crate::progress::{stderr_reader, summary, Progress};
 use crate::wildfly::ServerType::{DomainController, Standalone};
 use crate::wildfly::{
     ContainerConfig, ContainerInstance, HasWildFlyContainer, Ports, Server, ServerType,
 };
-use anyhow::{Error, bail};
+use anyhow::{bail, Error};
 use futures::future::join_all;
 use indicatif::MultiProgress;
 use std::collections::{HashMap, HashSet};
@@ -89,37 +89,7 @@ pub async fn container_ps(
     name: Option<&str>,
     resolve_ports: bool,
 ) -> anyhow::Result<Vec<ContainerInstance>> {
-    let mut instances: Vec<ContainerInstance> = vec![];
-    let mut command = container_command()?;
-    command
-        .arg("ps")
-        .arg("--filter")
-        .arg(format!("label={}", LABEL_NAME))
-        .arg("--format")
-        .arg(format!(
-            "{{{{.ID}}}}|{{{{index .Labels \"{}\"}}}}|{{{{.Names}}}}|{{{{.Status}}}}",
-            LABEL_NAME
-        ));
-    let child = command
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()?;
-    let output = child.wait_with_output().await?;
-    let output = String::from_utf8(output.stdout)?;
-    for line in output.lines() {
-        let parts: Vec<&str> = line.split("|").collect();
-        if parts.len() == 4 {
-            let container_id = parts[0];
-            let identifier = parts[1];
-            let name = parts[2];
-            let status = parts[3];
-            if let Ok(instance) = ContainerInstance::new(identifier, container_id, name, status) {
-                instances.push(instance);
-            }
-        }
-    }
-
-    instances.retain(|instance| {
+    let mut instances = ps_instances(&format!("label={}", LABEL_NAME), |instance| {
         let server_type_match = server_types.contains(&instance.admin_container.server_type);
         let version_match = if let Some(versions) = &wildfly_containers {
             versions.contains(&instance.admin_container.wildfly_container)
@@ -132,7 +102,8 @@ pub async fn container_ps(
             true
         };
         server_type_match && version_match && name_match
-    });
+    })
+    .await?;
 
     if resolve_ports {
         let futures = instances.iter().map(container_ports);
@@ -142,11 +113,20 @@ pub async fn container_ps(
     Ok(instances)
 }
 
+pub async fn containers_by_topology(topology_name: &str) -> anyhow::Result<Vec<ContainerInstance>> {
+    ps_instances(
+        &format!("label={}={}", TOPOLOGY_LABEL_NAME, topology_name),
+        |_| true,
+    )
+    .await
+}
+
 pub fn container_run(
     name: &str,
     ports: Option<&Ports>,
     operations: Vec<String>,
     dev: bool,
+    topology_name: Option<&str>,
 ) -> Command {
     let mut command = container_command().expect("Unable to run docker run/podman run.");
     command
@@ -172,6 +152,11 @@ pub fn container_run(
             operations.join(",")
         ));
     }
+    if let Some(topology) = topology_name {
+        command
+            .arg("--label")
+            .arg(format!("{}={}", TOPOLOGY_LABEL_NAME, topology));
+    }
     command
 }
 
@@ -182,6 +167,19 @@ pub fn container_stop(name: &str) -> Command {
 }
 
 // ------------------------------------------------------ higher functions
+
+pub fn add_servers(mut command: Command, hostname: &str, servers: Vec<Server>) -> Command {
+    if !servers.is_empty() {
+        let server_ops = servers
+            .iter()
+            .map(|server| server.add_server_op(hostname))
+            .collect::<Vec<String>>();
+        command
+            .arg("--env")
+            .arg(format!("{}={}", SERVERS_VARIABLE, server_ops.join(",")));
+    }
+    command
+}
 
 pub fn ensure_unique_names<T>(
     items: &[T],
@@ -206,96 +204,6 @@ where
         }
     }
     unique_names
-}
-
-pub async fn running_instance_count(
-    server_type: ServerType,
-    wildfly_container: &WildFlyContainer,
-) -> anyhow::Result<u16> {
-    let instances = container_ps(
-        vec![server_type],
-        Some(std::slice::from_ref(wildfly_container)),
-        None,
-        false,
-    )
-    .await?;
-    Ok(instances.len() as u16)
-}
-
-pub async fn running_counts(
-    server_type: ServerType,
-    wildfly_containers: &[WildFlyContainer],
-) -> anyhow::Result<HashMap<u16, u16>> {
-    let mut seen = HashSet::new();
-    let unique: Vec<_> = wildfly_containers
-        .iter()
-        .filter(|wc| seen.insert(wc.identifier))
-        .collect();
-    let futures: Vec<_> = unique
-        .iter()
-        .map(|wc| running_instance_count(server_type, wc))
-        .collect();
-    let results = join_all(futures).await;
-    let mut counts = HashMap::new();
-    for (wc, result) in unique.iter().zip(results) {
-        counts.insert(wc.identifier, result?);
-    }
-    Ok(counts)
-}
-
-pub fn add_servers(mut command: Command, hostname: &str, servers: Vec<Server>) -> Command {
-    if !servers.is_empty() {
-        let server_ops = servers
-            .iter()
-            .map(|server| server.add_server_op(hostname))
-            .collect::<Vec<String>>();
-        command
-            .arg("--env")
-            .arg(format!("{}={}", SERVERS_VARIABLE, server_ops.join(",")));
-    }
-    command
-}
-
-pub async fn run_instances<T, F>(instances: &[T], build_command: F) -> anyhow::Result<()>
-where
-    T: ContainerConfig,
-    F: Fn(&T) -> Command,
-{
-    let count = instances.len();
-    let instant = Instant::now();
-    let multi_progress = MultiProgress::new();
-    let mut commands = JoinSet::new();
-
-    for instance in instances {
-        let progress = Progress::new(
-            &instance
-                .admin_container()
-                .wildfly_container
-                .display_version(),
-            &instance.admin_container().image_name(),
-        );
-        multi_progress.add(progress.bar.clone());
-        let mut child = build_command(instance)
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-            .expect("Unable to run podman-run.");
-
-        let stderr = stderr_reader(&mut child);
-        let name = instance.name().to_string();
-        let progress_clone = progress.clone();
-        commands.spawn(async move {
-            let output = child.wait_with_output().await;
-            progress.finish(output, Some(&name))
-        });
-        tokio::spawn(async move {
-            progress_clone.trace_progress(stderr).await;
-        });
-    }
-
-    let status = commands.join_all().await;
-    summary("Started", "container", count, instant, status);
-    Ok(())
 }
 
 pub async fn get_instance(
@@ -344,6 +252,110 @@ pub async fn get_instance(
     container_ports(&instances[0]).await
 }
 
+pub async fn run_instances<T, F>(instances: &[T], build_command: F) -> anyhow::Result<()>
+where
+    T: ContainerConfig,
+    F: Fn(&T) -> Command,
+{
+    let count = instances.len();
+    let instant = Instant::now();
+    let multi_progress = MultiProgress::new();
+    let mut commands = JoinSet::new();
+
+    for instance in instances {
+        let progress = Progress::new(
+            &instance
+                .admin_container()
+                .wildfly_container
+                .display_version(),
+            &instance.admin_container().image_name(),
+        );
+        multi_progress.add(progress.bar.clone());
+        let mut child = build_command(instance)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("Unable to run podman-run.");
+
+        let stderr = stderr_reader(&mut child);
+        let name = instance.name().to_string();
+        let progress_clone = progress.clone();
+        commands.spawn(async move {
+            let output = child.wait_with_output().await;
+            progress.finish(output, Some(&name))
+        });
+        tokio::spawn(async move {
+            progress_clone.trace_progress(stderr).await;
+        });
+    }
+
+    let status = commands.join_all().await;
+    summary("Started", "container", count, instant, status);
+    Ok(())
+}
+
+pub async fn running_counts(
+    server_type: ServerType,
+    wildfly_containers: &[WildFlyContainer],
+) -> anyhow::Result<HashMap<u16, u16>> {
+    let mut seen = HashSet::new();
+    let unique: Vec<_> = wildfly_containers
+        .iter()
+        .filter(|wc| seen.insert(wc.identifier))
+        .collect();
+    let futures: Vec<_> = unique
+        .iter()
+        .map(|wc| running_instance_count(server_type, wc))
+        .collect();
+    let results = join_all(futures).await;
+    let mut counts = HashMap::new();
+    for (wc, result) in unique.iter().zip(results) {
+        counts.insert(wc.identifier, result?);
+    }
+    Ok(counts)
+}
+
+pub async fn running_instance_count(
+    server_type: ServerType,
+    wildfly_container: &WildFlyContainer,
+) -> anyhow::Result<u16> {
+    let instances = container_ps(
+        vec![server_type],
+        Some(std::slice::from_ref(wildfly_container)),
+        None,
+        false,
+    )
+    .await?;
+    Ok(instances.len() as u16)
+}
+
+pub async fn stop_containers_by_name(names: &[String]) -> anyhow::Result<()> {
+    let count = names.len();
+    let instant = Instant::now();
+    let multi_progress = MultiProgress::new();
+    let mut commands = JoinSet::new();
+
+    for name in names {
+        let progress = Progress::new(name, name);
+        multi_progress.add(progress.bar.clone());
+        let mut command = container_stop(name);
+        let child = command
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .expect("Unable to run podman-stop.");
+        let name = name.clone();
+        commands.spawn(async move {
+            let output = child.wait_with_output().await;
+            progress.finish(output, Some(&name))
+        });
+    }
+
+    let status = commands.join_all().await;
+    summary("Stopped", "container", count, instant, status);
+    Ok(())
+}
+
 pub async fn stop_instances(
     server_type: ServerType,
     wildfly_containers: Option<&[WildFlyContainer]>,
@@ -379,31 +391,39 @@ pub async fn stop_instances(
     Ok(())
 }
 
-pub async fn stop_containers_by_name(names: &[String]) -> anyhow::Result<()> {
-    let count = names.len();
-    let instant = Instant::now();
-    let multi_progress = MultiProgress::new();
-    let mut commands = JoinSet::new();
+// ------------------------------------------------------ internal helper functions
 
-    for name in names {
-        let progress = Progress::new(name, name);
-        multi_progress.add(progress.bar.clone());
-        let mut command = container_stop(name);
-        let child = command
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-            .expect("Unable to run podman-stop.");
-        let name = name.clone();
-        commands.spawn(async move {
-            let output = child.wait_with_output().await;
-            progress.finish(output, Some(&name))
-        });
+async fn ps_instances(
+    filter: &str,
+    predicate: impl Fn(&ContainerInstance) -> bool,
+) -> anyhow::Result<Vec<ContainerInstance>> {
+    let mut command = container_command()?;
+    command
+        .arg("ps")
+        .arg("--filter")
+        .arg(filter)
+        .arg("--format")
+        .arg(format!(
+            "{{{{.ID}}}}|{{{{index .Labels \"{}\"}}}}|{{{{.Names}}}}|{{{{.Status}}}}",
+            LABEL_NAME
+        ));
+    let child = command
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()?;
+    let output = child.wait_with_output().await?;
+    let output = String::from_utf8(output.stdout)?;
+    let mut instances = Vec::new();
+    for line in output.lines() {
+        let parts: Vec<&str> = line.split('|').collect();
+        if parts.len() == 4
+            && let Ok(instance) = ContainerInstance::new(parts[0], parts[1], parts[2], parts[3])
+            && predicate(&instance)
+        {
+            instances.push(instance);
+        }
     }
-
-    let status = commands.join_all().await;
-    summary("Stopped", "container", count, instant, status);
-    Ok(())
+    Ok(instances)
 }
 
 // ------------------------------------------------------ verify functions

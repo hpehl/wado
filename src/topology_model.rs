@@ -7,13 +7,14 @@ use wildfly_container_versions::WildFlyContainer;
 
 #[derive(Deserialize)]
 pub struct TopologySetup {
+    pub name: String,
     pub version: u16,
     pub hosts: Vec<HostSetup>,
 }
 
 #[derive(Deserialize)]
 pub struct HostSetup {
-    pub name: String,
+    pub name: Option<String>,
     #[serde(rename = "domain-controller", default)]
     pub domain_controller: bool,
     pub version: Option<u16>,
@@ -54,22 +55,25 @@ impl TopologySetup {
                 .hosts
                 .iter()
                 .filter(|h| h.domain_controller)
-                .map(|h| h.name.as_str())
+                .map(|h| h.name.as_deref().unwrap_or("<unnamed>"))
                 .collect();
             bail!("Multiple domain controllers defined: {}", names.join(", "));
         }
 
         let mut seen = HashSet::new();
         for host in &self.hosts {
-            if !seen.insert(&host.name) {
-                bail!("Duplicate host name: '{}'", host.name);
+            if let Some(name) = &host.name
+                && !seen.insert(name)
+            {
+                bail!("Duplicate host name: '{}'", name);
             }
         }
 
         for host in &self.hosts {
+            let host_label = host.name.as_deref().unwrap_or("<unnamed>");
             if let Some(v) = host.version {
                 self.resolve_version(v).with_context(|| {
-                    format!("Unknown WildFly version {} for host '{}'", v, host.name)
+                    format!("Unknown WildFly version {} for host '{}'", v, host_label)
                 })?;
             }
             for server in &host.servers {
@@ -78,7 +82,7 @@ impl TopologySetup {
                         "Invalid server group '{}' for server '{}' on host '{}'",
                         server.group,
                         server.name,
-                        host.name
+                        host_label
                     );
                 }
             }
@@ -127,22 +131,42 @@ mod tests {
     #[test]
     fn deserialize_minimal() {
         let yaml = r#"
+name: test-topology
 version: 34
 hosts:
   - name: dc
     domain-controller: true
 "#;
         let setup: TopologySetup = serde_yml::from_str(yaml).unwrap();
+        assert_eq!(setup.name, "test-topology");
         assert_eq!(setup.version, 34);
         assert_eq!(setup.hosts.len(), 1);
         assert!(setup.hosts[0].domain_controller);
-        assert_eq!(setup.hosts[0].name, "dc");
+        assert_eq!(setup.hosts[0].name, Some("dc".to_string()));
         assert!(setup.hosts[0].servers.is_empty());
+    }
+
+    #[test]
+    fn deserialize_unnamed_hosts() {
+        let yaml = r#"
+name: test-topology
+version: 34
+hosts:
+  - domain-controller: true
+  - servers:
+      - name: server-one
+        group: main-server-group
+"#;
+        let setup: TopologySetup = serde_yml::from_str(yaml).unwrap();
+        assert_eq!(setup.hosts.len(), 2);
+        assert!(setup.hosts[0].name.is_none());
+        assert!(setup.hosts[1].name.is_none());
     }
 
     #[test]
     fn deserialize_full() {
         let yaml = r#"
+name: test-topology
 version: 34
 hosts:
   - name: dc
@@ -167,7 +191,7 @@ hosts:
         let setup: TopologySetup = serde_yml::from_str(yaml).unwrap();
         assert_eq!(setup.hosts.len(), 3);
         assert_eq!(setup.hc_hosts().len(), 2);
-        assert_eq!(setup.dc_host().name, "dc");
+        assert_eq!(setup.dc_host().name, Some("dc".to_string()));
 
         let host1 = &setup.hosts[1];
         assert!(!host1.domain_controller);
@@ -183,6 +207,7 @@ hosts:
     #[test]
     fn deserialize_version_override() {
         let yaml = r#"
+name: test-topology
 version: 34
 hosts:
   - name: dc
@@ -199,6 +224,7 @@ hosts:
     #[test]
     fn validate_no_dc() {
         let yaml = r#"
+name: test-topology
 version: 34
 hosts:
   - name: host1
@@ -217,6 +243,7 @@ hosts:
     #[test]
     fn validate_multiple_dcs() {
         let yaml = r#"
+name: test-topology
 version: 34
 hosts:
   - name: dc1
@@ -238,6 +265,7 @@ hosts:
     #[test]
     fn validate_duplicate_names() {
         let yaml = r#"
+name: test-topology
 version: 34
 hosts:
   - name: dc
@@ -259,6 +287,7 @@ hosts:
     #[test]
     fn validate_invalid_server_group() {
         let yaml = r#"
+name: test-topology
 version: 34
 hosts:
   - name: dc
@@ -277,6 +306,24 @@ hosts:
                 .to_string()
                 .contains("Invalid server group")
         );
+    }
+
+    #[test]
+    fn validate_unnamed_no_duplicate_error() {
+        let yaml = r#"
+name: test-topology
+version: 34
+hosts:
+  - domain-controller: true
+  - servers:
+      - name: server-one
+        group: main-server-group
+  - servers:
+      - name: server-two
+        group: other-server-group
+"#;
+        let setup: TopologySetup = serde_yml::from_str(yaml).unwrap();
+        assert!(setup.validate().is_ok());
     }
 
     #[test]

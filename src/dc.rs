@@ -83,6 +83,7 @@ async fn start_instances(
             Some(&instance.ports),
             operations.clone(),
             instance.admin_container.wildfly_container.is_dev(),
+            None,
         );
         command
             .arg("--network")

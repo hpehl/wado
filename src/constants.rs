@@ -2,6 +2,7 @@ pub static WILDFLY_ADMIN_CONTAINER: &str = "wado";
 pub static WILDFLY_ADMIN_CONTAINER_REPOSITORY: &str = "quay.io/wado";
 pub static ENTRYPOINT: &str = "wado-entrypoint.sh";
 pub static LABEL_NAME: &str = "org.wildfly.wado.id";
+pub static TOPOLOGY_LABEL_NAME: &str = "org.wildfly.wado.topology";
 pub static FQN_LENGTH: usize = "quay.io/wado/wado-xx:00.0.0.Final-jdkxx".len();
 
 pub static BOOTSTRAP_OPERATIONS_VARIABLE: &str = "WADO_BOOTSTRAP_OPERATIONS";

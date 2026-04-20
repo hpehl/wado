@@ -3,12 +3,15 @@ use crate::constants::{
     WILDFLY_ADMIN_CONTAINER,
 };
 use crate::container::{
-    add_servers, container_network, container_run, run_instances, stop_containers_by_name,
+    add_servers, container_network, container_run, containers_by_topology, ensure_unique_names,
+    run_instances, running_counts, running_instance_count, stop_containers_by_name,
     verify_container_command,
 };
 use crate::hc::create_secret;
 use crate::topology_model::TopologySetup;
-use crate::wildfly::{AdminContainer, DomainController, HostController, Ports, Server, ServerType};
+use crate::wildfly::{
+    AdminContainer, DomainController, HostController, Ports, Server, ServerType,
+};
 use clap::ArgMatches;
 use futures::executor::block_on;
 use std::collections::HashMap;
@@ -21,34 +24,125 @@ pub fn topology_start(matches: &ArgMatches) -> anyhow::Result<()> {
     let setup = TopologySetup::load(path)?;
     verify_container_command()?;
 
+    let topology_name = setup.name.clone();
+
     let dc_host = setup.dc_host();
     let dc_version = dc_host.effective_version(setup.version);
     let dc_wf =
         WildFlyContainer::version(&dc_version.to_string()).map_err(|e| anyhow::anyhow!("{}", e))?;
     let dc_admin = AdminContainer::new(dc_wf.clone(), ServerType::DomainController);
-    let dc = DomainController::new(dc_admin, dc_host.name.clone(), Ports::default_ports(&dc_wf));
+    let dc_name = dc_host
+        .name
+        .clone()
+        .unwrap_or_else(|| dc_admin.container_name());
+    let mut dc = DomainController::new(dc_admin, dc_name, Ports::default_ports(&dc_wf));
+    if dc_host.name.is_none() {
+        let count = block_on(running_instance_count(
+            ServerType::DomainController,
+            &dc_wf,
+        ))?;
+        if count > 0 {
+            dc = dc.copy(count);
+        }
+    }
     let dc_servers: Vec<Server> = dc_host.servers.iter().map(|s| s.to_server()).collect();
 
-    let mut hc_server_map: HashMap<String, Vec<Server>> = HashMap::new();
-    let hcs: Vec<HostController> = setup
-        .hc_hosts()
-        .iter()
-        .map(|host| {
-            let version = host.effective_version(setup.version);
-            let wf = WildFlyContainer::version(&version.to_string())
-                .map_err(|e| anyhow::anyhow!("{}", e))
-                .unwrap();
-            let admin = AdminContainer::new(wf, ServerType::HostController);
-            let servers: Vec<Server> = host.servers.iter().map(|s| s.to_server()).collect();
-            hc_server_map.insert(host.name.clone(), servers);
-            HostController::new(admin, host.name.clone(), dc_host.name.clone())
-        })
-        .collect();
+    let hc_hosts = setup.hc_hosts();
+    let (named_hcs, unnamed_hcs) = build_host_controllers(&hc_hosts, setup.version, &dc.name)?;
 
-    block_on(start_topology(dc, dc_servers, hcs, hc_server_map))
+    let unnamed_hcs = if !unnamed_hcs.is_empty() {
+        let wf_containers: Vec<WildFlyContainer> = unnamed_hcs
+            .iter()
+            .map(|hc| hc.admin_container.wildfly_container.clone())
+            .collect();
+        let counts = block_on(running_counts(
+            ServerType::HostController,
+            &wf_containers,
+        ))?;
+        ensure_unique_names(&unnamed_hcs, HostController::copy, |wc| {
+            *counts.get(&wc.identifier).unwrap_or(&0)
+        })
+    } else {
+        unnamed_hcs
+    };
+
+    let hc_server_map = build_server_map(&hc_hosts, &named_hcs, &unnamed_hcs);
+
+    let mut all_hcs = named_hcs;
+    all_hcs.extend(unnamed_hcs);
+
+    block_on(start_topology(
+        topology_name,
+        dc,
+        dc_servers,
+        all_hcs,
+        hc_server_map,
+    ))
+}
+
+fn build_host_controllers(
+    hc_hosts: &[&crate::topology_model::HostSetup],
+    default_version: u16,
+    dc_name: &str,
+) -> anyhow::Result<(Vec<HostController>, Vec<HostController>)> {
+    let mut named = Vec::new();
+    let mut unnamed = Vec::new();
+
+    for host in hc_hosts {
+        let version = host.effective_version(default_version);
+        let wf = WildFlyContainer::version(&version.to_string())
+            .map_err(|e| anyhow::anyhow!("{}", e))?;
+        let admin = AdminContainer::new(wf, ServerType::HostController);
+
+        if let Some(name) = &host.name {
+            named.push(HostController::new(
+                admin,
+                name.clone(),
+                dc_name.to_string(),
+            ));
+        } else {
+            let default_name = admin.container_name();
+            unnamed.push(HostController::new(
+                admin,
+                default_name,
+                dc_name.to_string(),
+            ));
+        }
+    }
+
+    Ok((named, unnamed))
+}
+
+fn build_server_map(
+    hc_hosts: &[&crate::topology_model::HostSetup],
+    named_hcs: &[HostController],
+    unnamed_hcs: &[HostController],
+) -> HashMap<String, Vec<Server>> {
+    let mut map = HashMap::new();
+    let mut unnamed_idx = 0;
+    for host in hc_hosts {
+        let servers: Vec<Server> = host.servers.iter().map(|s| s.to_server()).collect();
+        let resolved_name = if let Some(name) = &host.name {
+            named_hcs
+                .iter()
+                .find(|hc| hc.name == name.as_str())
+                .map(|hc| hc.name.clone())
+        } else {
+            let name = unnamed_hcs.get(unnamed_idx).map(|hc| hc.name.clone());
+            unnamed_idx += 1;
+            name
+        };
+        if let Some(name) = resolved_name
+            && !servers.is_empty()
+        {
+            map.insert(name, servers);
+        }
+    }
+    map
 }
 
 async fn start_topology(
+    topology_name: String,
     dc: DomainController,
     dc_servers: Vec<Server>,
     hcs: Vec<HostController>,
@@ -60,8 +154,16 @@ async fn start_topology(
         create_secret("password", "admin"),
     )?;
 
+    let topology = topology_name.as_str();
+
     run_instances(std::slice::from_ref(&dc), |instance| {
-        let mut command = container_run(&instance.name, Some(&instance.ports), vec![], false);
+        let mut command = container_run(
+            &instance.name,
+            Some(&instance.ports),
+            vec![],
+            false,
+            Some(topology),
+        );
         command
             .arg("--network")
             .arg(WILDFLY_ADMIN_CONTAINER)
@@ -79,7 +181,8 @@ async fn start_topology(
                 .get(&instance.name)
                 .cloned()
                 .unwrap_or_default();
-            let mut command = container_run(&instance.name, None, vec![], false);
+            let mut command =
+                container_run(&instance.name, None, vec![], false, Some(topology));
             command
                 .arg(format!(
                     "--secret=username,type=env,target={}",
@@ -111,20 +214,45 @@ async fn start_topology(
 }
 
 pub fn topology_stop(matches: &ArgMatches) -> anyhow::Result<()> {
-    let path = matches.get_one::<PathBuf>("setup").unwrap();
-    let setup = TopologySetup::load(path)?;
+    let setup_arg = matches.get_one::<String>("setup").unwrap();
+    let topology_name = resolve_topology_name(setup_arg)?;
     verify_container_command()?;
-
-    let dc_name = setup.dc_host().name.clone();
-    let hc_names: Vec<String> = setup.hc_hosts().iter().map(|h| h.name.clone()).collect();
-
-    block_on(stop_topology(hc_names, dc_name))
+    block_on(stop_topology(&topology_name))
 }
 
-async fn stop_topology(hc_names: Vec<String>, dc_name: String) -> anyhow::Result<()> {
+fn resolve_topology_name(setup_arg: &str) -> anyhow::Result<String> {
+    let path = std::path::Path::new(setup_arg);
+    if path.exists() {
+        let setup = TopologySetup::load(path)?;
+        Ok(setup.name)
+    } else {
+        Ok(setup_arg.to_string())
+    }
+}
+
+async fn stop_topology(topology_name: &str) -> anyhow::Result<()> {
+    let instances = containers_by_topology(topology_name).await?;
+    if instances.is_empty() {
+        println!("No running containers found for topology '{}'", topology_name);
+        return Ok(());
+    }
+
+    let hc_names: Vec<String> = instances
+        .iter()
+        .filter(|i| i.admin_container.server_type == ServerType::HostController)
+        .map(|i| i.name.clone())
+        .collect();
+    let dc_names: Vec<String> = instances
+        .iter()
+        .filter(|i| i.admin_container.server_type == ServerType::DomainController)
+        .map(|i| i.name.clone())
+        .collect();
+
     if !hc_names.is_empty() {
         stop_containers_by_name(&hc_names).await?;
     }
-    stop_containers_by_name(&[dc_name]).await?;
+    if !dc_names.is_empty() {
+        stop_containers_by_name(&dc_names).await?;
+    }
     Ok(())
 }
