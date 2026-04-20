@@ -2,12 +2,12 @@ use crate::constants::{
     BOOTSTRAP_OPERATIONS_VARIABLE, LABEL_NAME, SERVERS_VARIABLE, TOPOLOGY_LABEL_NAME,
     WILDFLY_ADMIN_CONTAINER, WILDFLY_ADMIN_CONTAINER_REPOSITORY,
 };
-use crate::progress::{stderr_reader, summary, Progress};
+use crate::progress::{Progress, stderr_reader, summary};
 use crate::wildfly::ServerType::{DomainController, Standalone};
 use crate::wildfly::{
     ContainerConfig, ContainerInstance, HasWildFlyContainer, Ports, Server, ServerType,
 };
-use anyhow::{bail, Error};
+use anyhow::{Error, bail};
 use futures::future::join_all;
 use indicatif::MultiProgress;
 use std::collections::{HashMap, HashSet};

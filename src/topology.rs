@@ -9,9 +9,7 @@ use crate::container::{
 };
 use crate::hc::create_secret;
 use crate::topology_model::TopologySetup;
-use crate::wildfly::{
-    AdminContainer, DomainController, HostController, Ports, Server, ServerType,
-};
+use crate::wildfly::{AdminContainer, DomainController, HostController, Ports, Server, ServerType};
 use clap::ArgMatches;
 use futures::executor::block_on;
 use std::collections::HashMap;
@@ -37,10 +35,7 @@ pub fn topology_start(matches: &ArgMatches) -> anyhow::Result<()> {
         .unwrap_or_else(|| dc_admin.container_name());
     let mut dc = DomainController::new(dc_admin, dc_name, Ports::default_ports(&dc_wf));
     if dc_host.name.is_none() {
-        let count = block_on(running_instance_count(
-            ServerType::DomainController,
-            &dc_wf,
-        ))?;
+        let count = block_on(running_instance_count(ServerType::DomainController, &dc_wf))?;
         if count > 0 {
             dc = dc.copy(count);
         }
@@ -55,10 +50,7 @@ pub fn topology_start(matches: &ArgMatches) -> anyhow::Result<()> {
             .iter()
             .map(|hc| hc.admin_container.wildfly_container.clone())
             .collect();
-        let counts = block_on(running_counts(
-            ServerType::HostController,
-            &wf_containers,
-        ))?;
+        let counts = block_on(running_counts(ServerType::HostController, &wf_containers))?;
         ensure_unique_names(&unnamed_hcs, HostController::copy, |wc| {
             *counts.get(&wc.identifier).unwrap_or(&0)
         })
@@ -181,8 +173,7 @@ async fn start_topology(
                 .get(&instance.name)
                 .cloned()
                 .unwrap_or_default();
-            let mut command =
-                container_run(&instance.name, None, vec![], false, Some(topology));
+            let mut command = container_run(&instance.name, None, vec![], false, Some(topology));
             command
                 .arg(format!(
                     "--secret=username,type=env,target={}",
@@ -233,7 +224,10 @@ fn resolve_topology_name(setup_arg: &str) -> anyhow::Result<String> {
 async fn stop_topology(topology_name: &str) -> anyhow::Result<()> {
     let instances = containers_by_topology(topology_name).await?;
     if instances.is_empty() {
-        println!("No running containers found for topology '{}'", topology_name);
+        println!(
+            "No running containers found for topology '{}'",
+            topology_name
+        );
         return Ok(());
     }
 
