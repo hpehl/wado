@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Add 30-second timeout to CLI jar/config HTTP downloads
+- Add a 30-second timeout to CLI jar/config HTTP downloads
 - Check for container name conflicts before starting to prevent race condition
   in concurrent `wado start` invocations
 
