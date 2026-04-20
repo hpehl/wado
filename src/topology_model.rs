@@ -336,10 +336,7 @@ hosts:
         };
         let server = setup.to_server();
         assert_eq!(server.name, "server-one");
-        assert_eq!(
-            server.server_group,
-            crate::wildfly::ServerGroup::MainServerGroup
-        );
+        assert_eq!(server.server_group, ServerGroup::MainServerGroup);
         assert_eq!(server.offset, 100);
         assert!(server.autostart);
     }
