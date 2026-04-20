@@ -12,7 +12,7 @@ use crate::topology_model::TopologySetup;
 use crate::wildfly::{AdminContainer, DomainController, HostController, Ports, Server, ServerType};
 use clap::ArgMatches;
 use futures::executor::block_on;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::path::PathBuf;
 use tokio::try_join;
 use wildfly_container_versions::WildFlyContainer;
@@ -109,8 +109,8 @@ fn build_server_map(
     hc_hosts: &[&crate::topology_model::HostSetup],
     named_hcs: &[HostController],
     unnamed_hcs: &[HostController],
-) -> HashMap<String, Vec<Server>> {
-    let mut map = HashMap::new();
+) -> BTreeMap<String, Vec<Server>> {
+    let mut map = BTreeMap::new();
     let mut unnamed_idx = 0;
     for host in hc_hosts {
         let servers: Vec<Server> = host.servers.iter().map(|s| s.to_server()).collect();
@@ -138,7 +138,7 @@ async fn start_topology(
     dc: DomainController,
     dc_servers: Vec<Server>,
     hcs: Vec<HostController>,
-    hc_server_map: HashMap<String, Vec<Server>>,
+    hc_server_map: BTreeMap<String, Vec<Server>>,
 ) -> anyhow::Result<()> {
     try_join!(
         container_network(),

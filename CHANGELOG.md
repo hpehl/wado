@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improve error messages for missing `java`, `podman`, and `docker` commands
 - Log warnings instead of silently swallowing errors during volume removal,
   container cleanup, and log file deletion
+- Decompose `clone_and_build_repo_inner` into smaller focused functions
+- Use `BTreeMap` for deterministic host controller ordering in topology
+- Add doc comments to public API types and traits
+- Cap build log files at 10 MB to prevent unbounded disk usage
+- Add file copy fallback for symlinks on non-unix/windows platforms
 
 ### Security
 
@@ -24,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Add 30-second timeout to CLI jar/config HTTP downloads
+- Check for container name conflicts before starting to prevent race condition
+  in concurrent `wado start` invocations
 
 ## [0.4.1] - 2026-04-20
 

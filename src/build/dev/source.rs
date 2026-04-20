@@ -17,6 +17,7 @@ static HAL_JAR_REGEX: LazyLock<regex::Regex> = LazyLock::new(|| {
 });
 
 const MAVEN_CACHE_VOLUME: &str = "wado-maven-cache";
+const MAX_LOG_BYTES: u64 = 10 * 1024 * 1024;
 
 const WILDFLY_BUILD_IMAGE: &str = "maven:3.9-eclipse-temurin-21";
 const WILDFLY_REPO: &str = "https://github.com/wildfly/wildfly.git";
@@ -162,12 +163,43 @@ async fn clone_and_build_repo_inner(
     let mut log_file = BufWriter::new(File::create(&log_path)?);
     task.log_path = Some(log_path.clone());
 
-    let mut last_counter = String::new();
     let mut child = build_maven_command(repo_url, branch, maven_args, build_image, volume_name)?
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()?;
 
+    let last_counter = stream_build_output(&mut child, task, &mut log_file, branch).await?;
+
+    drop(log_file);
+    let status = child.wait().await?;
+    if status.success() {
+        let detail = if last_counter.is_empty() {
+            Some(format!("({})", branch))
+        } else {
+            Some(format!("{} ({})", last_counter, branch))
+        };
+        task.finish_success(detail.as_deref());
+        if let Err(e) = fs::remove_file(&log_path) {
+            eprintln!(
+                "Warning: failed to remove log file {}: {}",
+                log_path.display(),
+                e
+            );
+        }
+        task.log_path = None;
+        Ok(())
+    } else {
+        task.finish_error("build failed");
+        anyhow::bail!("Clone/build failed for {}", repo_url)
+    }
+}
+
+async fn stream_build_output(
+    child: &mut tokio::process::Child,
+    task: &mut DevTask,
+    log_file: &mut BufWriter<File>,
+    branch: &str,
+) -> anyhow::Result<String> {
     let stdout = child.stdout.take().expect("No stdout handle");
     let stderr = child.stderr.take().expect("No stderr handle");
     let mut stdout_lines = BufReader::new(stdout).lines();
@@ -175,13 +207,15 @@ async fn clone_and_build_repo_inner(
     let mut stdout_done = false;
     let mut stderr_done = false;
     let mut cloning = true;
+    let mut last_counter = String::new();
+    let mut bytes_written: u64 = 0;
 
     loop {
         tokio::select! {
             result = stdout_lines.next_line(), if !stdout_done => {
                 match result? {
                     Some(line) => {
-                        writeln!(log_file, "{}", line).ok();
+                        write_log_line(log_file, &line, &mut bytes_written);
                         task.append_line(&line);
                         if cloning && line.contains("[INFO] Building ") {
                             cloning = false;
@@ -201,7 +235,7 @@ async fn clone_and_build_repo_inner(
             result = stderr_lines.next_line(), if !stderr_done => {
                 match result? {
                     Some(line) => {
-                        writeln!(log_file, "{}", line).ok();
+                        write_log_line(log_file, &line, &mut bytes_written);
                         task.append_line(&line);
                         if cloning && line.contains("Receiving objects:") {
                             task.set_progress(&format!("cloning ({})...", branch));
@@ -216,23 +250,14 @@ async fn clone_and_build_repo_inner(
         }
     }
 
-    drop(log_file);
-    let status = child.wait().await?;
-    if status.success() {
-        let detail = if last_counter.is_empty() {
-            Some(format!("({})", branch))
-        } else {
-            Some(format!("{} ({})", last_counter, branch))
-        };
-        task.finish_success(detail.as_deref());
-        if let Err(e) = fs::remove_file(&log_path) {
-            eprintln!("Warning: failed to remove log file {}: {}", log_path.display(), e);
-        }
-        task.log_path = None;
-        Ok(())
-    } else {
-        task.finish_error("build failed");
-        anyhow::bail!("Clone/build failed for {}", repo_url)
+    Ok(last_counter)
+}
+
+fn write_log_line(log_file: &mut BufWriter<File>, line: &str, bytes_written: &mut u64) {
+    if *bytes_written < MAX_LOG_BYTES
+        && let Ok(()) = writeln!(log_file, "{}", line)
+    {
+        *bytes_written += line.len() as u64 + 1;
     }
 }
 

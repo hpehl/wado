@@ -9,10 +9,12 @@ use wildfly_container_versions::{VERSIONS, WildFlyContainer};
 
 // ------------------------------------------------------ traits
 
+/// Provides access to the underlying `WildFlyContainer` version metadata.
 pub trait HasWildFlyContainer {
     fn wildfly_container(&self) -> &WildFlyContainer;
 }
 
+/// Configuration for a named container instance with its admin container metadata.
 pub trait ContainerConfig: HasWildFlyContainer + Clone {
     fn admin_container(&self) -> &AdminContainer;
     fn name(&self) -> &str;
@@ -39,6 +41,7 @@ macro_rules! impl_container_instance {
 
 // ------------------------------------------------------ server type
 
+/// WildFly server operating mode.
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub enum ServerType {
     Standalone,
@@ -71,6 +74,7 @@ impl FromStr for ServerType {
 
 // ------------------------------------------------------ admin container
 
+/// A WildFly admin container combining a version with a server type and image metadata.
 #[derive(Eq, PartialEq, Clone)]
 pub struct AdminContainer {
     pub wildfly_container: WildFlyContainer,
@@ -212,6 +216,7 @@ impl HasWildFlyContainer for AdminContainer {
 
 // ------------------------------------------------------ ports
 
+/// HTTP and management port pair for a container instance.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Ports {
     pub http: u16,
@@ -236,6 +241,7 @@ impl Ports {
 
 // ------------------------------------------------------ standalone instance
 
+/// A standalone WildFly server instance with its own HTTP and management ports.
 #[derive(Clone)]
 pub struct StandaloneInstance {
     pub admin_container: AdminContainer,
@@ -265,6 +271,7 @@ impl_container_instance!(StandaloneInstance);
 
 // ------------------------------------------------------ domain controller
 
+/// A WildFly domain controller instance managing host controllers in a domain.
 #[derive(Clone)]
 pub struct DomainController {
     pub admin_container: AdminContainer,
@@ -294,6 +301,7 @@ impl_container_instance!(DomainController);
 
 // ------------------------------------------------------ host controller
 
+/// A WildFly host controller instance connected to a domain controller.
 #[derive(Clone)]
 pub struct HostController {
     pub admin_container: AdminContainer,
@@ -327,6 +335,7 @@ impl_container_instance!(HostController);
 
 // ------------------------------------------------------ container instance
 
+/// A running container instance parsed from `podman ps` output.
 #[derive(Eq, PartialEq, Clone)]
 pub struct ContainerInstance {
     pub admin_container: AdminContainer,
@@ -377,6 +386,7 @@ impl PartialOrd for ContainerInstance {
 
 // ------------------------------------------------------ server
 
+/// WildFly domain server group assignment.
 #[derive(Clone, Debug, PartialEq)]
 pub enum ServerGroup {
     MainServerGroup,
@@ -406,6 +416,7 @@ impl Display for ServerGroup {
     }
 }
 
+/// A managed server definition within a WildFly domain host.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Server {
     pub name: String,
@@ -503,6 +514,7 @@ impl Server {
 
 // ------------------------------------------------------ management client
 
+/// Client configuration for connecting to a WildFly management interface via JBoss CLI.
 pub struct ManagementClient {
     pub wildfly_container: WildFlyContainer,
     pub management_port: u16,

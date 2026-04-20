@@ -257,6 +257,9 @@ where
     T: ContainerConfig,
     F: Fn(&T) -> Command,
 {
+    let names: Vec<&str> = instances.iter().map(|i| i.name()).collect();
+    check_name_conflicts(&names).await?;
+
     let count = instances.len();
     let instant = Instant::now();
     let multi_progress = MultiProgress::new();
@@ -424,6 +427,37 @@ async fn ps_instances(
         }
     }
     Ok(instances)
+}
+
+async fn check_name_conflicts(names: &[&str]) -> anyhow::Result<()> {
+    let mut cmd = container_command()?;
+    cmd.arg("ps").arg("--format").arg("{{.Names}}");
+    let output = cmd
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null())
+        .output()
+        .await?;
+    let running_names: HashSet<String> = String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .map(|s| s.to_string())
+        .collect();
+
+    let conflicts: Vec<&str> = names
+        .iter()
+        .filter(|n| running_names.contains(**n))
+        .copied()
+        .collect();
+    if !conflicts.is_empty() {
+        bail!(
+            "Container name(s) already in use: {}. Please retry.",
+            conflicts
+                .iter()
+                .map(|n| format!("'{}'", n))
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
+    }
+    Ok(())
 }
 
 // ------------------------------------------------------ verify functions

@@ -348,6 +348,8 @@ fn copy_dir_recursive(src: &Path, dst: &Path) -> anyhow::Result<()> {
             std::os::unix::fs::symlink(&target, &dest_path)?;
             #[cfg(windows)]
             std::os::windows::fs::symlink_file(&target, &dest_path)?;
+            #[cfg(not(any(unix, windows)))]
+            fs::copy(entry.path(), &dest_path)?;
         } else {
             fs::copy(entry.path(), &dest_path)?;
         }
