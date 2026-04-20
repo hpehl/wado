@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.2] - 2026-04-20
+
+### Fixed
+
+- Validate bootstrap operations to only accept valid JBoss CLI operations
+  (must start with `/` or `:`) and skip comments/empty lines from CLI files
+- Canonicalize `--cli` file paths before reading to prevent path traversal
+- Add 30-second timeout to CLI jar/config HTTP downloads
+- Log warnings instead of silently swallowing errors during volume removal,
+  container cleanup, and log file deletion
+- Cache HAL jar regex compilation via `LazyLock` instead of recompiling per call
+- Extract magic number `100` to `DEFAULT_SERVER_OFFSET` constant
+- Improve error messages for missing `java`, `podman`, and `docker` commands
+
 ## [0.4.1] - 2026-04-20
 
 ### Fixed
@@ -261,6 +275,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - First release 🎉
+
+[0.4.2]: https://github.com/hpehl/wado/compare/v0.4.1...v0.4.2
 
 [0.4.1]: https://github.com/hpehl/wado/compare/v0.4.0...v0.4.1
 

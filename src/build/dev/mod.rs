@@ -128,8 +128,12 @@ async fn run_dev_build(
     let result = run_dev_build_inner(config, admin_containers, &wf_volume, &hal_volume).await;
 
     // Always clean up volumes
-    remove_volume(&wf_volume).await;
-    remove_volume(&hal_volume).await;
+    if let Err(e) = remove_volume(&wf_volume).await {
+        eprintln!("Warning: failed to remove volume {}: {}", wf_volume, e);
+    }
+    if let Err(e) = remove_volume(&hal_volume).await {
+        eprintln!("Warning: failed to remove volume {}: {}", hal_volume, e);
+    }
 
     result
 }
@@ -221,18 +225,21 @@ async fn create_volume(name: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn remove_volume(name: &str) {
-    if let Ok(mut cmd) = container_command() {
-        cmd.arg("volume")
-            .arg("rm")
-            .arg("-f")
-            .arg(name)
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .status()
-            .await
-            .ok();
+async fn remove_volume(name: &str) -> anyhow::Result<()> {
+    let mut cmd = container_command()?;
+    let status = cmd
+        .arg("volume")
+        .arg("rm")
+        .arg("-f")
+        .arg(name)
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()
+        .await?;
+    if !status.success() {
+        anyhow::bail!("volume rm exited with {}", status);
     }
+    Ok(())
 }
 
 // ------------------------------------------------------ container build (progress)

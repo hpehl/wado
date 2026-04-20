@@ -431,7 +431,7 @@ async fn ps_instances(
 fn detect_runtime() -> Result<PathBuf, Error> {
     which("podman")
         .or_else(|_| which("docker"))
-        .map_err(|_| anyhow::anyhow!("podman or docker not found"))
+        .map_err(|_| anyhow::anyhow!("Neither podman nor docker found. Install one of them to continue"))
 }
 
 pub fn verify_container_command() -> Result<PathBuf, Error> {

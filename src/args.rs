@@ -5,7 +5,10 @@ use clap::ArgMatches;
 use fs::read_to_string;
 use futures::executor::block_on;
 use std::fs;
+use std::path::Path;
 use wildfly_container_versions::WildFlyContainer;
+
+const DEFAULT_SERVER_OFFSET: u16 = 100;
 
 // ------------------------------------------------------ sorted a-z
 
@@ -46,13 +49,37 @@ pub fn operations_argument(matches: &ArgMatches) -> Vec<String> {
                 .map(|s| s.to_string())
                 .collect::<Vec<String>>()
         })
+        .filter(|op| {
+            if is_valid_cli_operation(op) {
+                true
+            } else {
+                eprintln!(
+                    "Skipping invalid CLI operation (must start with '/' or ':'): {}",
+                    op
+                );
+                false
+            }
+        })
         .collect::<Vec<_>>();
     if matches.contains_id("cli")
         && let Some(cli_path) = matches.get_one::<String>("cli")
     {
-        match read_to_string(cli_path) {
+        let path = Path::new(cli_path);
+        match path.canonicalize().and_then(|_| read_to_string(path)) {
             Ok(content) => {
-                operations.extend(content.lines().map(|s| s.trim().to_string()));
+                for line in content.lines().map(|s| s.trim().to_string()) {
+                    if line.is_empty() || line.starts_with('#') {
+                        continue;
+                    }
+                    if is_valid_cli_operation(&line) {
+                        operations.push(line);
+                    } else {
+                        eprintln!(
+                            "Skipping invalid CLI operation (must start with '/' or ':'): {}",
+                            line
+                        );
+                    }
+                }
             }
             Err(err) => {
                 eprintln!("Failed to read file {}: {}", cli_path, err);
@@ -93,7 +120,7 @@ pub fn server_argument(matches: &ArgMatches) -> Vec<Server> {
         .iter()
         .flat_map(|server| server.clone())
         .collect::<Vec<_>>();
-    apply_offsets(servers, 100)
+    apply_offsets(servers, DEFAULT_SERVER_OFFSET)
 }
 
 pub fn username_password_argument(matches: &ArgMatches) -> (&str, &str) {
@@ -138,6 +165,13 @@ pub fn validate_single_version(matches: &ArgMatches, options: &[&str]) -> anyhow
         }
     }
     Ok(())
+}
+
+// ------------------------------------------------------ validation
+
+fn is_valid_cli_operation(operation: &str) -> bool {
+    let trimmed = operation.trim();
+    trimmed.starts_with('/') || trimmed.starts_with(':')
 }
 
 // ------------------------------------------------------ helpers

@@ -17,7 +17,7 @@ use which::which;
 use wildfly_container_versions::WildFlyContainer;
 
 pub fn cli(matches: &ArgMatches) -> anyhow::Result<()> {
-    which("java").with_context(|| "java not found")?;
+    which("java").with_context(|| "java not found. Install JDK 11 or later to run JBoss CLI")?;
 
     let management_client = if let Some(name) = matches.get_one::<String>("name") {
         let mut v = vec![];
@@ -134,7 +134,10 @@ async fn download_file(url: &str, path: &PathBuf) -> anyhow::Result<()> {
     if path.exists() {
         Ok(())
     } else {
-        let response = reqwest::get(url).await?;
+        let client = reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(30))
+            .build()?;
+        let response = client.get(url).send().await?;
         if response.status().is_success() {
             let mut file = File::create(path)?;
             let content = response.bytes().await?;

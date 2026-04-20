@@ -7,8 +7,14 @@ use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
+use std::sync::LazyLock;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
+
+static HAL_JAR_REGEX: LazyLock<regex::Regex> = LazyLock::new(|| {
+    regex::Regex::new(r#"path="hal-console-[^"]*-resources\.jar""#)
+        .expect("invalid HAL jar regex")
+});
 
 const MAVEN_CACHE_VOLUME: &str = "wado-maven-cache";
 
@@ -219,7 +225,9 @@ async fn clone_and_build_repo_inner(
             Some(format!("{} ({})", last_counter, branch))
         };
         task.finish_success(detail.as_deref());
-        fs::remove_file(&log_path).ok();
+        if let Err(e) = fs::remove_file(&log_path) {
+            eprintln!("Warning: failed to remove log file {}: {}", log_path.display(), e);
+        }
         task.log_path = None;
         Ok(())
     } else {
@@ -355,7 +363,7 @@ async fn extract_from_volume(
 
     // Clean up extraction container
     let mut rm_cmd = container_command()?;
-    rm_cmd
+    if let Err(e) = rm_cmd
         .arg("rm")
         .arg("-f")
         .arg(&container_name)
@@ -363,7 +371,9 @@ async fn extract_from_volume(
         .stderr(Stdio::null())
         .status()
         .await
-        .ok();
+    {
+        eprintln!("Warning: failed to remove container {}: {}", container_name, e);
+    }
 
     if !cp_status.success() {
         anyhow::bail!("Failed to extract artifact from volume {}", volume_name);
@@ -442,7 +452,7 @@ pub(super) fn integrate_hal(wildfly_dist: &Path, hal_jar: &Path) -> anyhow::Resu
     let module_xml_path = console_module_dir.join("module.xml");
     let content = fs::read_to_string(&module_xml_path)?;
     let hal_jar_name_str = hal_jar_name.to_string_lossy();
-    let updated = regex::Regex::new(r#"path="hal-console-[^"]*-resources\.jar""#)?
+    let updated = HAL_JAR_REGEX
         .replace(&content, format!(r#"path="{}""#, hal_jar_name_str).as_str())
         .to_string();
     fs::write(&module_xml_path, updated)?;
