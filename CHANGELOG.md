@@ -7,17 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.2] - 2026-04-20
 
-### Fixed
+### Changed
+
+- Cache HAL jar regex compilation via `LazyLock` instead of recompiling per call
+- Extract magic number `100` to `DEFAULT_SERVER_OFFSET` constant
+- Improve error messages for missing `java`, `podman`, and `docker` commands
+- Log warnings instead of silently swallowing errors during volume removal,
+  container cleanup, and log file deletion
+
+### Security
 
 - Validate bootstrap operations to only accept valid JBoss CLI operations
   (must start with `/` or `:`) and skip comments/empty lines from CLI files
 - Canonicalize `--cli` file paths before reading to prevent path traversal
+
+### Fixed
+
 - Add 30-second timeout to CLI jar/config HTTP downloads
-- Log warnings instead of silently swallowing errors during volume removal,
-  container cleanup, and log file deletion
-- Cache HAL jar regex compilation via `LazyLock` instead of recompiling per call
-- Extract magic number `100` to `DEFAULT_SERVER_OFFSET` constant
-- Improve error messages for missing `java`, `podman`, and `docker` commands
 
 ## [0.4.1] - 2026-04-20
 
