@@ -218,7 +218,7 @@ impl HasWildFlyContainer for AdminContainer {
 // ------------------------------------------------------ ports
 
 /// HTTP and management port pair for a container instance.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Ports {
     pub http: u16,
     pub management: u16,
@@ -642,6 +642,87 @@ fn compare(
 mod tests {
     use super::*;
     use crate::wildfly::ServerGroup::{MainServerGroup, OtherServerGroup};
+
+    fn sa_instance(version: &str) -> StandaloneInstance {
+        let wc = WildFlyContainer::version(version).unwrap();
+        let ac = AdminContainer::new(wc.clone(), ServerType::Standalone);
+        StandaloneInstance::new(ac.clone(), ac.container_name(), Ports::default_ports(&wc))
+    }
+
+    fn dc_instance(version: &str) -> DomainController {
+        let wc = WildFlyContainer::version(version).unwrap();
+        let ac = AdminContainer::new(wc.clone(), ServerType::DomainController);
+        DomainController::new(ac.clone(), ac.container_name(), Ports::default_ports(&wc))
+    }
+
+    fn hc_instance(version: &str, dc_name: &str) -> HostController {
+        let wc = WildFlyContainer::version(version).unwrap();
+        let ac = AdminContainer::new(wc, ServerType::HostController);
+        HostController::new(ac.clone(), ac.container_name(), dc_name.to_string())
+    }
+
+    // ------------------------------------------------------ copy tests
+
+    #[test]
+    fn copy_sa_name_and_ports() {
+        let instance = sa_instance("39");
+        let copied = instance.copy(Some(1), 2);
+        assert_eq!(copied.name, "wado-sa-390-1");
+        assert_eq!(copied.ports.http, instance.ports.http + 2);
+        assert_eq!(copied.ports.management, instance.ports.management + 2);
+    }
+
+    #[test]
+    fn copy_sa_ports_only() {
+        let instance = sa_instance("39");
+        let copied = instance.copy(None, 1);
+        assert_eq!(copied.name, "wado-sa-390");
+        assert_eq!(copied.ports.http, instance.ports.http + 1);
+        assert_eq!(copied.ports.management, instance.ports.management + 1);
+    }
+
+    #[test]
+    fn copy_sa_no_change() {
+        let instance = sa_instance("39");
+        let copied = instance.copy(None, 0);
+        assert_eq!(copied.name, "wado-sa-390");
+        assert_eq!(copied.ports.http, instance.ports.http);
+        assert_eq!(copied.ports.management, instance.ports.management);
+    }
+
+    #[test]
+    fn copy_dc_name_and_ports() {
+        let instance = dc_instance("39");
+        let copied = instance.copy(Some(1), 2);
+        assert_eq!(copied.name, "wado-dc-390-1");
+        assert_eq!(copied.ports.http, instance.ports.http + 2);
+        assert_eq!(copied.ports.management, instance.ports.management + 2);
+    }
+
+    #[test]
+    fn copy_dc_ports_only() {
+        let instance = dc_instance("39");
+        let copied = instance.copy(None, 1);
+        assert_eq!(copied.name, "wado-dc-390");
+        assert_eq!(copied.ports.http, instance.ports.http + 1);
+    }
+
+    #[test]
+    fn copy_hc_name_only() {
+        let instance = hc_instance("39", "wado-dc-390");
+        let copied = instance.copy(Some(1), 99);
+        assert_eq!(copied.name, "wado-hc-390-1");
+        assert_eq!(copied.domain_controller, "wado-dc-390");
+    }
+
+    #[test]
+    fn copy_hc_no_name_change() {
+        let instance = hc_instance("39", "wado-dc-390");
+        let copied = instance.copy(None, 99);
+        assert_eq!(copied.name, "wado-hc-390");
+    }
+
+    // ------------------------------------------------------ parse server tests
 
     #[test]
     fn parse_server_name_only() {

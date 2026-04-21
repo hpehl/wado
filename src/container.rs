@@ -517,3 +517,92 @@ pub fn verify_container_command() -> Result<PathBuf, Error> {
 pub fn container_command() -> anyhow::Result<Command> {
     detect_runtime().map(Command::new)
 }
+
+// ------------------------------------------------------ tests
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::wildfly::{AdminContainer, Ports, ServerType, StandaloneInstance};
+
+    fn sa_instance(version: &str) -> StandaloneInstance {
+        let wc = WildFlyContainer::version(version).unwrap();
+        let ac = AdminContainer::new(wc.clone(), ServerType::Standalone);
+        StandaloneInstance::new(ac.clone(), ac.container_name(), Ports::default_ports(&wc))
+    }
+
+    // ------------------------------------------------------ ensure_unique_instances
+
+    #[test]
+    fn no_running_single_item() {
+        let items = vec![sa_instance("39")];
+        let result = ensure_unique_instances(&items, StandaloneInstance::copy, |_| 0, |_| 0);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].name, "wado-sa-390");
+        assert_eq!(result[0].ports, Ports::default_ports(&result[0].admin_container.wildfly_container));
+    }
+
+    #[test]
+    fn no_running_multiple_same_version() {
+        let items = vec![sa_instance("39"), sa_instance("39")];
+        let result = ensure_unique_instances(&items, StandaloneInstance::copy, |_| 0, |_| 0);
+        assert_eq!(result.len(), 2);
+        assert_eq!(result[0].name, "wado-sa-390-0");
+        assert_eq!(result[1].name, "wado-sa-390-1");
+        let base = Ports::default_ports(&result[0].admin_container.wildfly_container);
+        assert_eq!(result[0].ports, base);
+        assert_eq!(result[1].ports, base.with_offset(1));
+    }
+
+    #[test]
+    fn same_type_running_single_item() {
+        let items = vec![sa_instance("39")];
+        let result = ensure_unique_instances(&items, StandaloneInstance::copy, |_| 1, |_| 1);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].name, "wado-sa-390-1");
+        let base = Ports::default_ports(&result[0].admin_container.wildfly_container);
+        assert_eq!(result[0].ports, base.with_offset(1));
+    }
+
+    #[test]
+    fn different_type_running_ports_adjusted_name_unchanged() {
+        let items = vec![sa_instance("39")];
+        let result = ensure_unique_instances(&items, StandaloneInstance::copy, |_| 0, |_| 1);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].name, "wado-sa-390");
+        let base = Ports::default_ports(&result[0].admin_container.wildfly_container);
+        assert_eq!(result[0].ports, base.with_offset(1));
+    }
+
+    #[test]
+    fn different_type_running_multiple_same_version() {
+        let items = vec![sa_instance("39"), sa_instance("39")];
+        let result = ensure_unique_instances(&items, StandaloneInstance::copy, |_| 0, |_| 1);
+        assert_eq!(result.len(), 2);
+        assert_eq!(result[0].name, "wado-sa-390-0");
+        assert_eq!(result[1].name, "wado-sa-390-1");
+        let base = Ports::default_ports(&result[0].admin_container.wildfly_container);
+        assert_eq!(result[0].ports, base.with_offset(1));
+        assert_eq!(result[1].ports, base.with_offset(2));
+    }
+
+    #[test]
+    fn mixed_running_sa_and_dc() {
+        let items = vec![sa_instance("39")];
+        // 1 SA running (same_type=1), 2 total (SA + DC, all_type=2)
+        let result = ensure_unique_instances(&items, StandaloneInstance::copy, |_| 1, |_| 2);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].name, "wado-sa-390-1");
+        let base = Ports::default_ports(&result[0].admin_container.wildfly_container);
+        assert_eq!(result[0].ports, base.with_offset(2));
+    }
+
+    #[test]
+    fn multiple_versions_no_running() {
+        let items = vec![sa_instance("39"), sa_instance("35")];
+        let result = ensure_unique_instances(&items, StandaloneInstance::copy, |_| 0, |_| 0);
+        assert_eq!(result.len(), 2);
+        assert_eq!(result[0].name, "wado-sa-390");
+        assert_eq!(result[1].name, "wado-sa-350");
+    }
+}
