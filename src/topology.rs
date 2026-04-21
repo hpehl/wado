@@ -155,6 +155,7 @@ async fn start_topology(
             vec![],
             false,
             Some(topology),
+            Some("domain.xml"),
         );
         command
             .arg("--network")
@@ -173,7 +174,14 @@ async fn start_topology(
                 .get(&instance.name)
                 .cloned()
                 .unwrap_or_default();
-            let mut command = container_run(&instance.name, None, vec![], false, Some(topology));
+            let mut command = container_run(
+                &instance.name,
+                None,
+                vec![],
+                false,
+                Some(topology),
+                Some("domain.xml"),
+            );
             command
                 .arg(format!(
                     "--secret=username,type=env,target={}",

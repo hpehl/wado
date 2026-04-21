@@ -1,6 +1,6 @@
 use crate::args::{
-    name_argument, operations_argument, parameters_argument, port_argument, server_argument,
-    stop_command, validate_single_version, versions_argument,
+    extract_config, name_argument, operations_argument, parameters_argument, port_argument,
+    server_argument, stop_command, validate_single_version, versions_argument,
 };
 use crate::constants::{HOSTNAME_VARIABLE, WILDFLY_ADMIN_CONTAINER};
 use crate::container::{
@@ -76,6 +76,7 @@ async fn start_instances(
     operations: Vec<String>,
     parameters: Vec<String>,
 ) -> anyhow::Result<()> {
+    let config = extract_config(&parameters, "domain.xml");
     container_network().await?;
     run_instances(&instances, |instance| {
         let mut command = container_run(
@@ -84,6 +85,7 @@ async fn start_instances(
             operations.clone(),
             instance.admin_container.wildfly_container.is_dev(),
             None,
+            Some(&config),
         );
         command
             .arg("--network")

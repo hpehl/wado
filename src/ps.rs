@@ -25,13 +25,17 @@ pub fn ps(matches: &ArgMatches) -> anyhow::Result<()> {
     table
         .load_preset(UTF8_BORDERS_ONLY)
         .set_content_arrangement(ContentArrangement::Dynamic)
-        .set_header(vec!["Version", "Type", "Name", "Ports", "Status", "ID"]);
+        .set_header(vec![
+            "Version", "Type", "Topology", "Name", "Config", "Ports", "Status", "ID",
+        ]);
     for instance in instances {
         table.add_row(vec![
             Cell::new(instance.admin_container.wildfly_container.display_version())
                 .fg(Color::DarkMagenta),
             Cell::new(instance.admin_container.server_type.short_name()).fg(Color::DarkCyan),
+            Cell::new(instance.topology.as_deref().unwrap_or("")).fg(Color::DarkBlue),
             Cell::new(instance.name).fg(Color::DarkYellow),
+            Cell::new(instance.config.as_deref().unwrap_or("")).fg(Color::DarkCyan),
             if let Some(ports) = instance.ports {
                 Cell::new(format!("{}/{}", ports.http, ports.management)).fg(Color::Green)
             } else {

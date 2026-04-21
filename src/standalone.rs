@@ -1,6 +1,6 @@
 use crate::args::{
-    name_argument, operations_argument, parameters_argument, port_argument, stop_command,
-    validate_single_version, versions_argument,
+    extract_config, name_argument, operations_argument, parameters_argument, port_argument,
+    stop_command, validate_single_version, versions_argument,
 };
 use crate::container::{
     container_network, container_run, ensure_unique_names, run_instances, running_counts,
@@ -70,6 +70,7 @@ async fn start_instances(
     parameters: Vec<String>,
     operations: Vec<String>,
 ) -> anyhow::Result<()> {
+    let config = extract_config(&parameters, "standalone.xml");
     container_network().await?;
     run_instances(&instances, |instance| {
         let mut command = container_run(
@@ -78,6 +79,7 @@ async fn start_instances(
             operations.clone(),
             instance.admin_container.wildfly_container.is_dev(),
             None,
+            Some(&config),
         );
         command
             .arg(instance.admin_container.image_name())

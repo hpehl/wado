@@ -1,6 +1,6 @@
 use crate::args::{
-    name_argument, operations_argument, parameters_argument, server_argument, stop_command,
-    username_password_argument, versions_argument,
+    extract_config, name_argument, operations_argument, parameters_argument, server_argument,
+    stop_command, username_password_argument, versions_argument,
 };
 use crate::constants::{
     DOMAIN_CONTROLLER_VARIABLE, HOSTNAME_VARIABLE, PASSWORD_VARIABLE, USERNAME_VARIABLE,
@@ -114,6 +114,7 @@ async fn start_instances(
         create_secret("username", username),
         create_secret("password", password)
     )?;
+    let config = extract_config(&parameters, "domain.xml");
     run_instances(&instances, |instance| {
         let mut command = container_run(
             &instance.name,
@@ -121,6 +122,7 @@ async fn start_instances(
             operations.clone(),
             instance.admin_container.wildfly_container.is_dev(),
             None,
+            Some(&config),
         );
         command
             .arg(format!(

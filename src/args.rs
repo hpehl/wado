@@ -167,6 +167,20 @@ pub fn validate_single_version(matches: &ArgMatches, options: &[&str]) -> anyhow
     Ok(())
 }
 
+pub fn extract_config(parameters: &[String], default: &str) -> String {
+    let mut iter = parameters.iter();
+    while let Some(param) = iter.next() {
+        if param == "-c" {
+            if let Some(value) = iter.next() {
+                return value.clone();
+            }
+        } else if let Some(value) = param.strip_prefix("--server-config=") {
+            return value.to_string();
+        }
+    }
+    default.to_string()
+}
+
 // ------------------------------------------------------ validation
 
 fn is_valid_cli_operation(operation: &str) -> bool {
