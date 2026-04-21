@@ -1,4 +1,5 @@
 use crate::constants::{WILDFLY_ADMIN_CONTAINER, WILDFLY_ADMIN_CONTAINER_REPOSITORY};
+use crate::label::Label;
 use anyhow::bail;
 use semver::Version;
 use std::cmp::Ordering;
@@ -344,6 +345,8 @@ pub struct ContainerInstance {
     pub name: String,
     pub ports: Option<Ports>,
     pub status: String,
+    pub topology: Option<String>,
+    pub config: Option<String>,
 }
 
 impl ContainerInstance {
@@ -352,8 +355,12 @@ impl ContainerInstance {
         container_id: &str,
         name: &str,
         status: &str,
+        topology: &str,
+        config: &str,
     ) -> anyhow::Result<ContainerInstance> {
         if let Some(admin_container) = AdminContainer::from_identifier(identifier.to_string()) {
+            let topology = Label::Topology.parse_value(topology);
+            let config = Label::Config.parse_value(config);
             Ok(ContainerInstance {
                 admin_container: admin_container.clone(),
                 running: true,
@@ -361,19 +368,30 @@ impl ContainerInstance {
                 container_id: container_id.to_string(),
                 ports: Some(Ports::default_ports(&admin_container.wildfly_container)),
                 status: status.to_string(),
+                topology,
+                config,
             })
         } else {
             bail!("Invalid identifier: '{}'", identifier);
         }
     }
+
 }
 
 impl Ord for ContainerInstance {
     fn cmp(&self, other: &Self) -> Ordering {
-        if self.admin_container == other.admin_container {
-            self.name.cmp(&other.name)
-        } else {
-            self.admin_container.cmp(&other.admin_container)
+        match (&self.topology, &other.topology) {
+            (Some(a), Some(b)) => a.cmp(b).then_with(|| {
+                self.admin_container
+                    .cmp(&other.admin_container)
+                    .then_with(|| self.name.cmp(&other.name))
+            }),
+            (Some(_), None) => Ordering::Less,
+            (None, Some(_)) => Ordering::Greater,
+            (None, None) => self
+                .admin_container
+                .cmp(&other.admin_container)
+                .then_with(|| self.name.cmp(&other.name)),
         }
     }
 }
