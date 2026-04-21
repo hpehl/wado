@@ -24,10 +24,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
-      - uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: 21
       - uses: redhat-actions/podman-login@v1
         with:
           registry: quay.io
