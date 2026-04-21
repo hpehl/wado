@@ -1,6 +1,6 @@
 use crate::constants::{ADD_USER, ALLOWED_ORIGINS, ENTRYPOINT, NO_AUTH, WILDFLY_ADMIN_CONTAINER};
-use crate::label::Label;
 use crate::container::container_command;
+use crate::label::Label;
 use crate::progress::CommandStatus;
 use crate::resources::{
     DOMAIN_CONTROLLER_ENTRYPOINT_SH, HOST_CONTROLLER_ENTRYPOINT_SH, STANDALONE_ENTRYPOINT_SH,

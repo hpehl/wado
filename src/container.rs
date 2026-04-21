@@ -1,6 +1,6 @@
 use crate::constants::{
-    BOOTSTRAP_OPERATIONS_VARIABLE, SERVERS_VARIABLE,
-    WILDFLY_ADMIN_CONTAINER, WILDFLY_ADMIN_CONTAINER_REPOSITORY,
+    BOOTSTRAP_OPERATIONS_VARIABLE, SERVERS_VARIABLE, WILDFLY_ADMIN_CONTAINER,
+    WILDFLY_ADMIN_CONTAINER_REPOSITORY,
 };
 use crate::label::Label;
 use crate::progress::{Progress, stderr_reader, summary};
@@ -115,11 +115,7 @@ pub async fn container_ps(
 }
 
 pub async fn containers_by_topology(topology_name: &str) -> anyhow::Result<Vec<ContainerInstance>> {
-    ps_instances(
-        &Label::Topology.filter_value(topology_name),
-        |_| true,
-    )
-    .await
+    ps_instances(&Label::Topology.filter_value(topology_name), |_| true).await
 }
 
 pub fn container_run(
@@ -160,9 +156,7 @@ pub fn container_run(
             .arg(Label::Topology.run_arg(topology));
     }
     if let Some(config) = config {
-        command
-            .arg("--label")
-            .arg(Label::Config.run_arg(config));
+        command.arg("--label").arg(Label::Config.run_arg(config));
     }
     command
 }
