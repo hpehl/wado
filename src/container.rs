@@ -169,6 +169,8 @@ pub fn container_stop(name: &str) -> Command {
 
 // ------------------------------------------------------ resolve start specs
 
+// Generates unique names and ports based on running *wado* containers (filtered by label).
+// Does not detect collisions with non-wado containers — see `check_name_conflicts()`.
 pub async fn resolve_start_specs(
     server_type: ServerType,
     specs: Vec<StartSpec>,
@@ -479,6 +481,8 @@ async fn ps_instances(
     Ok(instances)
 }
 
+// Catches name collisions with *all* running containers (no label filter),
+// covering non-wado containers and race conditions that `resolve_start_specs()` cannot detect.
 async fn check_name_conflicts(names: &[&str]) -> anyhow::Result<()> {
     let mut cmd = container_command()?;
     cmd.arg("ps").arg("--format").arg("{{.Names}}");

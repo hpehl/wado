@@ -584,7 +584,8 @@ pub struct StartSpec {
     pub custom_management: Option<u16>,
 }
 
-/// Resolved container name and ports after checking running instances.
+/// Resolved container name and ports, unique among running *wado* containers.
+/// Non-wado collisions are caught later by `check_name_conflicts()` in `run_instances()`.
 pub struct ResolvedStart {
     pub admin_container: AdminContainer,
     pub name: String,
