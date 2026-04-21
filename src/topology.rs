@@ -35,7 +35,7 @@ pub fn topology_start(matches: &ArgMatches) -> anyhow::Result<()> {
         .unwrap_or_else(|| dc_admin.container_name());
     let mut dc = DomainController::new(dc_admin, dc_name, Ports::default_ports(&dc_wf));
     if dc_host.name.is_none() {
-        let count = block_on(running_instance_count(ServerType::DomainController, &dc_wf))?;
+        let count = block_on(running_instance_count(&dc_wf))?;
         if count > 0 {
             dc = dc.copy(count);
         }
@@ -50,7 +50,7 @@ pub fn topology_start(matches: &ArgMatches) -> anyhow::Result<()> {
             .iter()
             .map(|hc| hc.admin_container.wildfly_container.clone())
             .collect();
-        let counts = block_on(running_counts(ServerType::HostController, &wf_containers))?;
+        let counts = block_on(running_counts(&wf_containers))?;
         ensure_unique_names(&unnamed_hcs, HostController::copy, |wc| {
             *counts.get(&wc.identifier).unwrap_or(&0)
         })

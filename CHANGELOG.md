@@ -18,6 +18,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   string constants across the codebase
 - Extract `extract_config` helper to parse `-c` / `--server-config=` from
   parameters
+- Reorder `wado ps` columns: move topology after ports
+
+### Fixed
+
+- Fix port conflicts when starting different server types for the same WildFly
+  version (e.g. `wado start 39` then `wado dc start 39`). The unique name/port
+  adjustment now counts all running containers across server types, not just the
+  current type.
 
 ## [0.4.2] - 2026-04-20
 

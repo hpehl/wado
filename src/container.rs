@@ -299,7 +299,6 @@ where
 }
 
 pub async fn running_counts(
-    server_type: ServerType,
     wildfly_containers: &[WildFlyContainer],
 ) -> anyhow::Result<HashMap<u16, u16>> {
     let mut seen = HashSet::new();
@@ -309,7 +308,7 @@ pub async fn running_counts(
         .collect();
     let futures: Vec<_> = unique
         .iter()
-        .map(|wc| running_instance_count(server_type, wc))
+        .map(|wc| running_instance_count(wc))
         .collect();
     let results = join_all(futures).await;
     let mut counts = HashMap::new();
@@ -320,11 +319,14 @@ pub async fn running_counts(
 }
 
 pub async fn running_instance_count(
-    server_type: ServerType,
     wildfly_container: &WildFlyContainer,
 ) -> anyhow::Result<u16> {
     let instances = container_ps(
-        vec![server_type],
+        vec![
+            ServerType::Standalone,
+            ServerType::DomainController,
+            ServerType::HostController,
+        ],
         Some(std::slice::from_ref(wildfly_container)),
         None,
         false,
