@@ -14,6 +14,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Centralize container name and port adjustment into `StartSpec` and
+  `resolve_start_specs`, replacing duplicated logic across standalone, domain
+  controller, host controller, and topology start commands
+- Name and port adjustment are now independent — providing `--name` no longer
+  prevents port auto-adjustment, and providing `--http` or `--management` no
+  longer prevents name auto-adjustment
+- Per-port granularity: `--http`, `--management`, and `--offset` independently
+  mark individual ports as user-provided
 - Centralize container label management into a `Label` enum replacing scattered
   string constants across the codebase
 - Extract `extract_config` helper to parse `-c` / `--server-config=` from
