@@ -4,8 +4,8 @@ use crate::constants::{
 };
 use crate::container::{
     add_servers, container_network, container_run, containers_by_topology, ensure_unique_instances,
-    run_instances, running_counts, running_counts_by_type, running_instance_count,
-    running_instance_count_by_type, stop_containers_by_name, verify_container_command,
+    run_instances, running_counts_combined, running_instance_counts, stop_containers_by_name,
+    verify_container_command,
 };
 use crate::hc::create_secret;
 use crate::topology_model::TopologySetup;
@@ -35,15 +35,10 @@ pub fn topology_start(matches: &ArgMatches) -> anyhow::Result<()> {
         .unwrap_or_else(|| dc_admin.container_name());
     let mut dc = DomainController::new(dc_admin, dc_name, Ports::default_ports(&dc_wf));
     if dc_host.name.is_none() {
-        let same_type =
-            block_on(running_instance_count_by_type(ServerType::DomainController, &dc_wf))?;
-        let all_types = block_on(running_instance_count(&dc_wf))?;
+        let (same_type, all_types) =
+            block_on(running_instance_counts(ServerType::DomainController, &dc_wf))?;
         if same_type > 0 || all_types > 0 {
-            let name_index = if same_type > 0 {
-                Some(same_type)
-            } else {
-                None
-            };
+            let name_index = if same_type > 0 { Some(same_type) } else { None };
             dc = dc.copy(name_index, all_types);
         }
     }
@@ -57,9 +52,8 @@ pub fn topology_start(matches: &ArgMatches) -> anyhow::Result<()> {
             .iter()
             .map(|hc| hc.admin_container.wildfly_container.clone())
             .collect();
-        let same_type_counts =
-            block_on(running_counts_by_type(ServerType::HostController, &wf_containers))?;
-        let all_type_counts = block_on(running_counts(&wf_containers))?;
+        let (same_type_counts, all_type_counts) =
+            block_on(running_counts_combined(ServerType::HostController, &wf_containers))?;
         ensure_unique_instances(
             &unnamed_hcs,
             HostController::copy,

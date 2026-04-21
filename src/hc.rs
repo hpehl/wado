@@ -8,8 +8,7 @@ use crate::constants::{
 };
 use crate::container::{
     add_servers, container_command, container_network, container_run, ensure_unique_instances,
-    run_instances, running_counts, running_counts_by_type, running_instance_count,
-    running_instance_count_by_type, verify_container_command,
+    run_instances, running_counts_combined, running_instance_counts, verify_container_command,
 };
 use crate::wildfly::{AdminContainer, HostController, Server, ServerType};
 use anyhow::bail;
@@ -41,17 +40,12 @@ pub fn hc_start(matches: &ArgMatches) -> anyhow::Result<()> {
             dc_name.to_string(),
         );
         if !has_custom_name {
-            let same_type = block_on(running_instance_count_by_type(
+            let (same_type, all_types) = block_on(running_instance_counts(
                 ServerType::HostController,
                 &wildfly_container,
             ))?;
-            let all_types = block_on(running_instance_count(&wildfly_container))?;
             if same_type > 0 || all_types > 0 {
-                let name_index = if same_type > 0 {
-                    Some(same_type)
-                } else {
-                    None
-                };
+                let name_index = if same_type > 0 { Some(same_type) } else { None };
                 instance = instance.copy(name_index, all_types);
             }
         }
@@ -79,11 +73,10 @@ pub fn hc_start(matches: &ArgMatches) -> anyhow::Result<()> {
                 )
             })
             .collect::<Vec<_>>();
-        let same_type_counts = block_on(running_counts_by_type(
+        let (same_type_counts, all_type_counts) = block_on(running_counts_combined(
             ServerType::HostController,
             &wildfly_containers,
         ))?;
-        let all_type_counts = block_on(running_counts(&wildfly_containers))?;
         ensure_unique_instances(
             &instances,
             HostController::copy,

@@ -240,6 +240,15 @@ impl Ports {
     }
 }
 
+// ------------------------------------------------------ helpers
+
+fn indexed_name(base: &str, name_index: Option<u16>) -> String {
+    match name_index {
+        Some(index) => format!("{}-{}", base, index),
+        None => base.to_string(),
+    }
+}
+
 // ------------------------------------------------------ standalone instance
 
 /// A standalone WildFly server instance with its own HTTP and management ports.
@@ -262,11 +271,7 @@ impl StandaloneInstance {
     pub fn copy(&self, name_index: Option<u16>, port_offset: u16) -> StandaloneInstance {
         StandaloneInstance {
             admin_container: self.admin_container.clone(),
-            name: if let Some(index) = name_index {
-                format!("{}-{}", self.name, index)
-            } else {
-                self.name.clone()
-            },
+            name: indexed_name(&self.name, name_index),
             ports: self.ports.with_offset(port_offset),
         }
     }
@@ -296,11 +301,7 @@ impl DomainController {
     pub fn copy(&self, name_index: Option<u16>, port_offset: u16) -> DomainController {
         DomainController {
             admin_container: self.admin_container.clone(),
-            name: if let Some(index) = name_index {
-                format!("{}-{}", self.name, index)
-            } else {
-                self.name.clone()
-            },
+            name: indexed_name(&self.name, name_index),
             ports: self.ports.with_offset(port_offset),
         }
     }
@@ -334,11 +335,7 @@ impl HostController {
     pub fn copy(&self, name_index: Option<u16>, _port_offset: u16) -> HostController {
         HostController {
             admin_container: self.admin_container.clone(),
-            name: if let Some(index) = name_index {
-                format!("{}-{}", self.name, index)
-            } else {
-                self.name.clone()
-            },
+            name: indexed_name(&self.name, name_index),
             domain_controller: self.domain_controller.clone(),
         }
     }
@@ -636,30 +633,38 @@ fn compare(
     }
 }
 
-// ------------------------------------------------------ tests
+// ------------------------------------------------------ test helpers
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod test_helpers {
     use super::*;
-    use crate::wildfly::ServerGroup::{MainServerGroup, OtherServerGroup};
 
-    fn sa_instance(version: &str) -> StandaloneInstance {
+    pub fn sa_instance(version: &str) -> StandaloneInstance {
         let wc = WildFlyContainer::version(version).unwrap();
         let ac = AdminContainer::new(wc.clone(), ServerType::Standalone);
         StandaloneInstance::new(ac.clone(), ac.container_name(), Ports::default_ports(&wc))
     }
 
-    fn dc_instance(version: &str) -> DomainController {
+    pub fn dc_instance(version: &str) -> DomainController {
         let wc = WildFlyContainer::version(version).unwrap();
         let ac = AdminContainer::new(wc.clone(), ServerType::DomainController);
         DomainController::new(ac.clone(), ac.container_name(), Ports::default_ports(&wc))
     }
 
-    fn hc_instance(version: &str, dc_name: &str) -> HostController {
+    pub fn hc_instance(version: &str, dc_name: &str) -> HostController {
         let wc = WildFlyContainer::version(version).unwrap();
         let ac = AdminContainer::new(wc, ServerType::HostController);
         HostController::new(ac.clone(), ac.container_name(), dc_name.to_string())
     }
+}
+
+// ------------------------------------------------------ tests
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::wildfly::test_helpers::*;
+    use crate::wildfly::ServerGroup::{MainServerGroup, OtherServerGroup};
 
     // ------------------------------------------------------ copy tests
 

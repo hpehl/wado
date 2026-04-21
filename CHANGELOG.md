@@ -18,7 +18,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   string constants across the codebase
 - Extract `extract_config` helper to parse `-c` / `--server-config=` from
   parameters
-- Reorder `wado ps` columns: move topology after ports
 
 ### Fixed
 

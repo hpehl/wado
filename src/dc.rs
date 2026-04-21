@@ -5,8 +5,7 @@ use crate::args::{
 use crate::constants::{HOSTNAME_VARIABLE, WILDFLY_ADMIN_CONTAINER};
 use crate::container::{
     add_servers, container_network, container_run, ensure_unique_instances, run_instances,
-    running_counts, running_counts_by_type, running_instance_count,
-    running_instance_count_by_type, verify_container_command,
+    running_counts_combined, running_instance_counts, verify_container_command,
 };
 use crate::wildfly::{AdminContainer, DomainController, Ports, Server, ServerType};
 use clap::ArgMatches;
@@ -32,17 +31,12 @@ pub fn dc_start(matches: &ArgMatches) -> anyhow::Result<()> {
             port_argument(matches, &wildfly_container),
         );
         if !has_custom_name && !has_custom_ports {
-            let same_type = block_on(running_instance_count_by_type(
+            let (same_type, all_types) = block_on(running_instance_counts(
                 ServerType::DomainController,
                 &wildfly_container,
             ))?;
-            let all_types = block_on(running_instance_count(&wildfly_container))?;
             if same_type > 0 || all_types > 0 {
-                let name_index = if same_type > 0 {
-                    Some(same_type)
-                } else {
-                    None
-                };
+                let name_index = if same_type > 0 { Some(same_type) } else { None };
                 instance = instance.copy(name_index, all_types);
             }
         }
@@ -61,11 +55,10 @@ pub fn dc_start(matches: &ArgMatches) -> anyhow::Result<()> {
                 )
             })
             .collect::<Vec<_>>();
-        let same_type_counts = block_on(running_counts_by_type(
+        let (same_type_counts, all_type_counts) = block_on(running_counts_combined(
             ServerType::DomainController,
             &wildfly_containers,
         ))?;
-        let all_type_counts = block_on(running_counts(&wildfly_containers))?;
         ensure_unique_instances(
             &instances,
             DomainController::copy,
