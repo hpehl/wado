@@ -1,6 +1,5 @@
-use crate::constants::{
-    ADD_USER, ALLOWED_ORIGINS, ENTRYPOINT, LABEL_NAME, NO_AUTH, WILDFLY_ADMIN_CONTAINER,
-};
+use crate::constants::{ADD_USER, ALLOWED_ORIGINS, ENTRYPOINT, NO_AUTH, WILDFLY_ADMIN_CONTAINER};
+use crate::label::Label;
 use crate::container::container_command;
 use crate::progress::CommandStatus;
 use crate::resources::{
@@ -31,7 +30,7 @@ pub(super) fn base_template_data(
     admin_container: &AdminContainer,
 ) -> HashMap<&'static str, String> {
     let mut data = HashMap::new();
-    data.insert("label-name", LABEL_NAME.to_string());
+    data.insert("label-name", Label::Id.key().to_string());
     data.insert("label-value", admin_container.identifier());
     data.insert("entrypoint", ENTRYPOINT.to_string());
     data.insert("add-user", ADD_USER.to_string());
