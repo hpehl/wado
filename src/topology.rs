@@ -40,7 +40,7 @@ pub fn topology_start(matches: &ArgMatches) -> anyhow::Result<()> {
         let all_types = block_on(running_instance_count(&dc_wf))?;
         if same_type > 0 || all_types > 0 {
             let name_index = if same_type > 0 {
-                Some(all_types)
+                Some(same_type)
             } else {
                 None
             };

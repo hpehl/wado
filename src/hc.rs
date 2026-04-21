@@ -48,7 +48,7 @@ pub fn hc_start(matches: &ArgMatches) -> anyhow::Result<()> {
             let all_types = block_on(running_instance_count(&wildfly_container))?;
             if same_type > 0 || all_types > 0 {
                 let name_index = if same_type > 0 {
-                    Some(all_types)
+                    Some(same_type)
                 } else {
                     None
                 };
