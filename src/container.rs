@@ -348,11 +348,7 @@ pub async fn running_counts_by_type(
 
 pub async fn running_instance_count(wildfly_container: &WildFlyContainer) -> anyhow::Result<u16> {
     let instances = container_ps(
-        vec![
-            ServerType::Standalone,
-            ServerType::DomainController,
-            ServerType::HostController,
-        ],
+        vec![ServerType::Standalone, ServerType::DomainController],
         Some(std::slice::from_ref(wildfly_container)),
         None,
         false,
