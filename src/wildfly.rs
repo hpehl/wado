@@ -572,6 +572,35 @@ impl ManagementClient {
     }
 }
 
+// ------------------------------------------------------ server offsets
+
+pub const DEFAULT_SERVER_OFFSET: u16 = 100;
+
+pub fn apply_offsets(servers: Vec<Server>, offset: u16) -> Vec<Server> {
+    if servers.len() > 1 {
+        let mut last_offset = 0;
+        servers
+            .iter()
+            .enumerate()
+            .map(|(index, server)| {
+                if index == 0 {
+                    server.clone()
+                } else {
+                    let server_with_offset = if server.offset == 0 {
+                        server.with_offset(last_offset + offset)
+                    } else {
+                        server.clone()
+                    };
+                    last_offset = server_with_offset.offset;
+                    server_with_offset
+                }
+            })
+            .collect::<Vec<_>>()
+    } else {
+        servers
+    }
+}
+
 // ------------------------------------------------------ start spec / resolved start
 
 /// Captures what the user (or topology.yml) explicitly provided for a container start.
@@ -741,5 +770,63 @@ mod tests {
             server.add_server_op("secondary"),
             "/host=secondary/server-config=server-two:add(group=other-server-group,socket-binding-port-offset=100,auto-start=false)"
         );
+    }
+
+    // ------------------------------------------------------ apply offsets tests
+
+    #[test]
+    fn apply_offsets_empty() {
+        let servers = vec![];
+        assert_eq!(apply_offsets(servers, 100), vec![]);
+    }
+
+    #[test]
+    fn apply_offsets_single_server() {
+        let server = Server::parse_server("server1").unwrap();
+        let input = vec![server.clone()];
+        let expected = vec![server.clone()];
+        assert_eq!(apply_offsets(input, 100), expected);
+    }
+
+    #[test]
+    fn apply_offsets_multiple_servers() {
+        let server0 = Server::parse_server("server0").unwrap();
+        let server1 = Server::parse_server("server1").unwrap();
+        let server2 = Server::parse_server("server2").unwrap();
+        let server3 = Server::parse_server("server3").unwrap();
+        let input = vec![
+            server0.clone(),
+            server1.clone(),
+            server2.clone(),
+            server3.clone(),
+        ];
+        let expected = vec![
+            server0.clone(),
+            server1.with_offset(100),
+            server2.with_offset(200),
+            server3.with_offset(300),
+        ];
+        assert_eq!(apply_offsets(input, 100), expected);
+    }
+
+    #[test]
+    fn apply_offsets_multiple_servers_custom_offset() {
+        let server0 = Server::parse_server("server0").unwrap();
+        let server1 = Server::parse_server("server1").unwrap();
+        let server2 = Server::parse_server("server2:50").unwrap();
+        let server3 = Server::parse_server("server3").unwrap();
+        let input = vec![
+            server0.clone(),
+            server1.clone(),
+            server2.clone(),
+            server3.clone(),
+        ];
+        let expected = vec![
+            server0.clone(),
+            server1.with_offset(100),
+            server2.with_offset(50),
+            server3.with_offset(150),
+        ];
+        assert_eq!(apply_offsets(input, 100), expected);
     }
 }

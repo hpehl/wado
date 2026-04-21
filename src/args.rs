@@ -1,5 +1,7 @@
 use crate::container::{stop_instances, verify_container_command};
-use crate::wildfly::{AdminContainer, Server, ServerType, StartSpec};
+use crate::wildfly::{
+    AdminContainer, DEFAULT_SERVER_OFFSET, Server, ServerType, StartSpec, apply_offsets,
+};
 use anyhow::bail;
 use clap::ArgMatches;
 use fs::read_to_string;
@@ -7,8 +9,6 @@ use futures::executor::block_on;
 use std::fs;
 use std::path::Path;
 use wildfly_container_versions::WildFlyContainer;
-
-const DEFAULT_SERVER_OFFSET: u16 = 100;
 
 // ------------------------------------------------------ sorted a-z
 
@@ -211,92 +211,3 @@ fn is_valid_cli_operation(operation: &str) -> bool {
     trimmed.starts_with('/') || trimmed.starts_with(':')
 }
 
-// ------------------------------------------------------ helpers
-
-fn apply_offsets(servers: Vec<Server>, offset: u16) -> Vec<Server> {
-    if servers.len() > 1 {
-        let mut last_offset = 0;
-        servers
-            .iter()
-            .enumerate()
-            .map(|(index, server)| {
-                if index == 0 {
-                    server.clone()
-                } else {
-                    let server_with_offset = if server.offset == 0 {
-                        server.with_offset(last_offset + offset)
-                    } else {
-                        server.clone()
-                    };
-                    last_offset = server_with_offset.offset;
-                    server_with_offset
-                }
-            })
-            .collect::<Vec<_>>()
-    } else {
-        servers
-    }
-}
-
-// ------------------------------------------------------ tests
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn apply_offsets_empty() {
-        let servers = vec![];
-        assert_eq!(apply_offsets(servers, 100), vec![]);
-    }
-
-    #[test]
-    fn apply_offsets_single_server() {
-        let server = Server::parse_server("server1").unwrap();
-        let input = vec![server.clone()];
-        let expected = vec![server.clone()];
-        assert_eq!(apply_offsets(input, 100), expected);
-    }
-
-    #[test]
-    fn apply_offsets_multiple_servers() {
-        let server0 = Server::parse_server("server0").unwrap();
-        let server1 = Server::parse_server("server1").unwrap();
-        let server2 = Server::parse_server("server2").unwrap();
-        let server3 = Server::parse_server("server3").unwrap();
-        let input = vec![
-            server0.clone(),
-            server1.clone(),
-            server2.clone(),
-            server3.clone(),
-        ];
-        let expected = vec![
-            server0.clone(),
-            server1.with_offset(100),
-            server2.with_offset(200),
-            server3.with_offset(300),
-        ];
-        assert_eq!(apply_offsets(input, 100), expected);
-    }
-
-    #[test]
-    fn apply_offsets_multiple_servers_custom_offset() {
-        let server0 = Server::parse_server("server0").unwrap();
-        let server1 = Server::parse_server("server1").unwrap();
-        let server2 = Server::parse_server("server2:50").unwrap();
-        let server3 = Server::parse_server("server3").unwrap();
-        let input = vec![
-            server0.clone(),
-            server1.clone(),
-            server2.clone(),
-            server3.clone(),
-        ];
-        let expected = vec![
-            server0.clone(),
-            server1.with_offset(100),
-            server2.with_offset(50),
-            server3.with_offset(150),
-        ];
-        assert_eq!(apply_offsets(input, 100), expected);
-    }
-}

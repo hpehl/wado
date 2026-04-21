@@ -9,7 +9,8 @@ use crate::container::{
 use crate::hc::create_secret;
 use crate::topology_model::TopologySetup;
 use crate::wildfly::{
-    AdminContainer, DomainController, HostController, Server, ServerType, StartSpec,
+    AdminContainer, DEFAULT_SERVER_OFFSET, DomainController, HostController, Server, ServerType,
+    StartSpec, apply_offsets,
 };
 use clap::ArgMatches;
 use futures::executor::block_on;
@@ -46,6 +47,7 @@ pub fn topology_start(matches: &ArgMatches) -> anyhow::Result<()> {
         dc_r.ports.clone().unwrap(),
     );
     let dc_servers: Vec<Server> = dc_host.servers.iter().map(|s| s.to_server()).collect();
+    let dc_servers = apply_offsets(dc_servers, DEFAULT_SERVER_OFFSET);
 
     let hc_hosts = setup.hc_hosts();
     let hc_specs = build_hc_specs(&hc_hosts, setup.version)?;
@@ -93,6 +95,7 @@ fn build_server_map(
     let mut map = BTreeMap::new();
     for (host, hc) in hc_hosts.iter().zip(hcs.iter()) {
         let servers: Vec<Server> = host.servers.iter().map(|s| s.to_server()).collect();
+        let servers = apply_offsets(servers, DEFAULT_SERVER_OFFSET);
         if !servers.is_empty() {
             map.insert(hc.name.clone(), servers);
         }
