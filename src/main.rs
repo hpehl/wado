@@ -10,6 +10,7 @@ mod container_completion;
 mod dc;
 mod hc;
 mod image;
+mod label;
 mod progress;
 mod ps;
 mod push;

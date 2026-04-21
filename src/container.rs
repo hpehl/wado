@@ -1,7 +1,8 @@
 use crate::constants::{
-    BOOTSTRAP_OPERATIONS_VARIABLE, LABEL_NAME, SERVERS_VARIABLE, TOPOLOGY_LABEL_NAME,
+    BOOTSTRAP_OPERATIONS_VARIABLE, SERVERS_VARIABLE,
     WILDFLY_ADMIN_CONTAINER, WILDFLY_ADMIN_CONTAINER_REPOSITORY,
 };
+use crate::label::Label;
 use crate::progress::{Progress, stderr_reader, summary};
 use crate::wildfly::ServerType::{DomainController, Standalone};
 use crate::wildfly::{
@@ -89,7 +90,7 @@ pub async fn container_ps(
     name: Option<&str>,
     resolve_ports: bool,
 ) -> anyhow::Result<Vec<ContainerInstance>> {
-    let mut instances = ps_instances(&format!("label={}", LABEL_NAME), |instance| {
+    let mut instances = ps_instances(&Label::Id.filter(), |instance| {
         let server_type_match = server_types.contains(&instance.admin_container.server_type);
         let version_match = if let Some(versions) = &wildfly_containers {
             versions.contains(&instance.admin_container.wildfly_container)
@@ -115,7 +116,7 @@ pub async fn container_ps(
 
 pub async fn containers_by_topology(topology_name: &str) -> anyhow::Result<Vec<ContainerInstance>> {
     ps_instances(
-        &format!("label={}={}", TOPOLOGY_LABEL_NAME, topology_name),
+        &Label::Topology.filter_value(topology_name),
         |_| true,
     )
     .await
@@ -127,6 +128,7 @@ pub fn container_run(
     operations: Vec<String>,
     dev: bool,
     topology_name: Option<&str>,
+    config: Option<&str>,
 ) -> Command {
     let mut command = container_command().expect("Unable to run docker run/podman run.");
     command
@@ -155,7 +157,12 @@ pub fn container_run(
     if let Some(topology) = topology_name {
         command
             .arg("--label")
-            .arg(format!("{}={}", TOPOLOGY_LABEL_NAME, topology));
+            .arg(Label::Topology.run_arg(topology));
+    }
+    if let Some(config) = config {
+        command
+            .arg("--label")
+            .arg(Label::Config.run_arg(config));
     }
     command
 }
@@ -407,8 +414,10 @@ async fn ps_instances(
         .arg(filter)
         .arg("--format")
         .arg(format!(
-            "{{{{.ID}}}}|{{{{index .Labels \"{}\"}}}}|{{{{.Names}}}}|{{{{.Status}}}}",
-            LABEL_NAME
+            "{{{{.ID}}}}|{}|{{{{.Names}}}}|{{{{.Status}}}}|{}|{}",
+            Label::Id.format_expr(),
+            Label::Topology.format_expr(),
+            Label::Config.format_expr(),
         ));
     let child = command
         .stdout(Stdio::piped())
@@ -419,8 +428,9 @@ async fn ps_instances(
     let mut instances = Vec::new();
     for line in output.lines() {
         let parts: Vec<&str> = line.split('|').collect();
-        if parts.len() == 4
-            && let Ok(instance) = ContainerInstance::new(parts[1], parts[0], parts[2], parts[3])
+        if parts.len() == 6
+            && let Ok(instance) =
+                ContainerInstance::new(parts[1], parts[0], parts[2], parts[3], parts[4], parts[5])
             && predicate(&instance)
         {
             instances.push(instance);
