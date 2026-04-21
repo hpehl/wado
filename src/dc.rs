@@ -1,6 +1,6 @@
 use crate::args::{
     extract_config, operations_argument, parameters_argument, server_argument, start_spec,
-    stop_command, validate_single_version, versions_argument,
+    stop_command, validate_multiple_versions, versions_argument,
 };
 use crate::constants::{HOSTNAME_VARIABLE, WILDFLY_ADMIN_CONTAINER};
 use crate::container::{
@@ -17,7 +17,7 @@ pub fn dc_start(matches: &ArgMatches) -> anyhow::Result<()> {
     verify_container_command()?;
     let wildfly_containers = versions_argument(matches);
     if wildfly_containers.len() > 1 {
-        validate_single_version(matches, &["name", "http", "management", "offset"])?;
+        validate_multiple_versions(matches, &["name", "http", "management", "offset"])?;
     }
     let specs = wildfly_containers
         .iter()

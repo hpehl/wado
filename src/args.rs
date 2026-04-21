@@ -178,7 +178,7 @@ pub fn stop_command(server_type: ServerType, matches: &ArgMatches) -> anyhow::Re
     ))
 }
 
-pub fn validate_single_version(matches: &ArgMatches, options: &[&str]) -> anyhow::Result<()> {
+pub fn validate_multiple_versions(matches: &ArgMatches, options: &[&str]) -> anyhow::Result<()> {
     for option in options {
         if matches.contains_id(option) {
             bail!(

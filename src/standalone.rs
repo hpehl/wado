@@ -1,6 +1,6 @@
 use crate::args::{
     extract_config, operations_argument, parameters_argument, start_spec, stop_command,
-    validate_single_version, versions_argument,
+    validate_multiple_versions, versions_argument,
 };
 use crate::container::{
     container_network, container_run, resolve_start_specs, run_instances, verify_container_command,
@@ -15,7 +15,7 @@ pub fn standalone_start(matches: &ArgMatches) -> anyhow::Result<()> {
     verify_container_command()?;
     let wildfly_containers = versions_argument(matches);
     if wildfly_containers.len() > 1 {
-        validate_single_version(matches, &["name", "http", "management", "offset"])?;
+        validate_multiple_versions(matches, &["name", "http", "management", "offset"])?;
     }
     let specs = wildfly_containers
         .iter()
