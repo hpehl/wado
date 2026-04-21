@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.3] - 2026-04-21
+
+### Added
+
+- Show topology and config columns in `wado ps` output
+- Attach config label (`org.wildfly.wado.config`) to containers at start time
+
+### Changed
+
+- Centralize container label management into a `Label` enum replacing scattered
+  string constants across the codebase
+- Extract `extract_config` helper to parse `-c` / `--server-config=` from
+  parameters
+
 ## [0.4.2] - 2026-04-20
 
 ### Changed
@@ -288,6 +302,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - First release 🎉
+
+[0.4.3]: https://github.com/hpehl/wado/compare/v0.4.2...v0.4.3
 
 [0.4.2]: https://github.com/hpehl/wado/compare/v0.4.1...v0.4.2
 
