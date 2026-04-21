@@ -3,8 +3,9 @@ use crate::args::{
     stop_command, validate_single_version, versions_argument,
 };
 use crate::container::{
-    container_network, container_run, ensure_unique_names, run_instances, running_counts,
-    running_instance_count, verify_container_command,
+    container_network, container_run, ensure_unique_instances, run_instances, running_counts,
+    running_counts_by_type, running_instance_count, running_instance_count_by_type,
+    verify_container_command,
 };
 use crate::wildfly::{AdminContainer, Ports, ServerType, StandaloneInstance};
 use clap::ArgMatches;
@@ -30,9 +31,18 @@ pub fn standalone_start(matches: &ArgMatches) -> anyhow::Result<()> {
             port_argument(matches, &wildfly_container),
         );
         if !has_custom_name && !has_custom_ports {
-            let count = block_on(running_instance_count(&wildfly_container))?;
-            if count > 0 {
-                instance = instance.copy(count);
+            let same_type = block_on(running_instance_count_by_type(
+                ServerType::Standalone,
+                &wildfly_container,
+            ))?;
+            let all_types = block_on(running_instance_count(&wildfly_container))?;
+            if same_type > 0 || all_types > 0 {
+                let name_index = if same_type > 0 {
+                    Some(all_types)
+                } else {
+                    None
+                };
+                instance = instance.copy(name_index, all_types);
             }
         }
         vec![instance]
@@ -50,10 +60,17 @@ pub fn standalone_start(matches: &ArgMatches) -> anyhow::Result<()> {
                 )
             })
             .collect::<Vec<_>>();
-        let running_counts = block_on(running_counts(&wildfly_containers))?;
-        ensure_unique_names(&instances, StandaloneInstance::copy, |wc| {
-            *running_counts.get(&wc.identifier).unwrap_or(&0)
-        })
+        let same_type_counts = block_on(running_counts_by_type(
+            ServerType::Standalone,
+            &wildfly_containers,
+        ))?;
+        let all_type_counts = block_on(running_counts(&wildfly_containers))?;
+        ensure_unique_instances(
+            &instances,
+            StandaloneInstance::copy,
+            |wc| *same_type_counts.get(&wc.identifier).unwrap_or(&0),
+            |wc| *all_type_counts.get(&wc.identifier).unwrap_or(&0),
+        )
     };
     block_on(start_instances(
         instances,

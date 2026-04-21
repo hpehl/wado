@@ -259,11 +259,15 @@ impl StandaloneInstance {
         }
     }
 
-    pub fn copy(&self, index: u16) -> StandaloneInstance {
+    pub fn copy(&self, name_index: Option<u16>, port_offset: u16) -> StandaloneInstance {
         StandaloneInstance {
             admin_container: self.admin_container.clone(),
-            name: format!("{}-{}", self.name, index),
-            ports: self.ports.with_offset(index),
+            name: if let Some(index) = name_index {
+                format!("{}-{}", self.name, index)
+            } else {
+                self.name.clone()
+            },
+            ports: self.ports.with_offset(port_offset),
         }
     }
 }
@@ -289,11 +293,15 @@ impl DomainController {
         }
     }
 
-    pub fn copy(&self, index: u16) -> DomainController {
+    pub fn copy(&self, name_index: Option<u16>, port_offset: u16) -> DomainController {
         DomainController {
             admin_container: self.admin_container.clone(),
-            name: format!("{}-{}", self.name, index),
-            ports: self.ports.with_offset(index),
+            name: if let Some(index) = name_index {
+                format!("{}-{}", self.name, index)
+            } else {
+                self.name.clone()
+            },
+            ports: self.ports.with_offset(port_offset),
         }
     }
 }
@@ -323,10 +331,14 @@ impl HostController {
         }
     }
 
-    pub fn copy(&self, index: u16) -> HostController {
+    pub fn copy(&self, name_index: Option<u16>, _port_offset: u16) -> HostController {
         HostController {
             admin_container: self.admin_container.clone(),
-            name: format!("{}-{}", self.name, index),
+            name: if let Some(index) = name_index {
+                format!("{}-{}", self.name, index)
+            } else {
+                self.name.clone()
+            },
             domain_controller: self.domain_controller.clone(),
         }
     }

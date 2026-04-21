@@ -3,9 +3,9 @@ use crate::constants::{
     WILDFLY_ADMIN_CONTAINER,
 };
 use crate::container::{
-    add_servers, container_network, container_run, containers_by_topology, ensure_unique_names,
-    run_instances, running_counts, running_instance_count, stop_containers_by_name,
-    verify_container_command,
+    add_servers, container_network, container_run, containers_by_topology, ensure_unique_instances,
+    run_instances, running_counts, running_counts_by_type, running_instance_count,
+    running_instance_count_by_type, stop_containers_by_name, verify_container_command,
 };
 use crate::hc::create_secret;
 use crate::topology_model::TopologySetup;
@@ -35,9 +35,16 @@ pub fn topology_start(matches: &ArgMatches) -> anyhow::Result<()> {
         .unwrap_or_else(|| dc_admin.container_name());
     let mut dc = DomainController::new(dc_admin, dc_name, Ports::default_ports(&dc_wf));
     if dc_host.name.is_none() {
-        let count = block_on(running_instance_count(&dc_wf))?;
-        if count > 0 {
-            dc = dc.copy(count);
+        let same_type =
+            block_on(running_instance_count_by_type(ServerType::DomainController, &dc_wf))?;
+        let all_types = block_on(running_instance_count(&dc_wf))?;
+        if same_type > 0 || all_types > 0 {
+            let name_index = if same_type > 0 {
+                Some(all_types)
+            } else {
+                None
+            };
+            dc = dc.copy(name_index, all_types);
         }
     }
     let dc_servers: Vec<Server> = dc_host.servers.iter().map(|s| s.to_server()).collect();
@@ -50,10 +57,15 @@ pub fn topology_start(matches: &ArgMatches) -> anyhow::Result<()> {
             .iter()
             .map(|hc| hc.admin_container.wildfly_container.clone())
             .collect();
-        let counts = block_on(running_counts(&wf_containers))?;
-        ensure_unique_names(&unnamed_hcs, HostController::copy, |wc| {
-            *counts.get(&wc.identifier).unwrap_or(&0)
-        })
+        let same_type_counts =
+            block_on(running_counts_by_type(ServerType::HostController, &wf_containers))?;
+        let all_type_counts = block_on(running_counts(&wf_containers))?;
+        ensure_unique_instances(
+            &unnamed_hcs,
+            HostController::copy,
+            |wc| *same_type_counts.get(&wc.identifier).unwrap_or(&0),
+            |wc| *all_type_counts.get(&wc.identifier).unwrap_or(&0),
+        )
     } else {
         unnamed_hcs
     };

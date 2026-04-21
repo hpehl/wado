@@ -23,9 +23,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fix port conflicts when starting different server types for the same WildFly
-  version (e.g. `wado start 39` then `wado dc start 39`). The unique name/port
-  adjustment now counts all running containers across server types, not just the
-  current type.
+  version (e.g. `wado start 39` then `wado dc start 39`). Port offset now
+  counts all running containers across server types, while container name
+  indexing only considers containers of the same type.
 
 ## [0.4.2] - 2026-04-20
 
