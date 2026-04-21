@@ -35,8 +35,10 @@ pub fn topology_start(matches: &ArgMatches) -> anyhow::Result<()> {
         custom_http: None,
         custom_management: None,
     };
-    let dc_resolved =
-        block_on(resolve_start_specs(ServerType::DomainController, vec![dc_spec]))?;
+    let dc_resolved = block_on(resolve_start_specs(
+        ServerType::DomainController,
+        vec![dc_spec],
+    ))?;
     let dc_r = &dc_resolved[0];
     let dc = DomainController::new(
         dc_r.admin_container.clone(),

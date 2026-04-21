@@ -3,12 +3,12 @@ use crate::constants::{
     WILDFLY_ADMIN_CONTAINER_REPOSITORY,
 };
 use crate::label::Label;
-use crate::progress::{stderr_reader, summary, Progress};
+use crate::progress::{Progress, stderr_reader, summary};
 use crate::wildfly::ServerType::{DomainController, Standalone};
 use crate::wildfly::{
     ContainerConfig, ContainerInstance, Ports, ResolvedStart, Server, ServerType, StartSpec,
 };
-use anyhow::{bail, Error};
+use anyhow::{Error, bail};
 use futures::future::join_all;
 use indicatif::MultiProgress;
 use std::collections::{HashMap, HashSet};
@@ -295,12 +295,18 @@ pub async fn get_instance(
             (Some(name), Some(wcs)) => format!(
                 "for name '{}' and version '{}'",
                 name,
-                wcs.iter().map(|x| x.display_version()).collect::<Vec<String>>().join(", ")
+                wcs.iter()
+                    .map(|x| x.display_version())
+                    .collect::<Vec<String>>()
+                    .join(", ")
             ),
             (Some(name), None) => format!("for name '{}'", name),
             (None, Some(wcs)) => format!(
                 "for version '{}'",
-                wcs.iter().map(|x| x.display_version()).collect::<Vec<String>>().join(", ")
+                wcs.iter()
+                    .map(|x| x.display_version())
+                    .collect::<Vec<String>>()
+                    .join(", ")
             ),
             (None, None) => String::new(),
         };
@@ -525,8 +531,17 @@ pub fn container_command() -> anyhow::Result<Command> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::wildfly::test_helpers::sa_spec;
     use crate::wildfly::{AdminContainer, Ports, StartSpec};
+
+    fn sa_spec(version: &str) -> StartSpec {
+        let wc = WildFlyContainer::version(version).unwrap();
+        StartSpec {
+            admin_container: AdminContainer::new(wc, ServerType::Standalone),
+            custom_name: None,
+            custom_http: None,
+            custom_management: None,
+        }
+    }
 
     fn counts(entries: &[(u16, u16, u16)]) -> HashMap<u16, (u16, u16)> {
         entries

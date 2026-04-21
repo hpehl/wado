@@ -6,17 +6,12 @@ use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::fmt::{Debug, Display};
 use std::str::FromStr;
-use wildfly_container_versions::{WildFlyContainer, VERSIONS};
+use wildfly_container_versions::{VERSIONS, WildFlyContainer};
 
 // ------------------------------------------------------ traits
 
-/// Provides access to the underlying `WildFlyContainer` version metadata.
-pub trait HasWildFlyContainer {
-    fn wildfly_container(&self) -> &WildFlyContainer;
-}
-
 /// Configuration for a named container instance with its admin container metadata.
-pub trait ContainerConfig: HasWildFlyContainer + Clone {
+pub trait ContainerConfig: Clone {
     fn admin_container(&self) -> &AdminContainer;
     fn name(&self) -> &str;
 }
@@ -29,12 +24,6 @@ macro_rules! impl_container_instance {
             }
             fn name(&self) -> &str {
                 &self.name
-            }
-        }
-
-        impl HasWildFlyContainer for $type {
-            fn wildfly_container(&self) -> &WildFlyContainer {
-                &self.admin_container.wildfly_container
             }
         }
     };
@@ -212,12 +201,6 @@ impl PartialOrd for AdminContainer {
     }
 }
 
-impl HasWildFlyContainer for AdminContainer {
-    fn wildfly_container(&self) -> &WildFlyContainer {
-        &self.wildfly_container
-    }
-}
-
 // ------------------------------------------------------ ports
 
 /// HTTP and management port pair for a container instance.
@@ -235,6 +218,7 @@ impl Ports {
         }
     }
 
+    #[cfg(test)]
     pub fn with_offset(&self, offset: u16) -> Ports {
         Ports {
             http: self.http + offset,
@@ -605,23 +589,6 @@ pub struct ResolvedStart {
     pub admin_container: AdminContainer,
     pub name: String,
     pub ports: Option<Ports>,
-}
-
-// ------------------------------------------------------ test helpers
-
-#[cfg(test)]
-pub(crate) mod test_helpers {
-    use super::*;
-
-    pub fn sa_spec(version: &str) -> StartSpec {
-        let wc = WildFlyContainer::version(version).unwrap();
-        StartSpec {
-            admin_container: AdminContainer::new(wc, ServerType::Standalone),
-            custom_name: None,
-            custom_http: None,
-            custom_management: None,
-        }
-    }
 }
 
 // ------------------------------------------------------ tests
