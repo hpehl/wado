@@ -583,13 +583,10 @@ hosts:
         auto-start: true
       - name: server-two
         group: main-server-group
-        offset: 100
+        offset: 10
       - name: server-three
         group: other-server-group
-        offset: 200
-      - name: server-four
-        group: other-server-group
-        offset: 300
+        offset: 20
   - name: host2
     version: 38
     servers:
@@ -597,19 +594,15 @@ hosts:
         group: main-server-group
       - name: server-two
         group: main-server-group
-        offset: 100
       - name: server-three
         group: other-server-group
-        offset: 200
   - servers:
       - name: server-one
         group: main-server-group
       - name: server-two
         group: other-server-group
-        offset: 100
       - name: server-three
         group: other-server-group
-        offset: 200
 ```
 
 ## Images
