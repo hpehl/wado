@@ -210,4 +210,3 @@ fn is_valid_cli_operation(operation: &str) -> bool {
     let trimmed = operation.trim();
     trimmed.starts_with('/') || trimmed.starts_with(':')
 }
-
