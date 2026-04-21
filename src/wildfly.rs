@@ -375,7 +375,6 @@ impl ContainerInstance {
             bail!("Invalid identifier: '{}'", identifier);
         }
     }
-
 }
 
 impl Ord for ContainerInstance {
