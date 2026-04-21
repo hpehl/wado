@@ -7,10 +7,10 @@ use crate::constants::{
     WILDFLY_ADMIN_CONTAINER,
 };
 use crate::container::{
-    add_servers, container_command, container_network, container_run, ensure_unique_instances,
-    run_instances, running_counts_combined, running_instance_counts, verify_container_command,
+    add_servers, container_command, container_network, container_run, resolve_start_specs,
+    run_instances, verify_container_command,
 };
-use crate::wildfly::{AdminContainer, HostController, Server, ServerType};
+use crate::wildfly::{AdminContainer, HostController, Server, ServerType, StartSpec};
 use anyhow::bail;
 use clap::ArgMatches;
 use futures::executor::block_on;
@@ -30,27 +30,8 @@ pub fn hc_start(matches: &ArgMatches) -> anyhow::Result<()> {
     let dc_name = name_argument("domain-controller", matches, || {
         admin_container_dc.container_name()
     });
-    let has_custom_name = matches.get_one::<String>("name").is_some();
-    let instances = if wildfly_containers.len() == 1 {
-        let admin_container_hc =
-            AdminContainer::new(wildfly_container.clone(), ServerType::HostController);
-        let mut instance = HostController::new(
-            admin_container_hc.clone(),
-            name_argument("name", matches, || admin_container_hc.container_name()),
-            dc_name.to_string(),
-        );
-        if !has_custom_name {
-            let (same_type, all_types) = block_on(running_instance_counts(
-                ServerType::HostController,
-                &wildfly_container,
-            ))?;
-            if same_type > 0 || all_types > 0 {
-                let name_index = if same_type > 0 { Some(same_type) } else { None };
-                instance = instance.copy(name_index, all_types);
-            }
-        }
-        vec![instance]
-    } else {
+
+    if wildfly_containers.len() > 1 {
         if matches.contains_id("name") {
             bail!("Option <name> is not allowed when multiple <wildfly-version> are specified!");
         }
@@ -61,29 +42,23 @@ pub fn hc_start(matches: &ArgMatches) -> anyhow::Result<()> {
                 "Option <domain-controller> is required when multiple <wildfly-version> are specified!"
             );
         }
-        let instances = wildfly_containers
-            .iter()
-            .map(|wildfly_container| {
-                let admin_container =
-                    AdminContainer::new(wildfly_container.clone(), ServerType::HostController);
-                HostController::new(
-                    admin_container.clone(),
-                    admin_container.container_name(),
-                    dc_name.to_string(),
-                )
-            })
-            .collect::<Vec<_>>();
-        let (same_type_counts, all_type_counts) = block_on(running_counts_combined(
-            ServerType::HostController,
-            &wildfly_containers,
-        ))?;
-        ensure_unique_instances(
-            &instances,
-            HostController::copy,
-            |wc| *same_type_counts.get(&wc.identifier).unwrap_or(&0),
-            |wc| *all_type_counts.get(&wc.identifier).unwrap_or(&0),
-        )
-    };
+    }
+
+    let specs: Vec<StartSpec> = wildfly_containers
+        .iter()
+        .map(|wc| StartSpec {
+            admin_container: AdminContainer::new(wc.clone(), ServerType::HostController),
+            custom_name: matches.get_one::<String>("name").cloned(),
+            custom_http: None,
+            custom_management: None,
+        })
+        .collect();
+    let resolved = block_on(resolve_start_specs(ServerType::HostController, specs))?;
+    let instances: Vec<HostController> = resolved
+        .into_iter()
+        .map(|r| HostController::new(r.admin_container, r.name, dc_name.clone()))
+        .collect();
+
     let (username, password) = username_password_argument(matches);
     let mut parameters = parameters_argument(matches);
     let primary_address = format!("--primary-address={}", dc_name);

@@ -6,7 +6,7 @@ use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::fmt::{Debug, Display};
 use std::str::FromStr;
-use wildfly_container_versions::{VERSIONS, WildFlyContainer};
+use wildfly_container_versions::{WildFlyContainer, VERSIONS};
 
 // ------------------------------------------------------ traits
 
@@ -194,12 +194,15 @@ impl AdminContainer {
 
 impl Ord for AdminContainer {
     fn cmp(&self, other: &Self) -> Ordering {
-        compare(
-            &self.wildfly_container,
-            &self.server_type,
-            &other.wildfly_container,
-            &other.server_type,
-        )
+        let wildfly_container_a = &self.wildfly_container;
+        let server_type_a = &self.server_type;
+        let wildfly_container_b = &other.wildfly_container;
+        let server_type_b = &other.server_type;
+        if wildfly_container_a == wildfly_container_b {
+            server_type_a.cmp(server_type_b)
+        } else {
+            wildfly_container_a.cmp(wildfly_container_b)
+        }
     }
 }
 
@@ -240,15 +243,6 @@ impl Ports {
     }
 }
 
-// ------------------------------------------------------ helpers
-
-fn indexed_name(base: &str, name_index: Option<u16>) -> String {
-    match name_index {
-        Some(index) => format!("{}-{}", base, index),
-        None => base.to_string(),
-    }
-}
-
 // ------------------------------------------------------ standalone instance
 
 /// A standalone WildFly server instance with its own HTTP and management ports.
@@ -265,14 +259,6 @@ impl StandaloneInstance {
             admin_container,
             name,
             ports,
-        }
-    }
-
-    pub fn copy(&self, name_index: Option<u16>, port_offset: u16) -> StandaloneInstance {
-        StandaloneInstance {
-            admin_container: self.admin_container.clone(),
-            name: indexed_name(&self.name, name_index),
-            ports: self.ports.with_offset(port_offset),
         }
     }
 }
@@ -295,14 +281,6 @@ impl DomainController {
             admin_container,
             name,
             ports,
-        }
-    }
-
-    pub fn copy(&self, name_index: Option<u16>, port_offset: u16) -> DomainController {
-        DomainController {
-            admin_container: self.admin_container.clone(),
-            name: indexed_name(&self.name, name_index),
-            ports: self.ports.with_offset(port_offset),
         }
     }
 }
@@ -329,14 +307,6 @@ impl HostController {
             admin_container,
             name,
             domain_controller,
-        }
-    }
-
-    pub fn copy(&self, name_index: Option<u16>, _port_offset: u16) -> HostController {
-        HostController {
-            admin_container: self.admin_container.clone(),
-            name: indexed_name(&self.name, name_index),
-            domain_controller: self.domain_controller.clone(),
         }
     }
 }
@@ -618,19 +588,23 @@ impl ManagementClient {
     }
 }
 
-// ------------------------------------------------------ helper functions
+// ------------------------------------------------------ start spec / resolved start
 
-fn compare(
-    wildfly_container_a: &WildFlyContainer,
-    server_type_a: &ServerType,
-    wildfly_container_b: &WildFlyContainer,
-    server_type_b: &ServerType,
-) -> Ordering {
-    if wildfly_container_a == wildfly_container_b {
-        server_type_a.cmp(server_type_b)
-    } else {
-        wildfly_container_a.cmp(wildfly_container_b)
-    }
+/// Captures what the user (or topology.yml) explicitly provided for a container start.
+/// `None` fields will be auto-resolved based on running instance counts.
+#[derive(Clone)]
+pub struct StartSpec {
+    pub admin_container: AdminContainer,
+    pub custom_name: Option<String>,
+    pub custom_http: Option<u16>,
+    pub custom_management: Option<u16>,
+}
+
+/// Resolved container name and ports after checking running instances.
+pub struct ResolvedStart {
+    pub admin_container: AdminContainer,
+    pub name: String,
+    pub ports: Option<Ports>,
 }
 
 // ------------------------------------------------------ test helpers
@@ -639,22 +613,14 @@ fn compare(
 pub(crate) mod test_helpers {
     use super::*;
 
-    pub fn sa_instance(version: &str) -> StandaloneInstance {
+    pub fn sa_spec(version: &str) -> StartSpec {
         let wc = WildFlyContainer::version(version).unwrap();
-        let ac = AdminContainer::new(wc.clone(), ServerType::Standalone);
-        StandaloneInstance::new(ac.clone(), ac.container_name(), Ports::default_ports(&wc))
-    }
-
-    pub fn dc_instance(version: &str) -> DomainController {
-        let wc = WildFlyContainer::version(version).unwrap();
-        let ac = AdminContainer::new(wc.clone(), ServerType::DomainController);
-        DomainController::new(ac.clone(), ac.container_name(), Ports::default_ports(&wc))
-    }
-
-    pub fn hc_instance(version: &str, dc_name: &str) -> HostController {
-        let wc = WildFlyContainer::version(version).unwrap();
-        let ac = AdminContainer::new(wc, ServerType::HostController);
-        HostController::new(ac.clone(), ac.container_name(), dc_name.to_string())
+        StartSpec {
+            admin_container: AdminContainer::new(wc, ServerType::Standalone),
+            custom_name: None,
+            custom_http: None,
+            custom_management: None,
+        }
     }
 }
 
@@ -663,69 +629,7 @@ pub(crate) mod test_helpers {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::wildfly::test_helpers::*;
     use crate::wildfly::ServerGroup::{MainServerGroup, OtherServerGroup};
-
-    // ------------------------------------------------------ copy tests
-
-    #[test]
-    fn copy_sa_name_and_ports() {
-        let instance = sa_instance("39");
-        let copied = instance.copy(Some(1), 2);
-        assert_eq!(copied.name, "wado-sa-390-1");
-        assert_eq!(copied.ports.http, instance.ports.http + 2);
-        assert_eq!(copied.ports.management, instance.ports.management + 2);
-    }
-
-    #[test]
-    fn copy_sa_ports_only() {
-        let instance = sa_instance("39");
-        let copied = instance.copy(None, 1);
-        assert_eq!(copied.name, "wado-sa-390");
-        assert_eq!(copied.ports.http, instance.ports.http + 1);
-        assert_eq!(copied.ports.management, instance.ports.management + 1);
-    }
-
-    #[test]
-    fn copy_sa_no_change() {
-        let instance = sa_instance("39");
-        let copied = instance.copy(None, 0);
-        assert_eq!(copied.name, "wado-sa-390");
-        assert_eq!(copied.ports.http, instance.ports.http);
-        assert_eq!(copied.ports.management, instance.ports.management);
-    }
-
-    #[test]
-    fn copy_dc_name_and_ports() {
-        let instance = dc_instance("39");
-        let copied = instance.copy(Some(1), 2);
-        assert_eq!(copied.name, "wado-dc-390-1");
-        assert_eq!(copied.ports.http, instance.ports.http + 2);
-        assert_eq!(copied.ports.management, instance.ports.management + 2);
-    }
-
-    #[test]
-    fn copy_dc_ports_only() {
-        let instance = dc_instance("39");
-        let copied = instance.copy(None, 1);
-        assert_eq!(copied.name, "wado-dc-390");
-        assert_eq!(copied.ports.http, instance.ports.http + 1);
-    }
-
-    #[test]
-    fn copy_hc_name_only() {
-        let instance = hc_instance("39", "wado-dc-390");
-        let copied = instance.copy(Some(1), 99);
-        assert_eq!(copied.name, "wado-hc-390-1");
-        assert_eq!(copied.domain_controller, "wado-dc-390");
-    }
-
-    #[test]
-    fn copy_hc_no_name_change() {
-        let instance = hc_instance("39", "wado-dc-390");
-        let copied = instance.copy(None, 99);
-        assert_eq!(copied.name, "wado-hc-390");
-    }
 
     // ------------------------------------------------------ parse server tests
 

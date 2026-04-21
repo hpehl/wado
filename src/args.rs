@@ -1,5 +1,5 @@
 use crate::container::{stop_instances, verify_container_command};
-use crate::wildfly::{AdminContainer, Ports, Server, ServerType};
+use crate::wildfly::{AdminContainer, Server, ServerType, StartSpec};
 use anyhow::bail;
 use clap::ArgMatches;
 use fs::read_to_string;
@@ -97,17 +97,40 @@ pub fn parameters_argument(matches: &ArgMatches) -> Vec<String> {
         .collect::<Vec<_>>()
 }
 
-pub fn port_argument(matches: &ArgMatches, wildfly_container: &WildFlyContainer) -> Ports {
-    let offset = matches.get_one::<u16>("offset").unwrap_or(&0);
-    let http = matches
+pub fn start_spec(
+    matches: &ArgMatches,
+    wildfly_container: &WildFlyContainer,
+    server_type: ServerType,
+) -> StartSpec {
+    let admin_container = AdminContainer::new(wildfly_container.clone(), server_type);
+    let offset = matches.get_one::<u16>("offset").copied().unwrap_or(0);
+    let has_offset = offset > 0;
+    let custom_http = matches
         .get_one::<u16>("http")
-        .unwrap_or(&wildfly_container.http_port())
-        + offset;
-    let management = matches
+        .map(|p| p + offset)
+        .or_else(|| {
+            if has_offset {
+                Some(wildfly_container.http_port() + offset)
+            } else {
+                None
+            }
+        });
+    let custom_management = matches
         .get_one::<u16>("management")
-        .unwrap_or(&wildfly_container.management_port())
-        + offset;
-    Ports { http, management }
+        .map(|p| p + offset)
+        .or_else(|| {
+            if has_offset {
+                Some(wildfly_container.management_port() + offset)
+            } else {
+                None
+            }
+        });
+    StartSpec {
+        admin_container,
+        custom_name: matches.get_one::<String>("name").cloned(),
+        custom_http,
+        custom_management,
+    }
 }
 
 pub fn server_argument(matches: &ArgMatches) -> Vec<Server> {

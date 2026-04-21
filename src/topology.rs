@@ -3,13 +3,14 @@ use crate::constants::{
     WILDFLY_ADMIN_CONTAINER,
 };
 use crate::container::{
-    add_servers, container_network, container_run, containers_by_topology, ensure_unique_instances,
-    run_instances, running_counts_combined, running_instance_counts, stop_containers_by_name,
-    verify_container_command,
+    add_servers, container_network, container_run, containers_by_topology, resolve_start_specs,
+    run_instances, stop_containers_by_name, verify_container_command,
 };
 use crate::hc::create_secret;
 use crate::topology_model::TopologySetup;
-use crate::wildfly::{AdminContainer, DomainController, HostController, Ports, Server, ServerType};
+use crate::wildfly::{
+    AdminContainer, DomainController, HostController, Server, ServerType, StartSpec,
+};
 use clap::ArgMatches;
 use futures::executor::block_on;
 use std::collections::BTreeMap;
@@ -28,112 +29,70 @@ pub fn topology_start(matches: &ArgMatches) -> anyhow::Result<()> {
     let dc_version = dc_host.effective_version(setup.version);
     let dc_wf =
         WildFlyContainer::version(&dc_version.to_string()).map_err(|e| anyhow::anyhow!("{}", e))?;
-    let dc_admin = AdminContainer::new(dc_wf.clone(), ServerType::DomainController);
-    let dc_name = dc_host
-        .name
-        .clone()
-        .unwrap_or_else(|| dc_admin.container_name());
-    let mut dc = DomainController::new(dc_admin, dc_name, Ports::default_ports(&dc_wf));
-    if dc_host.name.is_none() {
-        let (same_type, all_types) =
-            block_on(running_instance_counts(ServerType::DomainController, &dc_wf))?;
-        if same_type > 0 || all_types > 0 {
-            let name_index = if same_type > 0 { Some(same_type) } else { None };
-            dc = dc.copy(name_index, all_types);
-        }
-    }
+    let dc_spec = StartSpec {
+        admin_container: AdminContainer::new(dc_wf, ServerType::DomainController),
+        custom_name: dc_host.name.clone(),
+        custom_http: None,
+        custom_management: None,
+    };
+    let dc_resolved =
+        block_on(resolve_start_specs(ServerType::DomainController, vec![dc_spec]))?;
+    let dc_r = &dc_resolved[0];
+    let dc = DomainController::new(
+        dc_r.admin_container.clone(),
+        dc_r.name.clone(),
+        dc_r.ports.clone().unwrap(),
+    );
     let dc_servers: Vec<Server> = dc_host.servers.iter().map(|s| s.to_server()).collect();
 
     let hc_hosts = setup.hc_hosts();
-    let (named_hcs, unnamed_hcs) = build_host_controllers(&hc_hosts, setup.version, &dc.name)?;
+    let hc_specs = build_hc_specs(&hc_hosts, setup.version)?;
+    let hc_resolved = block_on(resolve_start_specs(ServerType::HostController, hc_specs))?;
+    let hcs: Vec<HostController> = hc_resolved
+        .into_iter()
+        .map(|r| HostController::new(r.admin_container, r.name, dc.name.clone()))
+        .collect();
 
-    let unnamed_hcs = if !unnamed_hcs.is_empty() {
-        let wf_containers: Vec<WildFlyContainer> = unnamed_hcs
-            .iter()
-            .map(|hc| hc.admin_container.wildfly_container.clone())
-            .collect();
-        let (same_type_counts, all_type_counts) =
-            block_on(running_counts_combined(ServerType::HostController, &wf_containers))?;
-        ensure_unique_instances(
-            &unnamed_hcs,
-            HostController::copy,
-            |wc| *same_type_counts.get(&wc.identifier).unwrap_or(&0),
-            |wc| *all_type_counts.get(&wc.identifier).unwrap_or(&0),
-        )
-    } else {
-        unnamed_hcs
-    };
-
-    let hc_server_map = build_server_map(&hc_hosts, &named_hcs, &unnamed_hcs);
-
-    let mut all_hcs = named_hcs;
-    all_hcs.extend(unnamed_hcs);
+    let hc_server_map = build_server_map(&hc_hosts, &hcs);
 
     block_on(start_topology(
         topology_name,
         dc,
         dc_servers,
-        all_hcs,
+        hcs,
         hc_server_map,
     ))
 }
 
-fn build_host_controllers(
+fn build_hc_specs(
     hc_hosts: &[&crate::topology_model::HostSetup],
     default_version: u16,
-    dc_name: &str,
-) -> anyhow::Result<(Vec<HostController>, Vec<HostController>)> {
-    let mut named = Vec::new();
-    let mut unnamed = Vec::new();
-
-    for host in hc_hosts {
-        let version = host.effective_version(default_version);
-        let wf = WildFlyContainer::version(&version.to_string())
-            .map_err(|e| anyhow::anyhow!("{}", e))?;
-        let admin = AdminContainer::new(wf, ServerType::HostController);
-
-        if let Some(name) = &host.name {
-            named.push(HostController::new(
-                admin,
-                name.clone(),
-                dc_name.to_string(),
-            ));
-        } else {
-            let default_name = admin.container_name();
-            unnamed.push(HostController::new(
-                admin,
-                default_name,
-                dc_name.to_string(),
-            ));
-        }
-    }
-
-    Ok((named, unnamed))
+) -> anyhow::Result<Vec<StartSpec>> {
+    hc_hosts
+        .iter()
+        .map(|host| {
+            let version = host.effective_version(default_version);
+            let wf = WildFlyContainer::version(&version.to_string())
+                .map_err(|e| anyhow::anyhow!("{}", e))?;
+            Ok(StartSpec {
+                admin_container: AdminContainer::new(wf, ServerType::HostController),
+                custom_name: host.name.clone(),
+                custom_http: None,
+                custom_management: None,
+            })
+        })
+        .collect()
 }
 
 fn build_server_map(
     hc_hosts: &[&crate::topology_model::HostSetup],
-    named_hcs: &[HostController],
-    unnamed_hcs: &[HostController],
+    hcs: &[HostController],
 ) -> BTreeMap<String, Vec<Server>> {
     let mut map = BTreeMap::new();
-    let mut unnamed_idx = 0;
-    for host in hc_hosts {
+    for (host, hc) in hc_hosts.iter().zip(hcs.iter()) {
         let servers: Vec<Server> = host.servers.iter().map(|s| s.to_server()).collect();
-        let resolved_name = if let Some(name) = &host.name {
-            named_hcs
-                .iter()
-                .find(|hc| hc.name == name.as_str())
-                .map(|hc| hc.name.clone())
-        } else {
-            let name = unnamed_hcs.get(unnamed_idx).map(|hc| hc.name.clone());
-            unnamed_idx += 1;
-            name
-        };
-        if let Some(name) = resolved_name
-            && !servers.is_empty()
-        {
-            map.insert(name, servers);
+        if !servers.is_empty() {
+            map.insert(hc.name.clone(), servers);
         }
     }
     map

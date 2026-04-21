@@ -6,7 +6,7 @@ use crate::label::Label;
 use crate::progress::{stderr_reader, summary, Progress};
 use crate::wildfly::ServerType::{DomainController, Standalone};
 use crate::wildfly::{
-    ContainerConfig, ContainerInstance, HasWildFlyContainer, Ports, Server, ServerType,
+    ContainerConfig, ContainerInstance, Ports, ResolvedStart, Server, ServerType, StartSpec,
 };
 use anyhow::{bail, Error};
 use futures::future::join_all;
@@ -167,6 +167,98 @@ pub fn container_stop(name: &str) -> Command {
     command
 }
 
+// ------------------------------------------------------ resolve start specs
+
+pub async fn resolve_start_specs(
+    server_type: ServerType,
+    specs: Vec<StartSpec>,
+) -> anyhow::Result<Vec<ResolvedStart>> {
+    let has_ports = server_type != ServerType::HostController;
+
+    let needs_query: Vec<&WildFlyContainer> = specs
+        .iter()
+        .filter(|s| {
+            s.custom_name.is_none()
+                || (has_ports && (s.custom_http.is_none() || s.custom_management.is_none()))
+        })
+        .map(|s| &s.admin_container.wildfly_container)
+        .collect();
+
+    let mut seen = HashSet::new();
+    let unique: Vec<_> = needs_query
+        .into_iter()
+        .filter(|wc| seen.insert(wc.identifier))
+        .collect();
+    let futures: Vec<_> = unique
+        .iter()
+        .map(|wc| running_instance_counts(server_type, wc))
+        .collect();
+    let results = join_all(futures).await;
+    let mut counts: HashMap<u16, (u16, u16)> = HashMap::new();
+    for (wc, result) in unique.iter().zip(results) {
+        let (same_type, all_types) = result?;
+        counts.insert(wc.identifier, (same_type, all_types));
+    }
+
+    Ok(resolve_specs_with_counts(has_ports, &specs, &counts))
+}
+
+fn resolve_specs_with_counts(
+    has_ports: bool,
+    specs: &[StartSpec],
+    counts: &HashMap<u16, (u16, u16)>,
+) -> Vec<ResolvedStart> {
+    let mut result = Vec::new();
+    let chunks = specs.chunk_by(|a, b| {
+        a.admin_container.wildfly_container.identifier
+            == b.admin_container.wildfly_container.identifier
+    });
+    for chunk in chunks {
+        let wc = &chunk[0].admin_container.wildfly_container;
+        let (same_type, all_types) = counts.get(&wc.identifier).copied().unwrap_or((0, 0));
+
+        let auto_named_count = chunk.iter().filter(|s| s.custom_name.is_none()).count();
+        let needs_name_index = auto_named_count > 1 || same_type > 0;
+
+        let mut auto_name_counter: u16 = 0;
+        for (position, spec) in chunk.iter().enumerate() {
+            let name = match &spec.custom_name {
+                Some(custom) => custom.clone(),
+                None => {
+                    let base = spec.admin_container.container_name();
+                    if needs_name_index {
+                        let index = same_type + auto_name_counter;
+                        auto_name_counter += 1;
+                        format!("{}-{}", base, index)
+                    } else {
+                        base
+                    }
+                }
+            };
+
+            let ports = if has_ports {
+                let port_offset = all_types + position as u16;
+                let http = spec
+                    .custom_http
+                    .unwrap_or_else(|| wc.http_port() + port_offset);
+                let management = spec
+                    .custom_management
+                    .unwrap_or_else(|| wc.management_port() + port_offset);
+                Some(Ports { http, management })
+            } else {
+                None
+            };
+
+            result.push(ResolvedStart {
+                admin_container: spec.admin_container.clone(),
+                name,
+                ports,
+            });
+        }
+    }
+    result
+}
+
 // ------------------------------------------------------ higher functions
 
 pub fn add_servers(mut command: Command, hostname: &str, servers: Vec<Server>) -> Command {
@@ -180,41 +272,6 @@ pub fn add_servers(mut command: Command, hostname: &str, servers: Vec<Server>) -
             .arg(format!("{}={}", SERVERS_VARIABLE, server_ops.join(",")));
     }
     command
-}
-
-pub fn ensure_unique_instances<T>(
-    items: &[T],
-    copy_fn: fn(&T, Option<u16>, u16) -> T,
-    same_type_count_fn: impl Fn(&WildFlyContainer) -> u16,
-    all_type_count_fn: impl Fn(&WildFlyContainer) -> u16,
-) -> Vec<T>
-where
-    T: Clone,
-    T: HasWildFlyContainer,
-{
-    let chunks =
-        items.chunk_by(|a, b| a.wildfly_container().identifier == b.wildfly_container().identifier);
-    let mut result = vec![];
-    for chunk in chunks {
-        let wc = chunk[0].wildfly_container();
-        let same_type = same_type_count_fn(wc);
-        let all_type = all_type_count_fn(wc);
-        let needs_name_index = chunk.len() > 1 || same_type > 0;
-        if needs_name_index || all_type > 0 {
-            for (index, item) in chunk.iter().enumerate() {
-                let name_index = if needs_name_index {
-                    Some(same_type + index as u16)
-                } else {
-                    None
-                };
-                let port_offset = all_type + index as u16;
-                result.push(copy_fn(item, name_index, port_offset));
-            }
-        } else {
-            result.push(chunk[0].clone());
-        }
-    }
-    result
 }
 
 pub async fn get_instance(
@@ -295,30 +352,6 @@ where
     let status = commands.join_all().await;
     summary("Started", "container", count, instant, status);
     Ok(())
-}
-
-pub async fn running_counts_combined(
-    server_type: ServerType,
-    wildfly_containers: &[WildFlyContainer],
-) -> anyhow::Result<(HashMap<u16, u16>, HashMap<u16, u16>)> {
-    let mut seen = HashSet::new();
-    let unique: Vec<_> = wildfly_containers
-        .iter()
-        .filter(|wc| seen.insert(wc.identifier))
-        .collect();
-    let futures: Vec<_> = unique
-        .iter()
-        .map(|wc| running_instance_counts(server_type, wc))
-        .collect();
-    let results = join_all(futures).await;
-    let mut same_type_counts = HashMap::new();
-    let mut all_type_counts = HashMap::new();
-    for (wc, result) in unique.iter().zip(results) {
-        let (same_type, all_types) = result?;
-        same_type_counts.insert(wc.identifier, same_type);
-        all_type_counts.insert(wc.identifier, all_types);
-    }
-    Ok((same_type_counts, all_type_counts))
 }
 
 pub async fn running_instance_counts(
@@ -492,81 +525,156 @@ pub fn container_command() -> anyhow::Result<Command> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::wildfly::test_helpers::sa_instance;
-    use crate::wildfly::{Ports, StandaloneInstance};
+    use crate::wildfly::test_helpers::sa_spec;
+    use crate::wildfly::{AdminContainer, Ports, StartSpec};
 
-    // ------------------------------------------------------ ensure_unique_instances
+    fn counts(entries: &[(u16, u16, u16)]) -> HashMap<u16, (u16, u16)> {
+        entries
+            .iter()
+            .map(|&(id, same, all)| (id, (same, all)))
+            .collect()
+    }
+
+    fn resolve(specs: &[StartSpec], count_entries: &[(u16, u16, u16)]) -> Vec<ResolvedStart> {
+        resolve_specs_with_counts(true, specs, &counts(count_entries))
+    }
+
+    // ------------------------------------------------------ resolve_specs_with_counts
 
     #[test]
     fn no_running_single_item() {
-        let items = vec![sa_instance("39")];
-        let result = ensure_unique_instances(&items, StandaloneInstance::copy, |_| 0, |_| 0);
+        let specs = vec![sa_spec("39")];
+        let result = resolve(&specs, &[]);
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].name, "wado-sa-390");
-        assert_eq!(result[0].ports, Ports::default_ports(&result[0].admin_container.wildfly_container));
+        let base = Ports::default_ports(&specs[0].admin_container.wildfly_container);
+        assert_eq!(result[0].ports, Some(base));
     }
 
     #[test]
     fn no_running_multiple_same_version() {
-        let items = vec![sa_instance("39"), sa_instance("39")];
-        let result = ensure_unique_instances(&items, StandaloneInstance::copy, |_| 0, |_| 0);
+        let specs = vec![sa_spec("39"), sa_spec("39")];
+        let result = resolve(&specs, &[]);
         assert_eq!(result.len(), 2);
         assert_eq!(result[0].name, "wado-sa-390-0");
         assert_eq!(result[1].name, "wado-sa-390-1");
-        let base = Ports::default_ports(&result[0].admin_container.wildfly_container);
-        assert_eq!(result[0].ports, base);
-        assert_eq!(result[1].ports, base.with_offset(1));
+        let base = Ports::default_ports(&specs[0].admin_container.wildfly_container);
+        assert_eq!(result[0].ports, Some(base.clone()));
+        assert_eq!(result[1].ports, Some(base.with_offset(1)));
     }
 
     #[test]
     fn same_type_running_single_item() {
-        let items = vec![sa_instance("39")];
-        let result = ensure_unique_instances(&items, StandaloneInstance::copy, |_| 1, |_| 1);
-        assert_eq!(result.len(), 1);
+        let specs = vec![sa_spec("39")];
+        let id = specs[0].admin_container.wildfly_container.identifier;
+        let result = resolve(&specs, &[(id, 1, 1)]);
         assert_eq!(result[0].name, "wado-sa-390-1");
-        let base = Ports::default_ports(&result[0].admin_container.wildfly_container);
-        assert_eq!(result[0].ports, base.with_offset(1));
+        let base = Ports::default_ports(&specs[0].admin_container.wildfly_container);
+        assert_eq!(result[0].ports, Some(base.with_offset(1)));
     }
 
     #[test]
     fn different_type_running_ports_adjusted_name_unchanged() {
-        let items = vec![sa_instance("39")];
-        let result = ensure_unique_instances(&items, StandaloneInstance::copy, |_| 0, |_| 1);
-        assert_eq!(result.len(), 1);
+        let specs = vec![sa_spec("39")];
+        let id = specs[0].admin_container.wildfly_container.identifier;
+        let result = resolve(&specs, &[(id, 0, 1)]);
         assert_eq!(result[0].name, "wado-sa-390");
-        let base = Ports::default_ports(&result[0].admin_container.wildfly_container);
-        assert_eq!(result[0].ports, base.with_offset(1));
+        let base = Ports::default_ports(&specs[0].admin_container.wildfly_container);
+        assert_eq!(result[0].ports, Some(base.with_offset(1)));
     }
 
     #[test]
     fn different_type_running_multiple_same_version() {
-        let items = vec![sa_instance("39"), sa_instance("39")];
-        let result = ensure_unique_instances(&items, StandaloneInstance::copy, |_| 0, |_| 1);
-        assert_eq!(result.len(), 2);
+        let specs = vec![sa_spec("39"), sa_spec("39")];
+        let id = specs[0].admin_container.wildfly_container.identifier;
+        let result = resolve(&specs, &[(id, 0, 1)]);
         assert_eq!(result[0].name, "wado-sa-390-0");
         assert_eq!(result[1].name, "wado-sa-390-1");
-        let base = Ports::default_ports(&result[0].admin_container.wildfly_container);
-        assert_eq!(result[0].ports, base.with_offset(1));
-        assert_eq!(result[1].ports, base.with_offset(2));
+        let base = Ports::default_ports(&specs[0].admin_container.wildfly_container);
+        assert_eq!(result[0].ports, Some(base.with_offset(1)));
+        assert_eq!(result[1].ports, Some(base.with_offset(2)));
     }
 
     #[test]
     fn mixed_running_sa_and_dc() {
-        let items = vec![sa_instance("39")];
+        let specs = vec![sa_spec("39")];
+        let id = specs[0].admin_container.wildfly_container.identifier;
         // 1 SA running (same_type=1), 2 total (SA + DC, all_type=2)
-        let result = ensure_unique_instances(&items, StandaloneInstance::copy, |_| 1, |_| 2);
-        assert_eq!(result.len(), 1);
+        let result = resolve(&specs, &[(id, 1, 2)]);
         assert_eq!(result[0].name, "wado-sa-390-1");
-        let base = Ports::default_ports(&result[0].admin_container.wildfly_container);
-        assert_eq!(result[0].ports, base.with_offset(2));
+        let base = Ports::default_ports(&specs[0].admin_container.wildfly_container);
+        assert_eq!(result[0].ports, Some(base.with_offset(2)));
     }
 
     #[test]
     fn multiple_versions_no_running() {
-        let items = vec![sa_instance("39"), sa_instance("35")];
-        let result = ensure_unique_instances(&items, StandaloneInstance::copy, |_| 0, |_| 0);
+        let specs = vec![sa_spec("39"), sa_spec("35")];
+        let result = resolve(&specs, &[]);
         assert_eq!(result.len(), 2);
         assert_eq!(result[0].name, "wado-sa-390");
         assert_eq!(result[1].name, "wado-sa-350");
+    }
+
+    #[test]
+    fn custom_name_no_adjustment() {
+        let mut spec = sa_spec("39");
+        spec.custom_name = Some("my-container".to_string());
+        let result = resolve(&[spec], &[]);
+        assert_eq!(result[0].name, "my-container");
+    }
+
+    #[test]
+    fn custom_http_only_management_adjusted() {
+        let mut spec = sa_spec("39");
+        spec.custom_http = Some(9000);
+        let id = spec.admin_container.wildfly_container.identifier;
+        let result = resolve(&[spec.clone()], &[(id, 0, 1)]);
+        let ports = result[0].ports.as_ref().unwrap();
+        assert_eq!(ports.http, 9000);
+        assert_eq!(
+            ports.management,
+            spec.admin_container.wildfly_container.management_port() + 1
+        );
+    }
+
+    #[test]
+    fn custom_management_only_http_adjusted() {
+        let mut spec = sa_spec("39");
+        spec.custom_management = Some(10000);
+        let id = spec.admin_container.wildfly_container.identifier;
+        let result = resolve(&[spec.clone()], &[(id, 0, 1)]);
+        let ports = result[0].ports.as_ref().unwrap();
+        assert_eq!(
+            ports.http,
+            spec.admin_container.wildfly_container.http_port() + 1
+        );
+        assert_eq!(ports.management, 10000);
+    }
+
+    #[test]
+    fn all_custom_no_adjustment() {
+        let mut spec = sa_spec("39");
+        spec.custom_name = Some("custom".to_string());
+        spec.custom_http = Some(9000);
+        spec.custom_management = Some(10000);
+        let result = resolve(&[spec], &[(390, 2, 3)]);
+        assert_eq!(result[0].name, "custom");
+        let ports = result[0].ports.as_ref().unwrap();
+        assert_eq!(ports.http, 9000);
+        assert_eq!(ports.management, 10000);
+    }
+
+    #[test]
+    fn hc_no_ports() {
+        let wc = WildFlyContainer::version("39").unwrap();
+        let spec = StartSpec {
+            admin_container: AdminContainer::new(wc, ServerType::HostController),
+            custom_name: None,
+            custom_http: None,
+            custom_management: None,
+        };
+        let result = resolve_specs_with_counts(false, &[spec], &HashMap::new());
+        assert_eq!(result[0].name, "wado-hc-390");
+        assert_eq!(result[0].ports, None);
     }
 }

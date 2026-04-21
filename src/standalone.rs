@@ -1,12 +1,11 @@
 use crate::args::{
-    extract_config, name_argument, operations_argument, parameters_argument, port_argument,
-    stop_command, validate_single_version, versions_argument,
+    extract_config, operations_argument, parameters_argument, start_spec, stop_command,
+    validate_single_version, versions_argument,
 };
 use crate::container::{
-    container_network, container_run, ensure_unique_instances, run_instances,
-    running_counts_combined, running_instance_counts, verify_container_command,
+    container_network, container_run, resolve_start_specs, run_instances, verify_container_command,
 };
-use crate::wildfly::{AdminContainer, Ports, ServerType, StandaloneInstance};
+use crate::wildfly::{ServerType, StandaloneInstance};
 use clap::ArgMatches;
 use futures::executor::block_on;
 
@@ -14,57 +13,19 @@ use futures::executor::block_on;
 
 pub fn standalone_start(matches: &ArgMatches) -> anyhow::Result<()> {
     verify_container_command()?;
-
     let wildfly_containers = versions_argument(matches);
-    let has_custom_name = matches.get_one::<String>("name").is_some();
-    let has_custom_ports = matches.get_one::<u16>("http").is_some()
-        || matches.get_one::<u16>("management").is_some()
-        || matches.get_one::<u16>("offset").is_some();
-    let instances = if wildfly_containers.len() == 1 {
-        let wildfly_container = wildfly_containers[0].clone();
-        let admin_container =
-            AdminContainer::new(wildfly_container.clone(), ServerType::Standalone);
-        let mut instance = StandaloneInstance::new(
-            admin_container.clone(),
-            name_argument("name", matches, || admin_container.container_name()),
-            port_argument(matches, &wildfly_container),
-        );
-        if !has_custom_name && !has_custom_ports {
-            let (same_type, all_types) = block_on(running_instance_counts(
-                ServerType::Standalone,
-                &wildfly_container,
-            ))?;
-            if same_type > 0 || all_types > 0 {
-                let name_index = if same_type > 0 { Some(same_type) } else { None };
-                instance = instance.copy(name_index, all_types);
-            }
-        }
-        vec![instance]
-    } else {
+    if wildfly_containers.len() > 1 {
         validate_single_version(matches, &["name", "http", "management", "offset"])?;
-        let instances = wildfly_containers
-            .iter()
-            .map(|wildfly_container| {
-                let admin_container =
-                    AdminContainer::new(wildfly_container.clone(), ServerType::Standalone);
-                StandaloneInstance::new(
-                    admin_container.clone(),
-                    admin_container.container_name(),
-                    Ports::default_ports(wildfly_container),
-                )
-            })
-            .collect::<Vec<_>>();
-        let (same_type_counts, all_type_counts) = block_on(running_counts_combined(
-            ServerType::Standalone,
-            &wildfly_containers,
-        ))?;
-        ensure_unique_instances(
-            &instances,
-            StandaloneInstance::copy,
-            |wc| *same_type_counts.get(&wc.identifier).unwrap_or(&0),
-            |wc| *all_type_counts.get(&wc.identifier).unwrap_or(&0),
-        )
-    };
+    }
+    let specs = wildfly_containers
+        .iter()
+        .map(|wc| start_spec(matches, wc, ServerType::Standalone))
+        .collect();
+    let resolved = block_on(resolve_start_specs(ServerType::Standalone, specs))?;
+    let instances: Vec<StandaloneInstance> = resolved
+        .into_iter()
+        .map(|r| StandaloneInstance::new(r.admin_container, r.name, r.ports.unwrap()))
+        .collect();
     block_on(start_instances(
         instances,
         parameters_argument(matches),
