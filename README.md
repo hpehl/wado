@@ -26,8 +26,6 @@ The container names and published ports follow default values based on the WildF
             - [Start](#start-2)
             - [Stop](#stop-2)
         - [Topology](#topology)
-            - [Start](#start-3)
-            - [Stop](#stop-3)
     - [Images](#images-1)
     - [PS](#ps)
     - [Management Clients](#management-clients)
@@ -204,68 +202,17 @@ wado start 26.1,28..30,2x32,3x35,dev
 
 # Commands
 
-Currently, the following commands are supported:
-
-```shell
-Command line tool to build and run WildFly containers in different versions and operation modes.
-
-Usage: wado <COMMAND>
-
-Commands:
-  build     Build WildFly images
-  start     Start a standalone server
-  stop      Stop a standalone server
-  dc        Start and stop a domain controller
-  hc        Start and stop a host controller
-  topology  Start and stop a topology defined as YAML
-  images    List all available standalone, domain and host controller images
-  ps        List running images
-  console   Open the management console
-  cli       Connect to the CLI
-  help      Print this message or the help of the given subcommand(s)
-
-Options:
-  -h, --help     Print help
-  -V, --version  Print version
-```
-
 > [!IMPORTANT]
 > Most commands require `podman` to be present with `docker` as a fallback.
 > The `console` command opens the default web browser and the `cli` command requires a JVM.
 
 ## Build
 
-If not specified otherwise, the build command builds standalone, domain, and host controller images based on the
-official WildFly images. The images contain specific [modifications](#image-modifications) and a management user with a
-predefined username and password.
+Builds standalone, domain controller, and host controller images based on the official WildFly images. The images contain specific [modifications](#image-modifications) and a management user (
+`admin:admin` by default). You can restrict the build to `--standalone` or `--domain` images only, and use
+`--chunks` to build in parallel batches.
 
-Predefined images for
-all [supported versions](https://github.com/hpehl/wildfly-container-versions?tab=readme-ov-file#supported-versions)
-are available at https://quay.io/organization/wado. If you want to change the username and password, you can build your
-own local image.
-
-```shell
-Build images
-
-Usage: wado build [OPTIONS] <wildfly-version>
-
-Arguments:
-  <wildfly-version>  A single WildFly version or version range
-
-Options:
-  -u, --username <username>              The username of the management user [default: admin]
-  -p, --password <password>              The password of the management user [default: admin]
-      --standalone                       Build standalone images only
-      --domain                           Build domain controller and host controller images only
-      --chunks <chunks>                  Build the images in chunks of this size. If not specified, the images are built in one go.
-      --wildfly-branch <wildfly-branch>  The WildFly branch to build from (only used for dev builds) [default: main]
-      --hal-branch <hal-branch>          The HAL console branch to build from (only used for dev builds) [default: main]
-  -v, --verbose                          Print build output directly to stdout instead of using progress spinners (useful for CI)
-  -h, --help                             Print help
-  -V, --version                          Print version
-```
-
-**Examples**
+Predefined images for all [supported versions](https://github.com/hpehl/wildfly-container-versions?tab=readme-ov-file#supported-versions) are available at https://quay.io/organization/wado. Build your own local images if you want to change the username and password.
 
 ```shell
 wado build 34
@@ -278,8 +225,10 @@ wado build .. --chunks 5
 
 ### Dev Build
 
-Use `dev` as the version to build WildFly from source. This clones and compiles both the WildFly and HAL console
-repositories, integrates the console into the distribution, and builds container images from the result.
+Use
+`dev` as the version to build WildFly from source. This clones and compiles the [WildFly](https://github.com/wildfly/wildfly) and [HAL console](https://github.com/hal/console) repositories, integrates the console into the distribution, and builds container images from the result. Use
+`--wildfly-branch` and `--hal-branch` to control which branches to build from (both default to `main`), and
+`--verbose` to see the full Maven build output.
 
 ```shell
 wado build dev
@@ -289,39 +238,13 @@ wado build dev --hal-branch my-console-branch
 wado build dev --verbose
 ```
 
-The `--wildfly-branch` and `--hal-branch` options control which branch to build from (both default to `main`).
-Use `--verbose` to see the full Maven build output instead of progress spinners.
-
 ## Standalone
 
 ### Start
 
-```shell
-Start a standalone server
-
-Usage: wado start [OPTIONS] <wildfly-version> [-- [wildfly-parameters]...]
-
-Arguments:
-  <wildfly-version>        A single WildFly version or version range
-  [wildfly-parameters]...  Parameters passed to the standalone server
-
-Options:
-  -n, --name <name>              The name of the standalone server [default: wado-sa-<major><minor>].
-                                 Not allowed when multiple versions are specified.
-  -p, --http <http>              The published HTTP port [default: 8<major><minor>].
-                                 Not allowed when multiple versions are specified.
-  -m, --management <management>  The published management port [default: 9<major><minor>].
-                                 Not allowed when multiple versions are specified.
-  -o, --offset <offset>          The offset added to the published HTTP and management ports.
-                                 Not allowed when multiple versions are specified.
-      --operations <operations>  A comma seperated list of operations to bootstrap the standalone server.
-                                 Can be provided multiple times.
-      --cli <cli>                A file with operations to bootstrap the standalone server
-  -h, --help                     Print help
-  -V, --version                  Print version
-```
-
-**Examples**
+Starts one or more standalone WildFly containers. Container names and ports are derived from the version by default (see [Containers](#containers)). You can override the name, HTTP port, management port, or apply a port offset for single-version starts. Use
+`--operations` or `--cli` to bootstrap the server with management operations. Additional WildFly parameters can be passed after
+`--`.
 
 ```shell
 wado start 34
@@ -336,23 +259,7 @@ wado start 34 --offset 100 -- --server-config=standalone-microprofile.xml
 
 ### Stop
 
-```shell
-Stop a standalone server
-
-Usage: wado stop [OPTIONS] [wildfly-version]
-
-Arguments:
-  [wildfly-version]  A single WildFly version or version range
-
-Options:
-  -n, --name <name>  The name of the standalone server [default: wado-sa-<major><minor>]
-  -a, --all          Stop all running standalone servers. If specified with a version,
-                     stop all running standalone servers of that version.
-  -h, --help         Print help
-  -V, --version      Print version
-```
-
-**Examples**
+Stops standalone containers by version, name, or all at once.
 
 ```shell
 wado stop 34
@@ -368,41 +275,10 @@ wado stop --all
 
 #### Start
 
-```shell
-Start a domain controller
-
-Usage: wado dc start [OPTIONS] <wildfly-version> [-- [wildfly-parameters]...]
-
-Arguments:
-  <wildfly-version>        A single WildFly version or version range
-  [wildfly-parameters]...  Parameters passed to the domain controller
-
-Options:
-  -n, --name <name>              The name of the domain controller [default: wado-dc-<major><minor>].
-                                 Not allowed when multiple versions are specified.
-  -p, --http <http>              The published HTTP port [default: 8<major><minor>].
-                                 Not allowed when multiple versions are specified.
-  -m, --management <management>  The published management port [default: 9<major><minor>].
-                                 Not allowed when multiple versions are specified.
-  -o, --offset <offset>          The offset added to the published HTTP and management ports.
-                                 Not allowed when multiple versions are specified.
-  -s, --server <server>          Manage servers of the domain controller.
-                                 Servers are specified as a comma seperated list of <name>[:<server-group>][:<offset>][:start].
-                                 The option can be specified multiple times.
-                                 <name>          The name of the server. This part is mandatory and must be first.
-                                                 All other parts are optional.
-                                 <server-group>  The name of the server group. Allowed values are 'main-server-group' or 'msg',
-                                                 and 'other-server-group' or 'osg'. If not specified, 'main-server-group' is used.
-                                 <offset>        The port offset. If not specified, 100 is used from the second server onwards.
-                                 start           Whether to start the server.
-      --operations <operations>  A comma seperated list of operations to bootstrap the domain controller.
-                                 Can be provided multiple times.
-      --cli <cli>                A file with operations to bootstrap the domain controller
-  -h, --help                     Print help
-  -V, --version                  Print version
-```
-
-**Examples**
+Starts one or more domain controllers. Supports the same naming, port, and offset options as standalone. Use
+`--server` to configure servers on the domain controller. Servers are specified as
+`<name>[:<server-group>][:<offset>][:start]`, where the server group defaults to `main-server-group` (shorthand `msg`) and
+`other-server-group` can be abbreviated as `osg`. If no offset is specified, it is auto-incremented by 100 from the second server onward (0, 100, 200, ...).
 
 ```shell
 wado dc start 34
@@ -422,23 +298,7 @@ wado dc start 34 --name dc \
 
 #### Stop
 
-```shell
-Stop a domain controller
-
-Usage: wado dc stop [OPTIONS] [wildfly-version]
-
-Arguments:
-  [wildfly-version]  A single WildFly version or version range
-
-Options:
-  -n, --name <name>  The name of the domain controller [default: wado-dc-<major><minor>]
-  -a, --all          Stop all running domain controllers. If specified with a version,
-                     stop all running domain controllers of that version.
-  -h, --help         Print help
-  -V, --version      Print version
-```
-
-**Examples**
+Stops domain controllers by version, name, or all at once.
 
 ```shell
 wado dc stop 34
@@ -452,48 +312,11 @@ wado dc stop --all
 
 #### Start
 
-```shell
-Start a host controller
-
-Usage: wado hc start [OPTIONS] <wildfly-version> [-- [wildfly-parameters]...]
-
-Arguments:
-  <wildfly-version>        A single WildFly version or version range
-  [wildfly-parameters]...  Parameters passed to the domain controller
-
-Options:
-  -n, --name <name>
-          The name of the host controller [default: wado-hc-<major><minor>].
-          Not allowed when multiple versions are specified.
-  -d, --domain-controller <domain-controller>
-          The name of the domain controller [default: wado-dc-<major><minor>].
-          Required if different versions are specified.
-  -u, --username <username>
-          The username to connect to the domain controller [default: admin]
-  -p, --password <password>
-          The password to connect to the domain controller [default: admin]
-  -s, --server <server>
-          Manage servers of the host controller.
-          Servers are specified as a comma seperated list of <name>[:<server-group>][:<offset>][:start].
-          The option can be specified multiple times.
-          <name>          The name of the server. This part is mandatory and must be first.
-                          All other parts are optional.
-          <server-group>  The name of the server group. Allowed values are 'main-server-group' or 'msg',
-                          and 'other-server-group' or 'osg'. If not specified, 'main-server-group' is used.
-          <offset>        The port offset. If not specified, 100 is used from the second server onwards.
-          start           Whether to start the server.
-      --operations <operations>
-          A comma seperated list of operations to bootstrap the host controller.
-          Can be provided multiple times.
-      --cli <cli>
-          A file with operations to bootstrap the host controller
-  -h, --help
-          Print help
-  -V, --version
-          Print version
-```
-
-**Examples**
+Starts one or more host controllers that connect to a running domain controller. The domain controller defaults to
+`wado-dc-<major><minor>` but can be specified with
+`--domain-controller`. That means a running domain controller of the same WildFly version will be found automatically. Use
+`--server` to configure servers (same syntax as the domain controller). Credentials for connecting to the domain controller default to
+`admin:admin`.
 
 ```shell
 wado hc start 34
@@ -510,23 +333,7 @@ wado hc start 35 --name hc \
 
 #### Stop
 
-```shell
-Stop a host controller
-
-Usage: wado hc stop [OPTIONS] [wildfly-version]
-
-Arguments:
-  [wildfly-version]  A single WildFly version or version range
-
-Options:
-  -n, --name <name>  The name of the host controller [default: wado-hc-<major><minor>]
-  -a, --all          Stop all running host controllers. If specified with a version,
-                     stop all running host controllers of that version.
-  -h, --help         Print help
-  -V, --version      Print version
-```
-
-**Examples**
+Stops host controllers by version, name, or all at once.
 
 ```shell
 wado hc stop 34
@@ -538,37 +345,43 @@ wado hc stop --all
 
 ### Topology
 
-#### Start
+Starts or stops a complete domain topology defined as a YAML file. The topology file specifies the domain controller, host controllers, their servers, and optionally mixed WildFly versions. When stopping, you can pass either the YAML file or just the topology name.
 
 ```shell
-Start a topology
-
-Usage: wado topology start <setup>
-
-Arguments:
-  <setup>  The topology setup
-
-Options:
-  -h, --help     Print help
-  -V, --version  Print version
+wado topology start my-topology.yaml
+wado topology stop my-topology.yaml
+wado topology stop my-topology
 ```
 
-#### Stop
+#### Topology File Format
 
-```shell
-Stop a topology
+The topology file is a YAML file with the following structure:
 
-Usage: wado topology stop <setup>
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | string | yes | Name of the topology |
+| `version` | number | yes | WildFly version used for all hosts (unless overridden per host) |
+| `hosts` | list | yes | List of hosts in the topology |
 
-Arguments:
-  <setup>  The topology setup
+Each host supports the following fields:
 
-Options:
-  -h, --help     Print help
-  -V, --version  Print version
-```
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `name` | string | no | `wado-dc-<major><minor>` / `wado-hc-<major><minor>` | Name of the host. Defaults to the standard container name based on the server type and version. Must be unique if provided. |
+| `domain-controller` | bool | no | `false` | Whether this host is the domain controller. Exactly one host must be the domain controller. |
+| `version` | number | no | top-level version | WildFly version override for this host. Allows mixed-version topologies. |
+| `servers` | list | no | `[]` | List of servers on this host |
 
-The topology setup is a YAML file like this:
+Each server supports the following fields:
+
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `name` | string | yes | - | Name of the server |
+| `group` | string | yes | - | Server group: `main-server-group` (or `msg`) / `other-server-group` (or `osg`) |
+| `offset` | number | no | `0` | Socket binding port offset. If not specified, auto-incremented by 100 from the second server onward (0, 100, 200, ...). |
+| `auto-start` | bool | no | `false` | Whether to auto-start the server when the host starts |
+
+#### Example
 
 ```yaml
 name: my-topology
@@ -607,52 +420,27 @@ hosts:
 
 ## Images
 
+Lists all locally available standalone, domain controller, and host controller images.
+
 ```shell
-List all available standalone, domain and host controller images
-
-Usage: wado images
-
-Options:
-  -h, --help     Print help
-  -V, --version  Print version
+wado images
 ```
 
 ## PS
 
+Lists all running wado containers. Use `--standalone` or `--domain` to filter by operation mode.
+
 ```shell
-List running standalone, domain and host controller containers
-
-Usage: wado ps [OPTIONS]
-
-Options:
-      --standalone  List standalone containers only
-      --domain      List domain controller and host controller containers only
-  -h, --help        Print help
-  -V, --version     Print version
+wado ps
+wado ps --standalone
+wado ps --domain
 ```
 
 ## Management Clients
 
 ### Console
 
-```shell
-Open the management console
-
-Usage: wado console [OPTIONS] [wildfly-version]
-
-Arguments:
-  [wildfly-version]  A single WildFly version or version range.
-                     If omitted the console is opened for all running standalone and domain controller containers.
-
-Options:
-  -n, --name <name>              The name of the standalone server or domain controller [default: wado-sa|dc-<major><minor>].
-                                 Not allowed when multiple versions are specified.
-  -m, --management <management>  The published management port. Not allowed when multiple versions are specified.
-  -h, --help                     Print help
-  -V, --version                  Print version
-```
-
-**Examples**
+Opens the WildFly management console in the default web browser. If no version is specified, the console is opened for all running standalone and domain controller containers.
 
 ```shell
 wado console
@@ -663,30 +451,10 @@ wado console 34 --management 9990
 
 ### CLI
 
-If not already present, this command downloads the `wildfly-cli-client.jar` and `jboss-cli.xml` of the specified version
-to the `$TMPDIR`.
-
-```shell
-Connect to the CLI
-
-Usage: wado cli [OPTIONS] [wildfly-version] [-- [cli-parameters]...]
-
-Arguments:
-  [wildfly-version]    A single WildFly version.
-                       Can be omitted if only one standalone or domain controller is running.
-  [cli-parameters]...  Parameters passed to the CLI
-
-Options:
-  -n, --name <name>              The name of the standalone server or domain controller [default: wado-sa|dc-<major><minor>].
-                                 Not allowed when multiple versions are specified.
-  -m, --management <management>  The published management port
-  -u, --username <username>      The username to connect to the CLI [default: admin]
-  -p, --password <password>      The password to connect to the CLI [default: admin]
-  -h, --help                     Print help
-  -V, --version                  Print version
-```
-
-**Examples**
+Connects to the JBoss CLI of a running container. If not already present, this command downloads the
+`wildfly-cli-client.jar` and `jboss-cli.xml` of the specified version to
+`$TMPDIR`. The version can be omitted if only one standalone or domain controller is running. Additional CLI parameters can be passed after
+`--`.
 
 ```shell
 wado cli
