@@ -1,4 +1,5 @@
-use crate::container::{containers_by_topology, stop_containers_by_name, verify_container_command};
+use crate::command::lifecycle::stop_containers_by_name;
+use crate::container::{containers_by_topology, verify_container_command};
 use crate::wildfly::ServerType;
 use clap::ArgMatches;
 use futures::executor::block_on;

@@ -5,11 +5,9 @@
 //! and orchestrating container lifecycle operations.
 
 mod command;
-mod lifecycle;
 pub mod query;
 mod resolve;
 
 pub use command::*;
-pub use lifecycle::*;
 pub use query::*;
 pub use resolve::*;

@@ -18,9 +18,10 @@ use tokio::task::JoinSet;
 use tokio::time::Instant;
 use wildfly_container_versions::WildFlyContainer;
 
-use super::command::{container_command, container_stop_cmd, verify_container_command};
-use super::query::container_ps;
-use super::resolve::resolve_start_specs;
+use crate::container::{
+    container_command, container_ps, container_stop_cmd, resolve_start_specs,
+    verify_container_command,
+};
 
 /// Verifies the container runtime, extracts versions from CLI args, validates
 /// options for multi-version runs, resolves unique names/ports, and converts

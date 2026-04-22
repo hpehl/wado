@@ -5,6 +5,7 @@ pub mod console;
 pub mod dc;
 pub mod hc;
 pub mod images;
+pub(crate) mod lifecycle;
 pub mod ps;
 pub mod push;
 pub mod standalone;
