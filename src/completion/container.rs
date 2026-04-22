@@ -1,20 +1,14 @@
-//! Shell completion providers for container-related CLI arguments.
-//!
-//! These functions return closures compatible with [`clap_complete`]'s
-//! completion engine, providing tab-completion for running container names,
-//! WildFly versions, and topology names.
-
 use std::collections::BTreeSet;
 use std::ffi::OsStr;
 
 use clap_complete::engine::CompletionCandidate;
 use futures::executor::block_on;
 
-use super::query::{container_ps, running_topology_names};
+use crate::container::query::{container_ps, running_topology_names};
 use crate::wildfly::ServerType;
-use crate::wildfly_version::parse_prefix_token;
 
-/// Completes with names of running containers matching the given server types.
+use super::version::parse_prefix_token;
+
 pub fn complete_running_names(
     server_types: Vec<ServerType>,
 ) -> impl Fn(&OsStr) -> Vec<CompletionCandidate> {
@@ -30,7 +24,6 @@ pub fn complete_running_names(
     }
 }
 
-/// Completes with WildFly versions of running containers matching the given server types.
 pub fn complete_running_versions(
     server_types: Vec<ServerType>,
 ) -> impl Fn(&OsStr) -> Vec<CompletionCandidate> {
@@ -55,7 +48,6 @@ pub fn complete_running_versions(
     }
 }
 
-/// Completes with names of currently running topologies.
 pub fn complete_running_topologies() -> impl Fn(&OsStr) -> Vec<CompletionCandidate> {
     move |_current: &OsStr| {
         let names = block_on(running_topology_names());

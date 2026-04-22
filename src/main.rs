@@ -1,45 +1,35 @@
 mod app;
 mod args;
-mod build;
-mod cli;
-mod completions;
-mod console;
+mod command;
+mod completion;
 mod constants;
 mod container;
-mod dc;
-mod hc;
-mod image;
 mod label;
 mod progress;
-mod ps;
-mod push;
 mod resources;
-mod standalone;
-mod topology;
 mod wildfly;
-mod wildfly_version;
 
-use crate::build::build;
-use crate::cli::cli;
-use crate::completions::completions;
-use crate::console::console;
-use crate::container::{
+use crate::command::build::build;
+use crate::command::cli::cli;
+use crate::command::completions::completions;
+use crate::command::console::console;
+use crate::command::dc::{dc_start, dc_stop};
+use crate::command::hc::{hc_start, hc_stop};
+use crate::command::images::images;
+use crate::command::ps::ps;
+use crate::command::push::push;
+use crate::command::standalone::{standalone_start, standalone_stop};
+use crate::command::topology::{topology_start, topology_stop};
+use crate::completion::{
     complete_running_names, complete_running_topologies, complete_running_versions,
+    complete_versions,
 };
-use crate::dc::{dc_start, dc_stop};
-use crate::image::images;
-use crate::ps::ps;
-use crate::push::push;
-use crate::standalone::{standalone_start, standalone_stop};
-use crate::topology::{topology_start, topology_stop};
 use crate::wildfly::Server;
 use crate::wildfly::ServerType::{DomainController, HostController, Standalone};
-use crate::wildfly_version::complete_versions;
 use anyhow::Result;
 use app::build_app;
 use clap::value_parser;
 use clap_complete::engine::ArgValueCompleter;
-use hc::{hc_start, hc_stop};
 use std::path::PathBuf;
 use wildfly_container_versions::WildFlyContainer;
 

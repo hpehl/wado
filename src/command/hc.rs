@@ -8,7 +8,7 @@ use crate::constants::{
 };
 use crate::container::{
     add_servers, container_network_cmd, container_run_cmd, create_secret, resolve_start_specs,
-    run_instances, stop_command, verify_container_command,
+    run_instances, stop_containers_by_server_type, verify_container_command,
 };
 use crate::wildfly::{AdminContainer, HostController, Server, ServerType, StartSpec};
 use anyhow::bail;
@@ -132,5 +132,5 @@ async fn start_instances(
 // ------------------------------------------------------ stop
 
 pub fn hc_stop(matches: &ArgMatches) -> anyhow::Result<()> {
-    stop_command(ServerType::HostController, matches)
+    stop_containers_by_server_type(ServerType::HostController, matches)
 }

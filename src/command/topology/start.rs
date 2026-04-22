@@ -68,10 +68,7 @@ pub fn topology_start(matches: &ArgMatches) -> anyhow::Result<()> {
     ))
 }
 
-fn build_hc_specs(
-    hc_hosts: &[&HostSetup],
-    default_version: u16,
-) -> anyhow::Result<Vec<StartSpec>> {
+fn build_hc_specs(hc_hosts: &[&HostSetup], default_version: u16) -> anyhow::Result<Vec<StartSpec>> {
     hc_hosts
         .iter()
         .map(|host| {

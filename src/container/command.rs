@@ -19,6 +19,8 @@ use std::process::Stdio;
 use tokio::io::AsyncWriteExt;
 use tokio::process::Command;
 
+// ------------------------------------------------------ runtime detection
+
 fn detect_runtime() -> Result<PathBuf, Error> {
     which::which("podman")
         .or_else(|_| which::which("docker"))
@@ -36,6 +38,8 @@ pub fn verify_container_command() -> Result<PathBuf, Error> {
 pub fn container_command() -> anyhow::Result<Command> {
     detect_runtime().map(Command::new)
 }
+
+// ------------------------------------------------------ command builders
 
 pub fn container_images_cmd() -> Command {
     let mut command = container_command().expect("Unable to run docker images/podman images.");
@@ -120,6 +124,22 @@ pub fn container_stop_cmd(name: &str) -> Command {
     command
 }
 
+// ------------------------------------------------------ related functions
+
+/// Appends `--env SERVERS=...` to the command if servers are provided.
+pub fn add_servers(mut command: Command, hostname: &str, servers: Vec<Server>) -> Command {
+    if !servers.is_empty() {
+        let server_ops = servers
+            .iter()
+            .map(|server| server.add_server_op(hostname))
+            .collect::<Vec<String>>();
+        command
+            .arg("--env")
+            .arg(format!("{}={}", SERVERS_VARIABLE, server_ops.join(",")));
+    }
+    command
+}
+
 /// Creates a podman/docker secret by piping the value to stdin.
 pub async fn create_secret(secret_name: &str, secret_value: &str) -> anyhow::Result<()> {
     let mut podman_secret = container_command()?
@@ -137,18 +157,4 @@ pub async fn create_secret(secret_name: &str, secret_value: &str) -> anyhow::Res
     }
     podman_secret.wait().await?;
     Ok(())
-}
-
-/// Appends `--env SERVERS=...` to the command if servers are provided.
-pub fn add_servers(mut command: Command, hostname: &str, servers: Vec<Server>) -> Command {
-    if !servers.is_empty() {
-        let server_ops = servers
-            .iter()
-            .map(|server| server.add_server_op(hostname))
-            .collect::<Vec<String>>();
-        command
-            .arg("--env")
-            .arg(format!("{}={}", SERVERS_VARIABLE, server_ops.join(",")));
-    }
-    command
 }

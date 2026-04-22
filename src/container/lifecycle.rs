@@ -22,6 +22,28 @@ use super::command::{container_command, container_stop_cmd, verify_container_com
 use super::query::container_ps;
 use super::resolve::resolve_start_specs;
 
+/// Verifies the container runtime, extracts versions from CLI args, validates
+/// options for multi-version runs, resolves unique names/ports, and converts
+/// each [`ResolvedStart`] into the caller's instance type.
+pub fn prepare_instances<T>(
+    matches: &ArgMatches,
+    server_type: ServerType,
+    restricted_options: &[&str],
+    convert: impl Fn(ResolvedStart) -> T,
+) -> anyhow::Result<Vec<T>> {
+    verify_container_command()?;
+    let wildfly_containers = versions_argument(matches);
+    if wildfly_containers.len() > 1 {
+        validate_multiple_versions(matches, restricted_options)?;
+    }
+    let specs = wildfly_containers
+        .iter()
+        .map(|wc| start_spec(matches, wc, server_type))
+        .collect();
+    let resolved = block_on(resolve_start_specs(server_type, specs))?;
+    Ok(resolved.into_iter().map(convert).collect())
+}
+
 /// Starts multiple containers in parallel with progress bars.
 ///
 /// Each container is spawned as a separate task. Progress is tracked via
@@ -72,40 +94,50 @@ where
     Ok(())
 }
 
-/// Stops containers matching the given server type, version, and name filters.
-pub async fn stop_instances(
+/// Stops containers matching the server type, version, and name from CLI args.
+pub fn stop_containers_by_server_type(
     server_type: ServerType,
-    wildfly_containers: Option<&[WildFlyContainer]>,
-    name: Option<&str>,
+    matches: &ArgMatches,
 ) -> anyhow::Result<()> {
-    let instances = container_ps(vec![server_type], wildfly_containers, name, false).await?;
-    let count = instances.len();
-    let instant = Instant::now();
-    let multi_progress = MultiProgress::new();
-    let mut commands = JoinSet::new();
+    verify_container_command()?;
+    let wildfly_containers = matches.get_one::<Vec<WildFlyContainer>>("wildfly-version");
+    let name = matches.get_one::<String>("name").map(|s| s.as_str());
+    block_on(async {
+        let instances = container_ps(
+            vec![server_type],
+            wildfly_containers.map(|v| v.as_slice()),
+            name,
+            false,
+        )
+        .await?;
+        let count = instances.len();
+        let instant = Instant::now();
+        let multi_progress = MultiProgress::new();
+        let mut commands = JoinSet::new();
 
-    for instance in instances {
-        let progress = Progress::new(
-            &instance.admin_container.wildfly_container.display_version(),
-            &instance.admin_container.image_name(),
-        );
-        multi_progress.add(progress.bar.clone());
-        let mut command = container_stop_cmd(&instance.name);
-        let child = command
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-            .expect("Unable to run podman-stop.");
+        for instance in instances {
+            let progress = Progress::new(
+                &instance.admin_container.wildfly_container.display_version(),
+                &instance.admin_container.image_name(),
+            );
+            multi_progress.add(progress.bar.clone());
+            let mut command = container_stop_cmd(&instance.name);
+            let child = command
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .spawn()
+                .expect("Unable to run podman-stop.");
 
-        commands.spawn(async move {
-            let output = child.wait_with_output().await;
-            progress.finish(output, Some(&instance.name))
-        });
-    }
+            commands.spawn(async move {
+                let output = child.wait_with_output().await;
+                progress.finish(output, Some(&instance.name))
+            });
+        }
 
-    let status = commands.join_all().await;
-    summary("Stopped", "container", count, instant, status);
-    Ok(())
+        let status = commands.join_all().await;
+        summary("Stopped", "container", count, instant, status);
+        Ok(())
+    })
 }
 
 /// Stops multiple containers by their names.
@@ -134,42 +166,6 @@ pub async fn stop_containers_by_name(names: &[String]) -> anyhow::Result<()> {
     let status = commands.join_all().await;
     summary("Stopped", "container", count, instant, status);
     Ok(())
-}
-
-// ------------------------------------------------------ shared command helpers
-
-/// Verifies the container runtime, extracts versions from CLI args, validates
-/// options for multi-version runs, resolves unique names/ports, and converts
-/// each [`ResolvedStart`] into the caller's instance type.
-pub fn resolve_instances<T>(
-    matches: &ArgMatches,
-    server_type: ServerType,
-    restricted_options: &[&str],
-    convert: impl Fn(ResolvedStart) -> T,
-) -> anyhow::Result<Vec<T>> {
-    verify_container_command()?;
-    let wildfly_containers = versions_argument(matches);
-    if wildfly_containers.len() > 1 {
-        validate_multiple_versions(matches, restricted_options)?;
-    }
-    let specs = wildfly_containers
-        .iter()
-        .map(|wc| start_spec(matches, wc, server_type))
-        .collect();
-    let resolved = block_on(resolve_start_specs(server_type, specs))?;
-    Ok(resolved.into_iter().map(convert).collect())
-}
-
-/// Stops containers matching the server type, version, and name from CLI args.
-pub fn stop_command(server_type: ServerType, matches: &ArgMatches) -> anyhow::Result<()> {
-    verify_container_command()?;
-    let wildfly_containers = matches.get_one::<Vec<WildFlyContainer>>("wildfly-version");
-    let name = matches.get_one::<String>("name").map(|s| s.as_str());
-    block_on(stop_instances(
-        server_type,
-        wildfly_containers.map(|v| v.as_slice()),
-        name,
-    ))
 }
 
 // ------------------------------------------------------ internal

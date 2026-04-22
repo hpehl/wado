@@ -1,10 +1,8 @@
-use crate::args::{
-    extract_config, operations_argument, parameters_argument, server_argument,
-};
+use crate::args::{extract_config, operations_argument, parameters_argument, server_argument};
 use crate::constants::{HOSTNAME_VARIABLE, WILDFLY_ADMIN_CONTAINER};
 use crate::container::{
-    add_servers, container_network_cmd, container_run_cmd, resolve_instances, run_instances,
-    stop_command,
+    add_servers, container_network_cmd, container_run_cmd, prepare_instances, run_instances,
+    stop_containers_by_server_type,
 };
 use crate::wildfly::{DomainController, Server, ServerType};
 use clap::ArgMatches;
@@ -13,7 +11,7 @@ use futures::executor::block_on;
 // ------------------------------------------------------ start
 
 pub fn dc_start(matches: &ArgMatches) -> anyhow::Result<()> {
-    let instances: Vec<DomainController> = resolve_instances(
+    let instances: Vec<DomainController> = prepare_instances(
         matches,
         ServerType::DomainController,
         &["name", "http", "management", "offset"],
@@ -61,5 +59,5 @@ async fn start_instances(
 // ------------------------------------------------------ stop
 
 pub fn dc_stop(matches: &ArgMatches) -> anyhow::Result<()> {
-    stop_command(ServerType::DomainController, matches)
+    stop_containers_by_server_type(ServerType::DomainController, matches)
 }

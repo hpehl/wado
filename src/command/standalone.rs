@@ -1,6 +1,7 @@
 use crate::args::{extract_config, operations_argument, parameters_argument};
 use crate::container::{
-    container_network_cmd, container_run_cmd, resolve_instances, run_instances, stop_command,
+    container_network_cmd, container_run_cmd, prepare_instances, run_instances,
+    stop_containers_by_server_type,
 };
 use crate::wildfly::{ServerType, StandaloneInstance};
 use clap::ArgMatches;
@@ -9,7 +10,7 @@ use futures::executor::block_on;
 // ------------------------------------------------------ start
 
 pub fn standalone_start(matches: &ArgMatches) -> anyhow::Result<()> {
-    let instances: Vec<StandaloneInstance> = resolve_instances(
+    let instances: Vec<StandaloneInstance> = prepare_instances(
         matches,
         ServerType::Standalone,
         &["name", "http", "management", "offset"],
@@ -49,5 +50,5 @@ async fn start_instances(
 // ------------------------------------------------------ stop
 
 pub fn standalone_stop(matches: &ArgMatches) -> anyhow::Result<()> {
-    stop_command(ServerType::Standalone, matches)
+    stop_containers_by_server_type(ServerType::Standalone, matches)
 }

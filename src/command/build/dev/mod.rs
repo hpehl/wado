@@ -53,7 +53,7 @@ struct DevBuildConfig<'a> {
 
 // ------------------------------------------------------ build dev
 
-pub(in crate::build) async fn build_dev(
+pub(in crate::command::build) async fn build_dev(
     matches: &ArgMatches,
     admin_containers: Vec<AdminContainer>,
 ) -> anyhow::Result<()> {
