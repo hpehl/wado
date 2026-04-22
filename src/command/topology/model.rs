@@ -25,7 +25,7 @@ pub struct HostSetup {
 #[derive(Deserialize)]
 pub struct ServerSetup {
     pub name: String,
-    pub group: String,
+    pub group: Option<String>,
     #[serde(default)]
     pub offset: u16,
     #[serde(rename = "auto-start", default)]
@@ -77,10 +77,12 @@ impl TopologySetup {
                 })?;
             }
             for server in &host.servers {
-                if ServerGroup::parse_group(&server.group).is_none() {
+                if let Some(group) = &server.group
+                    && ServerGroup::parse_group(group).is_none()
+                {
                     bail!(
                         "Invalid server group '{}' for server '{}' on host '{}'",
-                        server.group,
+                        group,
                         server.name,
                         host_label
                     );
@@ -116,8 +118,11 @@ impl ServerSetup {
     pub fn to_server(&self) -> Server {
         Server {
             name: self.name.clone(),
-            server_group: ServerGroup::parse_group(&self.group)
-                .expect("Invalid server group (should have been validated)"),
+            server_group: self
+                .group
+                .as_deref()
+                .and_then(ServerGroup::parse_group)
+                .unwrap_or(ServerGroup::MainServerGroup),
             offset: self.offset,
             autostart: self.auto_start,
         }
@@ -219,6 +224,26 @@ hosts:
         let host1 = &setup.hosts[1];
         assert_eq!(host1.effective_version(34), 33);
         assert_eq!(setup.dc_host().effective_version(34), 34);
+    }
+
+    #[test]
+    fn deserialize_server_without_group() {
+        let yaml = r#"
+name: test-topology
+version: 34
+hosts:
+  - domain-controller: true
+  - servers:
+      - name: server-one
+      - name: server-two
+        group: other-server-group
+"#;
+        let setup: TopologySetup = serde_yml::from_str(yaml).unwrap();
+        assert!(setup.validate().is_ok());
+        let servers = &setup.hosts[1].servers;
+        assert!(servers[0].group.is_none());
+        assert_eq!(servers[0].to_server().server_group, ServerGroup::MainServerGroup);
+        assert_eq!(servers[1].to_server().server_group, ServerGroup::OtherServerGroup);
     }
 
     #[test]
@@ -330,7 +355,7 @@ hosts:
     fn server_setup_to_server() {
         let setup = ServerSetup {
             name: "server-one".to_string(),
-            group: "main-server-group".to_string(),
+            group: Some("main-server-group".to_string()),
             offset: 100,
             auto_start: true,
         };
@@ -345,7 +370,7 @@ hosts:
     fn server_setup_to_server_osg() {
         let setup = ServerSetup {
             name: "server-two".to_string(),
-            group: "other-server-group".to_string(),
+            group: Some("other-server-group".to_string()),
             offset: 200,
             auto_start: false,
         };
@@ -353,5 +378,17 @@ hosts:
         assert_eq!(server.server_group, ServerGroup::OtherServerGroup);
         assert_eq!(server.offset, 200);
         assert!(!server.autostart);
+    }
+
+    #[test]
+    fn server_setup_to_server_default_group() {
+        let setup = ServerSetup {
+            name: "server-three".to_string(),
+            group: None,
+            offset: 0,
+            auto_start: false,
+        };
+        let server = setup.to_server();
+        assert_eq!(server.server_group, ServerGroup::MainServerGroup);
     }
 }

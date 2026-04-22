@@ -377,7 +377,7 @@ Each server supports the following fields:
 | Field | Type | Required | Default | Description |
 |-------|------|----------|---------|-------------|
 | `name` | string | yes | - | Name of the server |
-| `group` | string | yes | - | Server group: `main-server-group` (or `msg`) / `other-server-group` (or `osg`) |
+| `group` | string | no | `main-server-group` | Server group: `main-server-group` (or `msg`) / `other-server-group` (or `osg`) |
 | `offset` | number | no | `0` | Socket binding port offset. If not specified, auto-incremented by 100 from the second server onward (0, 100, 200, ...). |
 | `auto-start` | bool | no | `false` | Whether to auto-start the server when the host starts |
 
@@ -392,10 +392,8 @@ hosts:
   - name: host1
     servers:
       - name: server-one
-        group: main-server-group
         auto-start: true
       - name: server-two
-        group: main-server-group
         offset: 10
       - name: server-three
         group: other-server-group
@@ -404,14 +402,11 @@ hosts:
     version: 38
     servers:
       - name: server-one
-        group: main-server-group
       - name: server-two
-        group: main-server-group
       - name: server-three
         group: other-server-group
   - servers:
       - name: server-one
-        group: main-server-group
       - name: server-two
         group: other-server-group
       - name: server-three

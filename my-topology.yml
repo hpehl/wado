@@ -5,10 +5,8 @@ hosts:
     domain-controller: true
   - servers:
       - name: server-one
-        group: main-server-group
         auto-start: true
       - name: server-two
-        group: main-server-group
         offset: 10
       - name: server-three
         group: other-server-group
@@ -19,16 +17,13 @@ hosts:
   - name: host
     servers:
       - name: server-one
-        group: main-server-group
       - name: server-two
-        group: other-server-group
+        group: osg
       - name: server-three
-        group: other-server-group
+        group: osg
   - version: 38
     servers:
       - name: server-one
-        group: main-server-group
       - name: server-two
-        group: main-server-group
       - name: server-three
-        group: other-server-group
+        group: osg
