@@ -4,7 +4,7 @@ use std::ffi::OsStr;
 use clap_complete::engine::CompletionCandidate;
 use futures::executor::block_on;
 
-use crate::container::container_ps;
+use crate::container::{container_ps, running_topology_names};
 use crate::wildfly::ServerType;
 use crate::wildfly_version::parse_prefix_token;
 
@@ -42,6 +42,19 @@ pub fn complete_running_versions(
                     .map(|v| CompletionCandidate::new(format!("{}{}", prefix, v)))
                     .collect()
             }
+            Err(_) => vec![],
+        }
+    }
+}
+
+pub fn complete_running_topologies() -> impl Fn(&OsStr) -> Vec<CompletionCandidate> {
+    move |_current: &OsStr| {
+        let names = block_on(running_topology_names());
+        match names {
+            Ok(names) => names
+                .into_iter()
+                .map(CompletionCandidate::new)
+                .collect(),
             Err(_) => vec![],
         }
     }

@@ -11,7 +11,7 @@ use crate::wildfly::{
 use anyhow::{Error, bail};
 use futures::future::join_all;
 use indicatif::MultiProgress;
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap, HashSet};
 use std::path::PathBuf;
 use std::process::Stdio;
 use tokio::process::Command;
@@ -116,6 +116,15 @@ pub async fn container_ps(
 
 pub async fn containers_by_topology(topology_name: &str) -> anyhow::Result<Vec<ContainerInstance>> {
     ps_instances(&Label::Topology.filter_value(topology_name), |_| true).await
+}
+
+pub async fn running_topology_names() -> anyhow::Result<Vec<String>> {
+    let instances = ps_instances(&Label::Topology.filter(), |_| true).await?;
+    let names: BTreeSet<String> = instances
+        .iter()
+        .filter_map(|i| i.topology.clone())
+        .collect();
+    Ok(names.into_iter().collect())
 }
 
 pub fn container_run(

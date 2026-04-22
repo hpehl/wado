@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.5] - 2026-04-22
+
+### Added
+
+- Dynamic topology name completion for `wado stop topology`, suggesting
+  names of currently running topologies
+
 ## [0.4.4] - 2026-04-21
 
 ### Changed
@@ -328,6 +335,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - First release 🎉
+
+[0.4.5]: https://github.com/hpehl/wado/compare/v0.4.4...v0.4.5
+
+[0.4.4]: https://github.com/hpehl/wado/compare/v0.4.3...v0.4.4
 
 [0.4.3]: https://github.com/hpehl/wado/compare/v0.4.2...v0.4.3
 

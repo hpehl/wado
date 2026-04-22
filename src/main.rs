@@ -25,7 +25,9 @@ use crate::build::build;
 use crate::cli::cli;
 use crate::completions::completions;
 use crate::console::console;
-use crate::container_completion::{complete_running_names, complete_running_versions};
+use crate::container_completion::{
+    complete_running_names, complete_running_topologies, complete_running_versions,
+};
 use crate::dc::{dc_start, dc_stop};
 use crate::image::images;
 use crate::ps::ps;
@@ -135,9 +137,15 @@ fn build_app_full() -> clap::Command {
             })
         })
         .mut_subcommand("topology", |sub_cmd| {
-            sub_cmd.mut_subcommand("start", |sub_sub_cmd| {
-                sub_sub_cmd.mut_arg("setup", |arg| arg.value_parser(value_parser!(PathBuf)))
-            })
+            sub_cmd
+                .mut_subcommand("start", |sub_sub_cmd| {
+                    sub_sub_cmd.mut_arg("setup", |arg| arg.value_parser(value_parser!(PathBuf)))
+                })
+                .mut_subcommand("stop", |sub_sub_cmd| {
+                    sub_sub_cmd.mut_arg("setup", |arg| {
+                        arg.add(ArgValueCompleter::new(complete_running_topologies()))
+                    })
+                })
         })
         .mut_subcommand("console", |sub_cmd| {
             sub_cmd
