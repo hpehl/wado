@@ -125,14 +125,19 @@ impl AdminContainer {
 
 impl Ord for AdminContainer {
     fn cmp(&self, other: &Self) -> Ordering {
-        let wildfly_container_a = &self.wildfly_container;
-        let server_type_a = &self.server_type;
-        let wildfly_container_b = &other.wildfly_container;
-        let server_type_b = &other.server_type;
-        if wildfly_container_a == wildfly_container_b {
-            server_type_a.cmp(server_type_b)
-        } else {
-            wildfly_container_a.cmp(wildfly_container_b)
+        let a_dev = self.wildfly_container.is_dev();
+        let b_dev = other.wildfly_container.is_dev();
+        match (a_dev, b_dev) {
+            (true, false) => Ordering::Greater,
+            (false, true) => Ordering::Less,
+            _ => {
+                let version_ord = self.wildfly_container.cmp(&other.wildfly_container);
+                if version_ord == Ordering::Equal {
+                    self.server_type.cmp(&other.server_type)
+                } else {
+                    version_ord
+                }
+            }
         }
     }
 }

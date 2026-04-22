@@ -31,7 +31,7 @@ pub fn images() -> anyhow::Result<()> {
         .set_header(vec!["Version", "Type", "Image"]);
     for image in &image_values {
         let cells = vec![
-            Cell::new(&image.wildfly_container.version).fg(Color::DarkMagenta),
+            Cell::new(image.wildfly_container.display_version()).fg(Color::DarkMagenta),
             Cell::new(image.server_type.short_name()).fg(Color::DarkCyan),
             if image.in_use {
                 Cell::new(image.image_name()).fg(Color::Green)
