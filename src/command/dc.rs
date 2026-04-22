@@ -1,6 +1,6 @@
+use super::lifecycle::{prepare_instances, run_instances, stop_containers_by_server_type};
 use crate::args::{extract_config, operations_argument, parameters_argument, server_argument};
 use crate::constants::{HOSTNAME_VARIABLE, WILDFLY_ADMIN_CONTAINER};
-use super::lifecycle::{prepare_instances, run_instances, stop_containers_by_server_type};
 use crate::container::{add_servers, container_network_cmd, container_run_cmd};
 use crate::wildfly::{DomainController, Server, ServerType};
 use clap::ArgMatches;

@@ -1,8 +1,8 @@
+use crate::command::lifecycle::run_instances;
 use crate::constants::{
     DOMAIN_CONTROLLER_VARIABLE, HOSTNAME_VARIABLE, PASSWORD_VARIABLE, USERNAME_VARIABLE,
     WILDFLY_ADMIN_CONTAINER,
 };
-use crate::command::lifecycle::run_instances;
 use crate::container::{
     add_servers, container_network_cmd, container_run_cmd, create_secret, resolve_start_specs,
     verify_container_command,

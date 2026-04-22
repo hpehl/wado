@@ -1,3 +1,4 @@
+use super::lifecycle::{run_instances, stop_containers_by_server_type};
 use crate::args::{
     extract_config, name_argument, operations_argument, parameters_argument, server_argument,
     username_password_argument, versions_argument,
@@ -6,7 +7,6 @@ use crate::constants::{
     DOMAIN_CONTROLLER_VARIABLE, HOSTNAME_VARIABLE, PASSWORD_VARIABLE, USERNAME_VARIABLE,
     WILDFLY_ADMIN_CONTAINER,
 };
-use super::lifecycle::{run_instances, stop_containers_by_server_type};
 use crate::container::{
     add_servers, container_network_cmd, container_run_cmd, create_secret, resolve_start_specs,
     verify_container_command,

@@ -242,8 +242,14 @@ hosts:
         assert!(setup.validate().is_ok());
         let servers = &setup.hosts[1].servers;
         assert!(servers[0].group.is_none());
-        assert_eq!(servers[0].to_server().server_group, ServerGroup::MainServerGroup);
-        assert_eq!(servers[1].to_server().server_group, ServerGroup::OtherServerGroup);
+        assert_eq!(
+            servers[0].to_server().server_group,
+            ServerGroup::MainServerGroup
+        );
+        assert_eq!(
+            servers[1].to_server().server_group,
+            ServerGroup::OtherServerGroup
+        );
     }
 
     #[test]
