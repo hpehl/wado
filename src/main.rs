@@ -16,7 +16,6 @@ mod push;
 mod resources;
 mod standalone;
 mod topology;
-mod topology_model;
 mod wildfly;
 mod wildfly_version;
 

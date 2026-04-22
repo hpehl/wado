@@ -3,11 +3,10 @@ use crate::constants::{
     WILDFLY_ADMIN_CONTAINER,
 };
 use crate::container::{
-    add_servers, container_network_cmd, container_run_cmd, containers_by_topology,
-    resolve_start_specs, run_instances, stop_containers_by_name, verify_container_command,
+    add_servers, container_network_cmd, container_run_cmd, resolve_start_specs, run_instances,
+    verify_container_command,
 };
 use crate::hc::create_secret;
-use crate::topology_model::TopologySetup;
 use crate::wildfly::{
     AdminContainer, DEFAULT_SERVER_OFFSET, DomainController, HostController, Server, ServerType,
     StartSpec, apply_offsets,
@@ -18,6 +17,8 @@ use std::collections::BTreeMap;
 use std::path::PathBuf;
 use tokio::try_join;
 use wildfly_container_versions::WildFlyContainer;
+
+use super::model::{HostSetup, TopologySetup};
 
 pub fn topology_start(matches: &ArgMatches) -> anyhow::Result<()> {
     let path = matches.get_one::<PathBuf>("setup").unwrap();
@@ -69,7 +70,7 @@ pub fn topology_start(matches: &ArgMatches) -> anyhow::Result<()> {
 }
 
 fn build_hc_specs(
-    hc_hosts: &[&crate::topology_model::HostSetup],
+    hc_hosts: &[&HostSetup],
     default_version: u16,
 ) -> anyhow::Result<Vec<StartSpec>> {
     hc_hosts
@@ -89,7 +90,7 @@ fn build_hc_specs(
 }
 
 fn build_server_map(
-    hc_hosts: &[&crate::topology_model::HostSetup],
+    hc_hosts: &[&HostSetup],
     hcs: &[HostController],
 ) -> BTreeMap<String, Vec<Server>> {
     let mut map = BTreeMap::new();
@@ -179,52 +180,5 @@ async fn start_topology(
         .await?;
     }
 
-    Ok(())
-}
-
-pub fn topology_stop(matches: &ArgMatches) -> anyhow::Result<()> {
-    let setup_arg = matches.get_one::<String>("setup").unwrap();
-    let topology_name = resolve_topology_name(setup_arg)?;
-    verify_container_command()?;
-    block_on(stop_topology(&topology_name))
-}
-
-fn resolve_topology_name(setup_arg: &str) -> anyhow::Result<String> {
-    let path = std::path::Path::new(setup_arg);
-    if path.exists() {
-        let setup = TopologySetup::load(path)?;
-        Ok(setup.name)
-    } else {
-        Ok(setup_arg.to_string())
-    }
-}
-
-async fn stop_topology(topology_name: &str) -> anyhow::Result<()> {
-    let instances = containers_by_topology(topology_name).await?;
-    if instances.is_empty() {
-        println!(
-            "No running containers found for topology '{}'",
-            topology_name
-        );
-        return Ok(());
-    }
-
-    let hc_names: Vec<String> = instances
-        .iter()
-        .filter(|i| i.admin_container.server_type == ServerType::HostController)
-        .map(|i| i.name.clone())
-        .collect();
-    let dc_names: Vec<String> = instances
-        .iter()
-        .filter(|i| i.admin_container.server_type == ServerType::DomainController)
-        .map(|i| i.name.clone())
-        .collect();
-
-    if !hc_names.is_empty() {
-        stop_containers_by_name(&hc_names).await?;
-    }
-    if !dc_names.is_empty() {
-        stop_containers_by_name(&dc_names).await?;
-    }
     Ok(())
 }
