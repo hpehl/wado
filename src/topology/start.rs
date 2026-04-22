@@ -3,10 +3,9 @@ use crate::constants::{
     WILDFLY_ADMIN_CONTAINER,
 };
 use crate::container::{
-    add_servers, container_network_cmd, container_run_cmd, resolve_start_specs, run_instances,
-    verify_container_command,
+    add_servers, container_network_cmd, container_run_cmd, create_secret, resolve_start_specs,
+    run_instances, verify_container_command,
 };
-use crate::hc::create_secret;
 use crate::wildfly::{
     AdminContainer, DEFAULT_SERVER_OFFSET, DomainController, HostController, Server, ServerType,
     StartSpec, apply_offsets,

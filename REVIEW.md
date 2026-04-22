@@ -81,7 +81,7 @@ This would reduce `standalone_start` and `dc_start` to ~15 lines each. `hc_start
 
 ---
 
-## 4. `create_secret` in `hc.rs` is used by `topology.rs` — move to `container/`
+## ~~4. `create_secret` in `hc.rs` is used by `topology.rs` — move to `container/`~~ FIXED
 
 **File:** `src/hc.rs:133` (`create_secret`), used by `src/topology.rs:9`
 **Severity:** MEDIUM

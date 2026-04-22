@@ -1,4 +1,4 @@
-//! Container runtime detection. and low-level podman/docker command builders.
+//! Container runtime detection and low-level podman/docker command builders.
 //!
 //! Finds podman (preferred) or docker on the system PATH and provides
 //! a [`Command`] ready to use for container operations.
@@ -16,6 +16,7 @@ use crate::wildfly::Server;
 use anyhow::Error;
 use std::path::PathBuf;
 use std::process::Stdio;
+use tokio::io::AsyncWriteExt;
 use tokio::process::Command;
 
 fn detect_runtime() -> Result<PathBuf, Error> {
@@ -117,6 +118,25 @@ pub fn container_stop_cmd(name: &str) -> Command {
     let mut command = container_command().expect("Unable to run docker stop/podman stop.");
     command.arg("stop").arg(name);
     command
+}
+
+/// Creates a podman/docker secret by piping the value to stdin.
+pub async fn create_secret(secret_name: &str, secret_value: &str) -> anyhow::Result<()> {
+    let mut podman_secret = container_command()?
+        .arg("secret")
+        .arg("create")
+        .arg("--replace")
+        .arg(secret_name)
+        .arg("-")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("Failed to spawn podman secret");
+    if let Some(mut stdin) = podman_secret.stdin.take() {
+        stdin.write_all(secret_value.as_bytes()).await?;
+    }
+    podman_secret.wait().await?;
+    Ok(())
 }
 
 /// Appends `--env SERVERS=...` to the command if servers are provided.

@@ -7,14 +7,13 @@ use crate::constants::{
     WILDFLY_ADMIN_CONTAINER,
 };
 use crate::container::{
-    add_servers, container_command, container_network_cmd, container_run_cmd, resolve_start_specs,
+    add_servers, container_network_cmd, container_run_cmd, create_secret, resolve_start_specs,
     run_instances, verify_container_command,
 };
 use crate::wildfly::{AdminContainer, HostController, Server, ServerType, StartSpec};
 use anyhow::bail;
 use clap::ArgMatches;
 use futures::executor::block_on;
-use std::process::Stdio;
 use tokio::try_join;
 use wildfly_container_versions::WildFlyContainer;
 
@@ -128,25 +127,6 @@ async fn start_instances(
         command
     })
     .await
-}
-
-pub(crate) async fn create_secret(secret_name: &str, secret_value: &str) -> anyhow::Result<()> {
-    let mut podman_secret = container_command()?
-        .arg("secret")
-        .arg("create")
-        .arg("--replace")
-        .arg(secret_name)
-        .arg("-")
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .spawn()
-        .expect("Failed to spawn podman secret");
-    if let Some(mut stdin) = podman_secret.stdin.take() {
-        use tokio::io::AsyncWriteExt;
-        stdin.write_all(secret_value.as_bytes()).await?;
-    }
-    podman_secret.wait().await?;
-    Ok(())
 }
 
 // ------------------------------------------------------ stop
