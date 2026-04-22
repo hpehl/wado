@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.9] - 2026-04-22
+
+### Fixed
+
+- Fix first container getting an unnecessary `-0` suffix when starting multiple
+  instances of the same version (e.g. `wado start 2x39` now produces
+  `wado-sa-390` and `wado-sa-390-1` instead of `wado-sa-390-0` and
+  `wado-sa-390-1`)
+
 ## [0.4.8] - 2026-04-22
 
 ### Changed
@@ -367,6 +376,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - First release 🎉
+
+[0.4.9]: https://github.com/hpehl/wado/compare/v0.4.8...v0.4.9
+
+[0.4.8]: https://github.com/hpehl/wado/compare/v0.4.7...v0.4.8
 
 [0.4.7]: https://github.com/hpehl/wado/compare/v0.4.6...v0.4.7
 

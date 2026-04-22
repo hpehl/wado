@@ -63,18 +63,15 @@ fn resolve_specs_with_counts(
         let wc = &chunk[0].admin_container.wildfly_container;
         let (same_type, all_types) = counts.get(&wc.identifier).copied().unwrap_or((0, 0));
 
-        let auto_named_count = chunk.iter().filter(|s| s.custom_name.is_none()).count();
-        let needs_name_index = auto_named_count > 1 || same_type > 0;
-
         let mut auto_name_counter: u16 = 0;
         for (position, spec) in chunk.iter().enumerate() {
             let name = match &spec.custom_name {
                 Some(custom) => custom.clone(),
                 None => {
                     let base = spec.admin_container.container_name();
-                    if needs_name_index {
-                        let index = same_type + auto_name_counter;
-                        auto_name_counter += 1;
+                    let index = same_type + auto_name_counter;
+                    auto_name_counter += 1;
+                    if index > 0 {
                         format!("{}-{}", base, index)
                     } else {
                         base
@@ -174,7 +171,7 @@ mod tests {
         let specs = vec![sa_spec("39"), sa_spec("39")];
         let result = resolve(&specs, &[]);
         assert_eq!(result.len(), 2);
-        assert_eq!(result[0].name, "wado-sa-390-0");
+        assert_eq!(result[0].name, "wado-sa-390");
         assert_eq!(result[1].name, "wado-sa-390-1");
         let base = Ports::default_ports(&specs[0].admin_container.wildfly_container);
         assert_eq!(result[0].ports, Some(base.clone()));
@@ -206,7 +203,7 @@ mod tests {
         let specs = vec![sa_spec("39"), sa_spec("39")];
         let id = specs[0].admin_container.wildfly_container.identifier;
         let result = resolve(&specs, &[(id, 0, 1)]);
-        assert_eq!(result[0].name, "wado-sa-390-0");
+        assert_eq!(result[0].name, "wado-sa-390");
         assert_eq!(result[1].name, "wado-sa-390-1");
         let base = Ports::default_ports(&specs[0].admin_container.wildfly_container);
         assert_eq!(result[0].ports, Some(base.with_offset(1)));
