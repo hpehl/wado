@@ -51,7 +51,7 @@ These two files are tightly coupled — `topology.rs` imports from `topology_mod
 
 ---
 
-## 3. `standalone.rs`, `dc.rs`, `hc.rs` share a repetitive start pattern
+## ~~3. `standalone.rs`, `dc.rs`, `hc.rs` share a repetitive start pattern~~ FIXED
 
 **Files:** `src/standalone.rs` (65 lines), `src/dc.rs` (74 lines), `src/hc.rs` (156 lines)
 **Severity:** MEDIUM

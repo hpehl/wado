@@ -1,11 +1,7 @@
 use crate::args::{
-    extract_config, operations_argument, parameters_argument, start_spec, stop_command,
-    validate_multiple_versions, versions_argument,
+    extract_config, operations_argument, parameters_argument, resolve_instances, stop_command,
 };
-use crate::container::{
-    container_network_cmd, container_run_cmd, resolve_start_specs, run_instances,
-    verify_container_command,
-};
+use crate::container::{container_network_cmd, container_run_cmd, run_instances};
 use crate::wildfly::{ServerType, StandaloneInstance};
 use clap::ArgMatches;
 use futures::executor::block_on;
@@ -13,20 +9,12 @@ use futures::executor::block_on;
 // ------------------------------------------------------ start
 
 pub fn standalone_start(matches: &ArgMatches) -> anyhow::Result<()> {
-    verify_container_command()?;
-    let wildfly_containers = versions_argument(matches);
-    if wildfly_containers.len() > 1 {
-        validate_multiple_versions(matches, &["name", "http", "management", "offset"])?;
-    }
-    let specs = wildfly_containers
-        .iter()
-        .map(|wc| start_spec(matches, wc, ServerType::Standalone))
-        .collect();
-    let resolved = block_on(resolve_start_specs(ServerType::Standalone, specs))?;
-    let instances: Vec<StandaloneInstance> = resolved
-        .into_iter()
-        .map(|r| StandaloneInstance::new(r.admin_container, r.name, r.ports.unwrap()))
-        .collect();
+    let instances: Vec<StandaloneInstance> = resolve_instances(
+        matches,
+        ServerType::Standalone,
+        &["name", "http", "management", "offset"],
+        |r| StandaloneInstance::new(r.admin_container, r.name, r.ports.unwrap()),
+    )?;
     block_on(start_instances(
         instances,
         parameters_argument(matches),

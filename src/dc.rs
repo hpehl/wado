@@ -1,11 +1,10 @@
 use crate::args::{
-    extract_config, operations_argument, parameters_argument, server_argument, start_spec,
-    stop_command, validate_multiple_versions, versions_argument,
+    extract_config, operations_argument, parameters_argument, resolve_instances, server_argument,
+    stop_command,
 };
 use crate::constants::{HOSTNAME_VARIABLE, WILDFLY_ADMIN_CONTAINER};
 use crate::container::{
-    add_servers, container_network_cmd, container_run_cmd, resolve_start_specs, run_instances,
-    verify_container_command,
+    add_servers, container_network_cmd, container_run_cmd, run_instances,
 };
 use crate::wildfly::{DomainController, Server, ServerType};
 use clap::ArgMatches;
@@ -14,20 +13,12 @@ use futures::executor::block_on;
 // ------------------------------------------------------ start
 
 pub fn dc_start(matches: &ArgMatches) -> anyhow::Result<()> {
-    verify_container_command()?;
-    let wildfly_containers = versions_argument(matches);
-    if wildfly_containers.len() > 1 {
-        validate_multiple_versions(matches, &["name", "http", "management", "offset"])?;
-    }
-    let specs = wildfly_containers
-        .iter()
-        .map(|wc| start_spec(matches, wc, ServerType::DomainController))
-        .collect();
-    let resolved = block_on(resolve_start_specs(ServerType::DomainController, specs))?;
-    let instances: Vec<DomainController> = resolved
-        .into_iter()
-        .map(|r| DomainController::new(r.admin_container, r.name, r.ports.unwrap()))
-        .collect();
+    let instances: Vec<DomainController> = resolve_instances(
+        matches,
+        ServerType::DomainController,
+        &["name", "http", "management", "offset"],
+        |r| DomainController::new(r.admin_container, r.name, r.ports.unwrap()),
+    )?;
     block_on(start_instances(
         instances,
         server_argument(matches),
