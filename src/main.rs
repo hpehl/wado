@@ -6,7 +6,6 @@ mod completions;
 mod console;
 mod constants;
 mod container;
-mod container_completion;
 mod dc;
 mod hc;
 mod image;
@@ -25,7 +24,7 @@ use crate::build::build;
 use crate::cli::cli;
 use crate::completions::completions;
 use crate::console::console;
-use crate::container_completion::{
+use crate::container::{
     complete_running_names, complete_running_topologies, complete_running_versions,
 };
 use crate::dc::{dc_start, dc_stop};
