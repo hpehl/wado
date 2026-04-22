@@ -11,7 +11,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Support `dev` and dotted versions (e.g. `26.1`) in topology YAML files,
   aligning with the `wildfly-version` parameter accepted by other commands
-- Validate that dev and versioned hosts cannot be mixed in a topology
 
 ## [0.4.7] - 2026-04-22
 

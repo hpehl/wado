@@ -71,27 +71,9 @@ impl TopologySetup {
             }
         }
 
-        let is_dev = self.version == "dev";
         for host in &self.hosts {
             let host_label = host.name.as_deref().unwrap_or("<unnamed>");
             if let Some(v) = &host.version {
-                let host_is_dev = v == "dev";
-                if is_dev && !host_is_dev {
-                    bail!(
-                        "Cannot mix dev and versioned hosts. \
-                         Top-level version is 'dev', but host '{}' uses version '{}'",
-                        host_label,
-                        v
-                    );
-                }
-                if !is_dev && host_is_dev {
-                    bail!(
-                        "Cannot mix dev and versioned hosts. \
-                         Top-level version is '{}', but host '{}' uses version 'dev'",
-                        self.version,
-                        host_label
-                    );
-                }
                 resolve_version(v).with_context(|| {
                     format!("Unknown WildFly version '{}' for host '{}'", v, host_label)
                 })?;
@@ -446,24 +428,7 @@ hosts:
     }
 
     #[test]
-    fn validate_mixed_dev_and_stable() {
-        let yaml = r#"
-name: test-topology
-version: dev
-hosts:
-  - name: dc
-    domain-controller: true
-  - name: host1
-    version: 34
-"#;
-        let setup: TopologySetup = serde_yml::from_str(yaml).unwrap();
-        let result = setup.validate();
-        assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Cannot mix dev"));
-    }
-
-    #[test]
-    fn validate_mixed_stable_and_dev() {
+    fn deserialize_host_dev_version_override() {
         let yaml = r#"
 name: test-topology
 version: 34
@@ -474,26 +439,9 @@ hosts:
     version: dev
 "#;
         let setup: TopologySetup = serde_yml::from_str(yaml).unwrap();
-        let result = setup.validate();
-        assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Cannot mix dev"));
-    }
-
-    #[test]
-    fn deserialize_host_dev_version_override() {
-        let yaml = r#"
-name: dev-topology
-version: dev
-hosts:
-  - name: dc
-    domain-controller: true
-  - name: host1
-    version: dev
-"#;
-        let setup: TopologySetup = serde_yml::from_str(yaml).unwrap();
         assert!(setup.validate().is_ok());
         assert_eq!(setup.hosts[1].version, Some("dev".to_string()));
-        assert_eq!(setup.hosts[1].effective_version("dev"), "dev");
+        assert_eq!(setup.hosts[1].effective_version("34"), "dev");
     }
 
     #[test]
