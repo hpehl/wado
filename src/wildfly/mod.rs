@@ -2,7 +2,7 @@ mod admin_container;
 mod management;
 mod server;
 mod server_type;
-mod start;
+mod start_spec;
 
 /// Configuration for a named container instance with its admin container metadata.
 pub trait ContainerConfig: Clone {
@@ -30,4 +30,4 @@ pub use instance::*;
 pub use management::*;
 pub use server::*;
 pub use server_type::*;
-pub use start::*;
+pub use start_spec::*;
