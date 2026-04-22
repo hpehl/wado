@@ -1,6 +1,6 @@
 use crate::args::{
     extract_config, name_argument, operations_argument, parameters_argument, server_argument,
-    stop_command, username_password_argument, versions_argument,
+    username_password_argument, versions_argument,
 };
 use crate::constants::{
     DOMAIN_CONTROLLER_VARIABLE, HOSTNAME_VARIABLE, PASSWORD_VARIABLE, USERNAME_VARIABLE,
@@ -8,7 +8,7 @@ use crate::constants::{
 };
 use crate::container::{
     add_servers, container_network_cmd, container_run_cmd, create_secret, resolve_start_specs,
-    run_instances, verify_container_command,
+    run_instances, stop_command, verify_container_command,
 };
 use crate::wildfly::{AdminContainer, HostController, Server, ServerType, StartSpec};
 use anyhow::bail;

@@ -1,7 +1,7 @@
-use crate::args::{
-    extract_config, operations_argument, parameters_argument, resolve_instances, stop_command,
+use crate::args::{extract_config, operations_argument, parameters_argument};
+use crate::container::{
+    container_network_cmd, container_run_cmd, resolve_instances, run_instances, stop_command,
 };
-use crate::container::{container_network_cmd, container_run_cmd, run_instances};
 use crate::wildfly::{ServerType, StandaloneInstance};
 use clap::ArgMatches;
 use futures::executor::block_on;

@@ -92,7 +92,7 @@ This would reduce `standalone_start` and `dc_start` to ~15 lines each. `hc_start
 
 ---
 
-## 5. `args.rs` mixes argument extraction with command execution
+## ~~5. `args.rs` mixes argument extraction with command execution~~ FIXED
 
 **File:** `src/args.rs` (212 lines)
 **Severity:** MEDIUM

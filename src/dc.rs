@@ -1,10 +1,10 @@
 use crate::args::{
-    extract_config, operations_argument, parameters_argument, resolve_instances, server_argument,
-    stop_command,
+    extract_config, operations_argument, parameters_argument, server_argument,
 };
 use crate::constants::{HOSTNAME_VARIABLE, WILDFLY_ADMIN_CONTAINER};
 use crate::container::{
-    add_servers, container_network_cmd, container_run_cmd, run_instances,
+    add_servers, container_network_cmd, container_run_cmd, resolve_instances, run_instances,
+    stop_command,
 };
 use crate::wildfly::{DomainController, Server, ServerType};
 use clap::ArgMatches;

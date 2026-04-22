@@ -1,12 +1,9 @@
-use crate::container::{resolve_start_specs, stop_instances, verify_container_command};
 use crate::wildfly::{
-    AdminContainer, DEFAULT_SERVER_OFFSET, ResolvedStart, Server, ServerType, StartSpec,
-    apply_offsets,
+    AdminContainer, DEFAULT_SERVER_OFFSET, Server, ServerType, StartSpec, apply_offsets,
 };
 use anyhow::bail;
 use clap::ArgMatches;
 use fs::read_to_string;
-use futures::executor::block_on;
 use std::fs;
 use std::path::Path;
 use wildfly_container_versions::WildFlyContainer;
@@ -166,37 +163,7 @@ pub fn versions_argument(matches: &ArgMatches) -> Vec<WildFlyContainer> {
         .clone()
 }
 
-// ------------------------------------------------------ shared command helpers
-
-pub fn resolve_instances<T>(
-    matches: &ArgMatches,
-    server_type: ServerType,
-    restricted_options: &[&str],
-    convert: impl Fn(ResolvedStart) -> T,
-) -> anyhow::Result<Vec<T>> {
-    verify_container_command()?;
-    let wildfly_containers = versions_argument(matches);
-    if wildfly_containers.len() > 1 {
-        validate_multiple_versions(matches, restricted_options)?;
-    }
-    let specs = wildfly_containers
-        .iter()
-        .map(|wc| start_spec(matches, wc, server_type))
-        .collect();
-    let resolved = block_on(resolve_start_specs(server_type, specs))?;
-    Ok(resolved.into_iter().map(convert).collect())
-}
-
-pub fn stop_command(server_type: ServerType, matches: &ArgMatches) -> anyhow::Result<()> {
-    verify_container_command()?;
-    let wildfly_containers = matches.get_one::<Vec<WildFlyContainer>>("wildfly-version");
-    let name = matches.get_one::<String>("name").map(|s| s.as_str());
-    block_on(stop_instances(
-        server_type,
-        wildfly_containers.map(|v| v.as_slice()),
-        name,
-    ))
-}
+// ------------------------------------------------------ validation
 
 pub fn validate_multiple_versions(matches: &ArgMatches, options: &[&str]) -> anyhow::Result<()> {
     for option in options {

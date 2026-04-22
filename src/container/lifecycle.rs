@@ -4,9 +4,12 @@
 //! Uses [`tokio::task::JoinSet`] for concurrent operations and
 //! [`indicatif::MultiProgress`] for visual feedback.
 
+use crate::args::{start_spec, validate_multiple_versions, versions_argument};
 use crate::progress::{Progress, stderr_reader, summary};
-use crate::wildfly::{ContainerConfig, ServerType};
+use crate::wildfly::{ContainerConfig, ResolvedStart, ServerType};
 use anyhow::bail;
+use clap::ArgMatches;
+use futures::executor::block_on;
 use indicatif::MultiProgress;
 use std::collections::HashSet;
 use std::process::Stdio;
@@ -15,9 +18,9 @@ use tokio::task::JoinSet;
 use tokio::time::Instant;
 use wildfly_container_versions::WildFlyContainer;
 
-use super::command::container_command;
-use super::command::container_stop_cmd;
+use super::command::{container_command, container_stop_cmd, verify_container_command};
 use super::query::container_ps;
+use super::resolve::resolve_start_specs;
 
 /// Starts multiple containers in parallel with progress bars.
 ///
@@ -131,6 +134,42 @@ pub async fn stop_containers_by_name(names: &[String]) -> anyhow::Result<()> {
     let status = commands.join_all().await;
     summary("Stopped", "container", count, instant, status);
     Ok(())
+}
+
+// ------------------------------------------------------ shared command helpers
+
+/// Verifies the container runtime, extracts versions from CLI args, validates
+/// options for multi-version runs, resolves unique names/ports, and converts
+/// each [`ResolvedStart`] into the caller's instance type.
+pub fn resolve_instances<T>(
+    matches: &ArgMatches,
+    server_type: ServerType,
+    restricted_options: &[&str],
+    convert: impl Fn(ResolvedStart) -> T,
+) -> anyhow::Result<Vec<T>> {
+    verify_container_command()?;
+    let wildfly_containers = versions_argument(matches);
+    if wildfly_containers.len() > 1 {
+        validate_multiple_versions(matches, restricted_options)?;
+    }
+    let specs = wildfly_containers
+        .iter()
+        .map(|wc| start_spec(matches, wc, server_type))
+        .collect();
+    let resolved = block_on(resolve_start_specs(server_type, specs))?;
+    Ok(resolved.into_iter().map(convert).collect())
+}
+
+/// Stops containers matching the server type, version, and name from CLI args.
+pub fn stop_command(server_type: ServerType, matches: &ArgMatches) -> anyhow::Result<()> {
+    verify_container_command()?;
+    let wildfly_containers = matches.get_one::<Vec<WildFlyContainer>>("wildfly-version");
+    let name = matches.get_one::<String>("name").map(|s| s.as_str());
+    block_on(stop_instances(
+        server_type,
+        wildfly_containers.map(|v| v.as_slice()),
+        name,
+    ))
 }
 
 // ------------------------------------------------------ internal
