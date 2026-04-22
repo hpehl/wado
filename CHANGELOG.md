@@ -12,6 +12,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dynamic topology name completion for `wado stop topology`, suggesting
   names of currently running topologies
 
+### Changed
+
+- Move all subcommand implementations into a `command` module
+- Group all shell completion logic into a `completion` module
+- Move shared container helpers (`resolve_instances`, `stop_command`) into
+  `container/lifecycle` and rename to `prepare_instances` and
+  `stop_containers_by_server_type` for clarity
+- Move `create_secret` and `add_servers` into `container/command`
+- Split `wildfly.rs` and `container.rs` into module directories
+
 ## [0.4.4] - 2026-04-21
 
 ### Changed
