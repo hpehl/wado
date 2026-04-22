@@ -1,4 +1,4 @@
-use crate::container::{container_images, container_ps};
+use crate::container::{container_images_cmd, container_ps};
 use crate::wildfly::{AdminContainer, ServerType};
 use comfy_table::presets::UTF8_BORDERS_ONLY;
 use comfy_table::{Cell, Color, ContentArrangement, Table};
@@ -53,7 +53,7 @@ pub fn images() -> anyhow::Result<()> {
 }
 
 async fn local_image_names() -> anyhow::Result<HashSet<String>> {
-    let mut command = container_images();
+    let mut command = container_images_cmd();
     let child = command
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())

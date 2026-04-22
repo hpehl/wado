@@ -7,7 +7,7 @@ use crate::constants::{
     WILDFLY_ADMIN_CONTAINER,
 };
 use crate::container::{
-    add_servers, container_command, container_network, container_run, resolve_start_specs,
+    add_servers, container_command, container_network_cmd, container_run_cmd, resolve_start_specs,
     run_instances, verify_container_command,
 };
 use crate::wildfly::{AdminContainer, HostController, Server, ServerType, StartSpec};
@@ -89,13 +89,13 @@ async fn start_instances(
     parameters: Vec<String>,
 ) -> anyhow::Result<()> {
     try_join!(
-        container_network(),
+        container_network_cmd(),
         create_secret("username", username),
         create_secret("password", password)
     )?;
     let config = extract_config(&parameters, "domain.xml");
     run_instances(&instances, |instance| {
-        let mut command = container_run(
+        let mut command = container_run_cmd(
             &instance.name,
             None,
             operations.clone(),

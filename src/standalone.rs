@@ -3,7 +3,8 @@ use crate::args::{
     validate_multiple_versions, versions_argument,
 };
 use crate::container::{
-    container_network, container_run, resolve_start_specs, run_instances, verify_container_command,
+    container_network_cmd, container_run_cmd, resolve_start_specs, run_instances,
+    verify_container_command,
 };
 use crate::wildfly::{ServerType, StandaloneInstance};
 use clap::ArgMatches;
@@ -39,9 +40,9 @@ async fn start_instances(
     operations: Vec<String>,
 ) -> anyhow::Result<()> {
     let config = extract_config(&parameters, "standalone.xml");
-    container_network().await?;
+    container_network_cmd().await?;
     run_instances(&instances, |instance| {
-        let mut command = container_run(
+        let mut command = container_run_cmd(
             &instance.name,
             Some(&instance.ports),
             operations.clone(),

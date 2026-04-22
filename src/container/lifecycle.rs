@@ -4,9 +4,8 @@
 //! Uses [`tokio::task::JoinSet`] for concurrent operations and
 //! [`indicatif::MultiProgress`] for visual feedback.
 
-use crate::constants::SERVERS_VARIABLE;
 use crate::progress::{Progress, stderr_reader, summary};
-use crate::wildfly::{ContainerConfig, Server, ServerType};
+use crate::wildfly::{ContainerConfig, ServerType};
 use anyhow::bail;
 use indicatif::MultiProgress;
 use std::collections::HashSet;
@@ -16,23 +15,9 @@ use tokio::task::JoinSet;
 use tokio::time::Instant;
 use wildfly_container_versions::WildFlyContainer;
 
-use super::command::container_stop;
+use super::command::container_command;
+use super::command::container_stop_cmd;
 use super::query::container_ps;
-use super::runtime::container_command;
-
-/// Appends `--env SERVERS=...` to the command if servers are provided.
-pub fn add_servers(mut command: Command, hostname: &str, servers: Vec<Server>) -> Command {
-    if !servers.is_empty() {
-        let server_ops = servers
-            .iter()
-            .map(|server| server.add_server_op(hostname))
-            .collect::<Vec<String>>();
-        command
-            .arg("--env")
-            .arg(format!("{}={}", SERVERS_VARIABLE, server_ops.join(",")));
-    }
-    command
-}
 
 /// Starts multiple containers in parallel with progress bars.
 ///
@@ -102,7 +87,7 @@ pub async fn stop_instances(
             &instance.admin_container.image_name(),
         );
         multi_progress.add(progress.bar.clone());
-        let mut command = container_stop(&instance.name);
+        let mut command = container_stop_cmd(&instance.name);
         let child = command
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -130,7 +115,7 @@ pub async fn stop_containers_by_name(names: &[String]) -> anyhow::Result<()> {
     for name in names {
         let progress = Progress::new(name, name);
         multi_progress.add(progress.bar.clone());
-        let mut command = container_stop(name);
+        let mut command = container_stop_cmd(name);
         let child = command
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())

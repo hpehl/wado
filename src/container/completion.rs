@@ -60,10 +60,7 @@ pub fn complete_running_topologies() -> impl Fn(&OsStr) -> Vec<CompletionCandida
     move |_current: &OsStr| {
         let names = block_on(running_topology_names());
         match names {
-            Ok(names) => names
-                .into_iter()
-                .map(CompletionCandidate::new)
-                .collect(),
+            Ok(names) => names.into_iter().map(CompletionCandidate::new).collect(),
             Err(_) => vec![],
         }
     }

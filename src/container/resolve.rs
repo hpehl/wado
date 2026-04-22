@@ -1,4 +1,4 @@
-//! Name and port resolution for new container starts.
+//! Name and port resolution for the new container starts.
 //!
 //! Auto-generates unique container names and non-colliding port mappings
 //! based on already-running instances of the same WildFly version.

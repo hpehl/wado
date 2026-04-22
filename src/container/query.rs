@@ -11,7 +11,7 @@ use std::collections::BTreeSet;
 use std::process::Stdio;
 use wildfly_container_versions::WildFlyContainer;
 
-use super::runtime::container_command;
+use super::command::container_command;
 
 /// Lists running wado containers, filtered by server type, version, and name.
 ///

@@ -4,7 +4,7 @@ use crate::args::{
 };
 use crate::constants::{HOSTNAME_VARIABLE, WILDFLY_ADMIN_CONTAINER};
 use crate::container::{
-    add_servers, container_network, container_run, resolve_start_specs, run_instances,
+    add_servers, container_network_cmd, container_run_cmd, resolve_start_specs, run_instances,
     verify_container_command,
 };
 use crate::wildfly::{DomainController, Server, ServerType};
@@ -43,9 +43,9 @@ async fn start_instances(
     parameters: Vec<String>,
 ) -> anyhow::Result<()> {
     let config = extract_config(&parameters, "domain.xml");
-    container_network().await?;
+    container_network_cmd().await?;
     run_instances(&instances, |instance| {
-        let mut command = container_run(
+        let mut command = container_run_cmd(
             &instance.name,
             Some(&instance.ports),
             operations.clone(),

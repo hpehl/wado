@@ -9,11 +9,9 @@ mod completion;
 mod lifecycle;
 mod query;
 mod resolve;
-mod runtime;
 
 pub use command::*;
 pub use completion::*;
 pub use lifecycle::*;
 pub use query::*;
 pub use resolve::*;
-pub use runtime::*;

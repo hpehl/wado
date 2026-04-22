@@ -3,8 +3,8 @@ use crate::constants::{
     WILDFLY_ADMIN_CONTAINER,
 };
 use crate::container::{
-    add_servers, container_network, container_run, containers_by_topology, resolve_start_specs,
-    run_instances, stop_containers_by_name, verify_container_command,
+    add_servers, container_network_cmd, container_run_cmd, containers_by_topology,
+    resolve_start_specs, run_instances, stop_containers_by_name, verify_container_command,
 };
 use crate::hc::create_secret;
 use crate::topology_model::TopologySetup;
@@ -111,7 +111,7 @@ async fn start_topology(
     hc_server_map: BTreeMap<String, Vec<Server>>,
 ) -> anyhow::Result<()> {
     try_join!(
-        container_network(),
+        container_network_cmd(),
         create_secret("username", "admin"),
         create_secret("password", "admin"),
     )?;
@@ -119,7 +119,7 @@ async fn start_topology(
     let topology = topology_name.as_str();
 
     run_instances(std::slice::from_ref(&dc), |instance| {
-        let mut command = container_run(
+        let mut command = container_run_cmd(
             &instance.name,
             Some(&instance.ports),
             vec![],
@@ -144,7 +144,7 @@ async fn start_topology(
                 .get(&instance.name)
                 .cloned()
                 .unwrap_or_default();
-            let mut command = container_run(
+            let mut command = container_run_cmd(
                 &instance.name,
                 None,
                 vec![],
