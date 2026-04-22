@@ -1,5 +1,6 @@
 use crate::wildfly::{Server, ServerGroup};
 use anyhow::{Context, bail};
+use serde::de;
 use serde::Deserialize;
 use std::collections::HashSet;
 use std::path::Path;
@@ -8,7 +9,8 @@ use wildfly_container_versions::WildFlyContainer;
 #[derive(Deserialize)]
 pub struct TopologySetup {
     pub name: String,
-    pub version: u16,
+    #[serde(deserialize_with = "deserialize_version")]
+    pub version: String,
     pub hosts: Vec<HostSetup>,
 }
 
@@ -17,7 +19,8 @@ pub struct HostSetup {
     pub name: Option<String>,
     #[serde(rename = "domain-controller", default)]
     pub domain_controller: bool,
-    pub version: Option<u16>,
+    #[serde(default, deserialize_with = "deserialize_optional_version")]
+    pub version: Option<String>,
     #[serde(default)]
     pub servers: Vec<ServerSetup>,
 }
@@ -39,8 +42,7 @@ impl TopologySetup {
         let setup: TopologySetup = serde_yml::from_str(&content)
             .with_context(|| format!("Failed to parse topology file: {}", path.display()))?;
         setup.validate()?;
-        setup
-            .resolve_version(setup.version)
+        resolve_version(&setup.version)
             .with_context(|| format!("Unknown WildFly version: {}", setup.version))?;
         Ok(setup)
     }
@@ -69,11 +71,29 @@ impl TopologySetup {
             }
         }
 
+        let is_dev = self.version == "dev";
         for host in &self.hosts {
             let host_label = host.name.as_deref().unwrap_or("<unnamed>");
-            if let Some(v) = host.version {
-                self.resolve_version(v).with_context(|| {
-                    format!("Unknown WildFly version {} for host '{}'", v, host_label)
+            if let Some(v) = &host.version {
+                let host_is_dev = v == "dev";
+                if is_dev && !host_is_dev {
+                    bail!(
+                        "Cannot mix dev and versioned hosts. \
+                         Top-level version is 'dev', but host '{}' uses version '{}'",
+                        host_label,
+                        v
+                    );
+                }
+                if !is_dev && host_is_dev {
+                    bail!(
+                        "Cannot mix dev and versioned hosts. \
+                         Top-level version is '{}', but host '{}' uses version 'dev'",
+                        self.version,
+                        host_label
+                    );
+                }
+                resolve_version(v).with_context(|| {
+                    format!("Unknown WildFly version '{}' for host '{}'", v, host_label)
                 })?;
             }
             for server in &host.servers {
@@ -102,16 +122,58 @@ impl TopologySetup {
     pub fn hc_hosts(&self) -> Vec<&HostSetup> {
         self.hosts.iter().filter(|h| !h.domain_controller).collect()
     }
-
-    fn resolve_version(&self, version: u16) -> anyhow::Result<WildFlyContainer> {
-        WildFlyContainer::version(&version.to_string()).map_err(|e| anyhow::anyhow!("{}", e))
-    }
 }
 
 impl HostSetup {
-    pub fn effective_version(&self, default: u16) -> u16 {
-        self.version.unwrap_or(default)
+    pub fn effective_version<'a>(&'a self, default: &'a str) -> &'a str {
+        self.version.as_deref().unwrap_or(default)
     }
+}
+
+fn resolve_version(version: &str) -> anyhow::Result<WildFlyContainer> {
+    WildFlyContainer::version(version).map_err(|e| anyhow::anyhow!("{}", e))
+}
+
+struct VersionVisitor;
+
+impl<'de> de::Visitor<'de> for VersionVisitor {
+    type Value = String;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        formatter.write_str("a version number (e.g. 34, 26.1) or 'dev'")
+    }
+
+    fn visit_u64<E: de::Error>(self, v: u64) -> Result<String, E> {
+        Ok(v.to_string())
+    }
+
+    fn visit_f64<E: de::Error>(self, v: f64) -> Result<String, E> {
+        Ok(format!("{v}"))
+    }
+
+    fn visit_str<E: de::Error>(self, v: &str) -> Result<String, E> {
+        Ok(v.to_string())
+    }
+}
+
+fn deserialize_version<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: de::Deserializer<'de>,
+{
+    deserializer.deserialize_any(VersionVisitor)
+}
+
+fn deserialize_optional_version<'de, D>(deserializer: D) -> Result<Option<String>, D::Error>
+where
+    D: de::Deserializer<'de>,
+{
+    Option::<serde_yml::Value>::deserialize(deserializer)?
+        .map(|v| match v {
+            serde_yml::Value::Number(n) => Ok(n.to_string()),
+            serde_yml::Value::String(s) => Ok(s),
+            _ => Err(de::Error::custom("expected a version number or 'dev'")),
+        })
+        .transpose()
 }
 
 impl ServerSetup {
@@ -144,11 +206,37 @@ hosts:
 "#;
         let setup: TopologySetup = serde_yml::from_str(yaml).unwrap();
         assert_eq!(setup.name, "test-topology");
-        assert_eq!(setup.version, 34);
+        assert_eq!(setup.version, "34");
         assert_eq!(setup.hosts.len(), 1);
         assert!(setup.hosts[0].domain_controller);
         assert_eq!(setup.hosts[0].name, Some("dc".to_string()));
         assert!(setup.hosts[0].servers.is_empty());
+    }
+
+    #[test]
+    fn deserialize_dev_version() {
+        let yaml = r#"
+name: dev-topology
+version: dev
+hosts:
+  - name: dc
+    domain-controller: true
+"#;
+        let setup: TopologySetup = serde_yml::from_str(yaml).unwrap();
+        assert_eq!(setup.version, "dev");
+    }
+
+    #[test]
+    fn deserialize_dotted_version() {
+        let yaml = r#"
+name: test-topology
+version: 26.1
+hosts:
+  - name: dc
+    domain-controller: true
+"#;
+        let setup: TopologySetup = serde_yml::from_str(yaml).unwrap();
+        assert_eq!(setup.version, "26.1");
     }
 
     #[test]
@@ -205,8 +293,8 @@ hosts:
         assert_eq!(host1.servers[1].offset, 100);
 
         let host2 = &setup.hosts[2];
-        assert_eq!(host2.version, Some(33));
-        assert_eq!(host2.effective_version(34), 33);
+        assert_eq!(host2.version, Some("33".to_string()));
+        assert_eq!(host2.effective_version("34"), "33");
     }
 
     #[test]
@@ -222,8 +310,8 @@ hosts:
 "#;
         let setup: TopologySetup = serde_yml::from_str(yaml).unwrap();
         let host1 = &setup.hosts[1];
-        assert_eq!(host1.effective_version(34), 33);
-        assert_eq!(setup.dc_host().effective_version(34), 34);
+        assert_eq!(host1.effective_version("34"), "33");
+        assert_eq!(setup.dc_host().effective_version("34"), "34");
     }
 
     #[test]
@@ -355,6 +443,73 @@ hosts:
 "#;
         let setup: TopologySetup = serde_yml::from_str(yaml).unwrap();
         assert!(setup.validate().is_ok());
+    }
+
+    #[test]
+    fn validate_mixed_dev_and_stable() {
+        let yaml = r#"
+name: test-topology
+version: dev
+hosts:
+  - name: dc
+    domain-controller: true
+  - name: host1
+    version: 34
+"#;
+        let setup: TopologySetup = serde_yml::from_str(yaml).unwrap();
+        let result = setup.validate();
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("Cannot mix dev"));
+    }
+
+    #[test]
+    fn validate_mixed_stable_and_dev() {
+        let yaml = r#"
+name: test-topology
+version: 34
+hosts:
+  - name: dc
+    domain-controller: true
+  - name: host1
+    version: dev
+"#;
+        let setup: TopologySetup = serde_yml::from_str(yaml).unwrap();
+        let result = setup.validate();
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("Cannot mix dev"));
+    }
+
+    #[test]
+    fn deserialize_host_dev_version_override() {
+        let yaml = r#"
+name: dev-topology
+version: dev
+hosts:
+  - name: dc
+    domain-controller: true
+  - name: host1
+    version: dev
+"#;
+        let setup: TopologySetup = serde_yml::from_str(yaml).unwrap();
+        assert!(setup.validate().is_ok());
+        assert_eq!(setup.hosts[1].version, Some("dev".to_string()));
+        assert_eq!(setup.hosts[1].effective_version("dev"), "dev");
+    }
+
+    #[test]
+    fn deserialize_host_dotted_version_override() {
+        let yaml = r#"
+name: test-topology
+version: 34
+hosts:
+  - name: dc
+    domain-controller: true
+  - name: host1
+    version: 26.1
+"#;
+        let setup: TopologySetup = serde_yml::from_str(yaml).unwrap();
+        assert_eq!(setup.hosts[1].version, Some("26.1".to_string()));
+        assert_eq!(setup.hosts[1].effective_version("34"), "26.1");
     }
 
     #[test]

@@ -278,7 +278,8 @@ wado stop --all
 Starts one or more domain controllers. Supports the same naming, port, and offset options as standalone. Use
 `--server` to configure servers on the domain controller. Servers are specified as
 `<name>[:<server-group>][:<offset>][:start]`, where the server group defaults to `main-server-group` (shorthand `msg`) and
-`other-server-group` can be abbreviated as `osg`. If no offset is specified, it is auto-incremented by 100 from the second server onward (0, 100, 200, ...).
+`other-server-group` can be abbreviated as
+`osg`. If no offset is specified, it is auto-incremented by 100 from the second server onward (0, 100, 200, ...).
 
 ```shell
 wado dc start 34
@@ -357,29 +358,29 @@ wado topology stop my-topology
 
 The topology file is a YAML file with the following structure:
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `name` | string | yes | Name of the topology |
-| `version` | number | yes | WildFly version used for all hosts (unless overridden per host) |
-| `hosts` | list | yes | List of hosts in the topology |
+| Field     | Type             | Required | Description                                                                                                                                     |
+|-----------|------------------|----------|-------------------------------------------------------------------------------------------------------------------------------------------------|
+| `name`    | string           | yes      | Name of the topology                                                                                                                            |
+| `version` | string or number | yes      | WildFly version used for all hosts (unless overridden per host). Accepts a major version (e.g. `34`), a dotted version (e.g. `26.1`), or `dev`. |
+| `hosts`   | list             | yes      | List of hosts in the topology                                                                                                                   |
 
 Each host supports the following fields:
 
-| Field | Type | Required | Default | Description |
-|-------|------|----------|---------|-------------|
-| `name` | string | no | `wado-dc-<major><minor>` / `wado-hc-<major><minor>` | Name of the host. Defaults to the standard container name based on the server type and version. Must be unique if provided. |
-| `domain-controller` | bool | no | `false` | Whether this host is the domain controller. Exactly one host must be the domain controller. |
-| `version` | number | no | top-level version | WildFly version override for this host. Allows mixed-version topologies. |
-| `servers` | list | no | `[]` | List of servers on this host |
+| Field               | Type             | Required | Default                                             | Description                                                                                                                 |
+|---------------------|------------------|----------|-----------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------|
+| `name`              | string           | no       | `wado-dc-<major><minor>` / `wado-hc-<major><minor>` | Name of the host. Defaults to the standard container name based on the server type and version. Must be unique if provided. |
+| `domain-controller` | bool             | no       | `false`                                             | Whether this host is the domain controller. Exactly one host must be the domain controller.                                 |
+| `version`           | string or number | no       | top-level version                                   | WildFly version override for this host. Allows mixed-version topologies.                                                    |
+| `servers`           | list             | no       | `[]`                                                | List of servers on this host                                                                                                |
 
 Each server supports the following fields:
 
-| Field | Type | Required | Default | Description |
-|-------|------|----------|---------|-------------|
-| `name` | string | yes | - | Name of the server |
-| `group` | string | no | `main-server-group` | Server group: `main-server-group` (or `msg`) / `other-server-group` (or `osg`) |
-| `offset` | number | no | `0` | Socket binding port offset. If not specified, auto-incremented by 100 from the second server onward (0, 100, 200, ...). |
-| `auto-start` | bool | no | `false` | Whether to auto-start the server when the host starts |
+| Field        | Type   | Required | Default             | Description                                                                                                             |
+|--------------|--------|----------|---------------------|-------------------------------------------------------------------------------------------------------------------------|
+| `name`       | string | yes      | -                   | Name of the server                                                                                                      |
+| `group`      | string | no       | `main-server-group` | Server group: `main-server-group` (or `msg`) / `other-server-group` (or `osg`)                                          |
+| `offset`     | number | no       | `0`                 | Socket binding port offset. If not specified, auto-incremented by 100 from the second server onward (0, 100, 200, ...). |
+| `auto-start` | bool   | no       | `false`             | Whether to auto-start the server when the host starts                                                                   |
 
 #### Example
 
