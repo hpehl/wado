@@ -2,10 +2,10 @@
 
 // Unified Dockerfile template for all server types and build modes (dev/stable).
 // Conditionals:
-//   is-dev        — set for dev builds (adds JDK base image, ENV, user setup, COPY wildfly)
-//   is-standalone — set for standalone server type (uses standalone config paths)
-//   host-config   — set for DC/HC (e.g. "host-primary.xml"), controls ENTRYPOINT/CMD
-//   base-image    — set for stable builds (the upstream WildFly image)
+//   is-dev — set for dev builds (adds JDK base image, ENV, user setup, COPY wildfly)
+//   is-standalone — set for a standalone server type (uses standalone config paths)
+//   host-config — set for DC/HC (e.g. "host-primary.xml"), controls ENTRYPOINT/CMD
+//   base-image — set for stable builds (the upstream WildFly image)
 
 // language=Dockerfile
 pub static DOCKERFILE: &str = r#"{{#if is-dev~}}
