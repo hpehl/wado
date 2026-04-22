@@ -29,8 +29,7 @@ pub fn topology_start(matches: &ArgMatches) -> anyhow::Result<()> {
 
     let dc_host = setup.dc_host();
     let dc_version = dc_host.effective_version(&setup.version);
-    let dc_wf =
-        WildFlyContainer::version(dc_version).map_err(|e| anyhow::anyhow!("{}", e))?;
+    let dc_wf = WildFlyContainer::version(dc_version).map_err(|e| anyhow::anyhow!("{}", e))?;
     let dc_spec = StartSpec {
         admin_container: AdminContainer::new(dc_wf, ServerType::DomainController),
         custom_name: dc_host.name.clone(),
@@ -69,13 +68,15 @@ pub fn topology_start(matches: &ArgMatches) -> anyhow::Result<()> {
     ))
 }
 
-fn build_hc_specs(hc_hosts: &[&HostSetup], default_version: &str) -> anyhow::Result<Vec<StartSpec>> {
+fn build_hc_specs(
+    hc_hosts: &[&HostSetup],
+    default_version: &str,
+) -> anyhow::Result<Vec<StartSpec>> {
     hc_hosts
         .iter()
         .map(|host| {
             let version = host.effective_version(default_version);
-            let wf = WildFlyContainer::version(version)
-                .map_err(|e| anyhow::anyhow!("{}", e))?;
+            let wf = WildFlyContainer::version(version).map_err(|e| anyhow::anyhow!("{}", e))?;
             Ok(StartSpec {
                 admin_container: AdminContainer::new(wf, ServerType::HostController),
                 custom_name: host.name.clone(),

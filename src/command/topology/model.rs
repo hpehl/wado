@@ -1,7 +1,7 @@
 use crate::wildfly::{Server, ServerGroup};
 use anyhow::{Context, bail};
-use serde::de;
 use serde::Deserialize;
+use serde::de;
 use std::collections::HashSet;
 use std::path::Path;
 use wildfly_container_versions::WildFlyContainer;
