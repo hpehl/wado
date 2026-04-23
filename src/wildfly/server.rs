@@ -1,3 +1,9 @@
+//! Domain server definitions and server group assignments.
+//!
+//! Provides types for parsing server specifications from CLI input
+//! (e.g. `"server1:msg:100:start"`) and generating the corresponding
+//! JBoss CLI operations to add servers to a domain host.
+
 use anyhow::bail;
 use std::fmt::Display;
 
@@ -11,6 +17,7 @@ pub enum ServerGroup {
 }
 
 impl ServerGroup {
+    /// Parses a server group from its name or abbreviation (`"msg"`, `"osg"`).
     pub fn parse_group(input: &str) -> Option<ServerGroup> {
         if input.eq_ignore_ascii_case("msg") || input.eq_ignore_ascii_case("main-server-group") {
             Some(ServerGroup::MainServerGroup)
@@ -45,10 +52,12 @@ pub struct Server {
 }
 
 impl Server {
+    /// Parses a comma-separated list of server specifications.
     pub fn parse_servers(input: &str) -> anyhow::Result<Vec<Server>> {
         input.split(',').map(Server::parse_server).collect()
     }
 
+    /// Parses a single server spec: `<name>[:<server-group>][:<offset>][:start]`.
     pub fn parse_server(input: &str) -> anyhow::Result<Server> {
         let parts: Vec<&str> = input.split(':').collect();
         if parts.is_empty() {
@@ -107,6 +116,7 @@ impl Server {
         })
     }
 
+    /// Returns a copy of this server with the given port offset.
     pub fn with_offset(&self, offset: u16) -> Server {
         Server {
             name: self.name.clone(),
@@ -116,6 +126,7 @@ impl Server {
         }
     }
 
+    /// Generates the JBoss CLI operation to add this server to the given host.
     pub fn add_server_op(&self, host: &str) -> String {
         if self.offset > 0 {
             format!(
@@ -133,8 +144,13 @@ impl Server {
 
 // ------------------------------------------------------ server offsets
 
+/// Default port offset between consecutive servers in a domain.
 pub const DEFAULT_SERVER_OFFSET: u16 = 100;
 
+/// Assigns incremental port offsets to servers that don't have explicit offsets.
+///
+/// The first server keeps its offset (typically 0). Subsequent servers without
+/// an explicit offset get `previous_offset + offset`.
 pub fn apply_offsets(servers: Vec<Server>, offset: u16) -> Vec<Server> {
     if servers.len() > 1 {
         let mut last_offset = 0;

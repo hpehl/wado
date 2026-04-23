@@ -41,6 +41,7 @@ pub fn container_command() -> anyhow::Result<Command> {
 
 // ------------------------------------------------------ command builders
 
+/// Builds a command to list local wado container images.
 pub fn container_images_cmd() -> Command {
     let mut command = container_command().expect("Unable to run docker images/podman images.");
     command
@@ -55,6 +56,7 @@ pub fn container_images_cmd() -> Command {
     command
 }
 
+/// Creates the shared `wado` container network (idempotent).
 pub async fn container_network_cmd() -> anyhow::Result<()> {
     let mut network_command = container_command()?;
     network_command
@@ -118,6 +120,7 @@ pub fn container_run_cmd(
     command
 }
 
+/// Builds a `podman stop` / `docker stop` command for the given container name.
 pub fn container_stop_cmd(name: &str) -> Command {
     let mut command = container_command().expect("Unable to run docker stop/podman stop.");
     command.arg("stop").arg(name);

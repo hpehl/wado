@@ -1,3 +1,8 @@
+//! Progress bar and status reporting for long-running container operations.
+//!
+//! Wraps [`indicatif`] spinners to show per-container progress during builds,
+//! pushes, starts, and stops. Also provides summary output with success/failure counts.
+
 use crate::constants::FQN_LENGTH;
 use console::{style, truncate_str};
 use indicatif::{HumanDuration, MultiProgress, ProgressBar, ProgressStyle};
@@ -9,6 +14,7 @@ use tokio::time::Instant;
 
 // ------------------------------------------------------ command status
 
+/// Outcome of a container command (build, push, start, or stop).
 #[derive(Clone)]
 pub struct CommandStatus {
     pub identifier: String,
@@ -17,6 +23,7 @@ pub struct CommandStatus {
 }
 
 impl CommandStatus {
+    /// Creates a successful status for the given identifier.
     pub fn success(identifier: &str) -> Self {
         CommandStatus {
             identifier: identifier.to_string(),
@@ -25,6 +32,7 @@ impl CommandStatus {
         }
     }
 
+    /// Creates a failed status with an error message.
     pub fn error(identifier: &str, error_message: &str) -> Self {
         CommandStatus {
             identifier: identifier.to_string(),
@@ -34,6 +42,7 @@ impl CommandStatus {
     }
 }
 
+/// Prints a colored summary line showing how many operations succeeded/failed and elapsed time.
 pub fn summary(verb: &str, noun: &str, count: usize, instant: Instant, status: Vec<CommandStatus>) {
     let successful = status.iter().filter(|&bs| bs.success).count();
     let failed = status.iter().filter(|&bs| !bs.success).count();
@@ -70,6 +79,7 @@ pub fn summary(verb: &str, noun: &str, count: usize, instant: Instant, status: V
 
 // ------------------------------------------------------ progress
 
+/// A spinner-based progress indicator for a single container operation.
 #[derive(Clone)]
 pub struct Progress {
     prefix: String,
@@ -78,6 +88,7 @@ pub struct Progress {
 }
 
 impl Progress {
+    /// Creates a progress spinner and adds it to a [`MultiProgress`] group.
     pub fn join(multi_progress: &MultiProgress, prefix: &str, image_name: &str) -> Progress {
         let progress = Progress {
             prefix: prefix.to_string(),
@@ -92,6 +103,7 @@ impl Progress {
         progress
     }
 
+    /// Creates a standalone progress spinner (not attached to a [`MultiProgress`]).
     pub fn new(prefix: &str, image_name: &str) -> Progress {
         let progress = Progress {
             prefix: prefix.to_string(),
@@ -118,6 +130,7 @@ impl Progress {
             .with_prefix(format!("{:<4}   ", style(prefix).yellow()))
     }
 
+    /// Reads lines from an async reader and updates the spinner message with each line.
     pub async fn trace_progress<R>(&self, mut reader: Lines<BufReader<R>>)
     where
         R: tokio::io::AsyncRead + Unpin,
@@ -131,6 +144,7 @@ impl Progress {
         }
     }
 
+    /// Updates the spinner message with the given progress text.
     pub fn show_progress(&self, progress: &str) {
         self.bar.set_message(format!(
             "{:<width$}   {}",
@@ -140,6 +154,7 @@ impl Progress {
         ));
     }
 
+    /// Completes the spinner based on the command output, returning a [`CommandStatus`].
     pub fn finish(&self, output: std::io::Result<Output>, status: Option<&str>) -> CommandStatus {
         match output {
             Ok(output) => {
@@ -166,6 +181,7 @@ impl Progress {
         }
     }
 
+    /// Completes the spinner as successful without checking command output.
     pub fn finish_no_output(&self, status: Option<&str>) -> CommandStatus {
         self.success(status);
         CommandStatus::success(self.image_name.as_str())
@@ -201,6 +217,7 @@ impl Progress {
 
 // ------------------------------------------------------ stdout / stderr
 
+/// Takes stdout from a child process and returns a line-buffered async reader.
 pub fn stdout_reader(child: &mut Child) -> Lines<BufReader<ChildStdout>> {
     let stdout = child
         .stdout
@@ -209,6 +226,7 @@ pub fn stdout_reader(child: &mut Child) -> Lines<BufReader<ChildStdout>> {
     BufReader::new(stdout).lines()
 }
 
+/// Takes stderr from a child process and returns a line-buffered async reader.
 pub fn stderr_reader(child: &mut Child) -> Lines<BufReader<ChildStderr>> {
     let stderr = child
         .stderr

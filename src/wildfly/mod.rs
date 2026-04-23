@@ -1,3 +1,9 @@
+//! Core WildFly domain model.
+//!
+//! Defines the server types (standalone, domain controller, host controller),
+//! admin container metadata, container instance representations, server
+//! definitions for managed domains, and the management client configuration.
+
 mod admin_container;
 mod management;
 mod server;

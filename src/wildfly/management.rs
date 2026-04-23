@@ -1,3 +1,5 @@
+//! Management client configuration for JBoss CLI connections.
+
 use semver::Version;
 use wildfly_container_versions::{VERSIONS, WildFlyContainer};
 
@@ -12,6 +14,7 @@ pub struct ManagementClient {
 }
 
 impl ManagementClient {
+    /// Creates a client using the version's default management port.
     pub fn default_port(wildfly_container: &WildFlyContainer) -> ManagementClient {
         let (cli_jar_url, cli_config_url) = Self::urls(&wildfly_container.core_version);
         ManagementClient {
@@ -22,6 +25,7 @@ impl ManagementClient {
         }
     }
 
+    /// Creates a client with an explicit management port override.
     pub fn custom_port(
         wildfly_container: &WildFlyContainer,
         management_port: u16,
@@ -35,6 +39,7 @@ impl ManagementClient {
         }
     }
 
+    /// Creates a client from a running container instance, using its actual port mappings.
     pub fn from_container_instance(container_instance: &ContainerInstance) -> ManagementClient {
         let management_port = if let Some(ports) = &container_instance.ports {
             ports.management

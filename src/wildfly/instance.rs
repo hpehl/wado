@@ -1,3 +1,9 @@
+//! Container instance types for each WildFly server mode.
+//!
+//! Provides [`StandaloneInstance`], [`DomainController`], [`HostController`] for
+//! containers about to be started, and [`ContainerInstance`] for running containers
+//! parsed from `podman ps` output.
+
 use crate::label::Label;
 use anyhow::bail;
 use std::cmp::Ordering;
@@ -15,6 +21,7 @@ pub struct Ports {
 }
 
 impl Ports {
+    /// Computes default ports from a WildFly version (HTTP: `8<major><minor>`, management: `9<major><minor>`).
     pub fn default_ports(wildfly_container: &WildFlyContainer) -> Ports {
         Ports {
             http: wildfly_container.http_port(),
@@ -117,6 +124,7 @@ pub struct ContainerInstance {
 }
 
 impl ContainerInstance {
+    /// Parses a running container from `podman ps` output fields.
     pub fn new(
         identifier: &str,
         container_id: &str,

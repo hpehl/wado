@@ -1,11 +1,22 @@
+//! OCI container label helpers for wado container metadata.
+//!
+//! Wado uses custom labels to tag containers with their identity, topology
+//! membership, and configuration. This module provides helpers for constructing
+//! the label keys, filter expressions, and format templates used with `podman`.
+
+/// OCI label types used to annotate wado containers.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Label {
+    /// Container identifier (e.g. `"sa-390"`), used to match containers to admin container metadata.
     Id,
+    /// Topology name, set when the container was started as part of a topology.
     Topology,
+    /// Server configuration file name (e.g. `"standalone.xml"`).
     Config,
 }
 
 impl Label {
+    /// Returns the fully qualified OCI label key (e.g. `"org.wildfly.wado.id"`).
     pub fn key(&self) -> &'static str {
         match self {
             Label::Id => "org.wildfly.wado.id",

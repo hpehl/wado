@@ -1,3 +1,5 @@
+//! Start specifications and resolved container configurations.
+
 use super::{AdminContainer, Ports};
 
 /// Captures what the user (or topology.yml) explicitly provided for a container start.

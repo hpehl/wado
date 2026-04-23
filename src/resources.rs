@@ -1,12 +1,16 @@
-// ------------------------------------------------------ dockerfile
+//! Embedded Dockerfile templates and entrypoint shell scripts.
+//!
+//! Contains the Handlebars Dockerfile template and the entrypoint scripts for
+//! standalone servers, domain controllers, and host controllers. These are
+//! rendered at image build time with version-specific data.
 
-// Unified Dockerfile template for all server types and build modes (dev/stable).
-// Conditionals:
-//   is-dev — set for dev builds (adds JDK base image, ENV, user setup, COPY wildfly)
-//   is-standalone — set for a standalone server type (uses standalone config paths)
-//   host-config — set for DC/HC (e.g. "host-primary.xml"), controls ENTRYPOINT/CMD
-//   base-image — set for stable builds (the upstream WildFly image)
-
+/// Handlebars Dockerfile template for all server types and build modes (dev/stable).
+///
+/// Template conditionals:
+/// - `is-dev` — dev builds (JDK base image, ENV, user setup, COPY wildfly)
+/// - `is-standalone` — standalone server (uses standalone config paths)
+/// - `host-config` — DC/HC (e.g. `"host-primary.xml"`), controls ENTRYPOINT/CMD
+/// - `base-image` — stable builds (the upstream WildFly image)
 // language=Dockerfile
 pub static DOCKERFILE: &str = r#"{{#if is-dev~}}
 FROM eclipse-temurin:21-ubi9-minimal
@@ -59,6 +63,10 @@ CMD ["-c", "standalone.xml"]
 
 // ------------------------------------------------------ standalone
 
+/// Entrypoint script for standalone servers.
+///
+/// Optionally bootstraps the server with CLI operations (via `WADO_BOOTSTRAP_OPERATIONS`)
+/// before starting the server in normal mode.
 // language=shell script
 pub static STANDALONE_ENTRYPOINT_SH: &str = r#"#!/bin/bash
 
@@ -78,6 +86,10 @@ $JBOSS_HOME/bin/standalone.sh $@
 
 // ------------------------------------------------------ domain controller
 
+/// Entrypoint script for domain controllers.
+///
+/// Bootstraps the domain by renaming the primary host, optionally adding servers
+/// and running CLI operations, then restarts in normal mode.
 // language=shell script
 pub static DOMAIN_CONTROLLER_ENTRYPOINT_SH: &str = r#"#!/bin/bash
 
@@ -106,6 +118,11 @@ $JBOSS_HOME/bin/domain.sh $@
 
 // ------------------------------------------------------ host controller
 
+/// Entrypoint script for host controllers.
+///
+/// Bootstraps the host by renaming it, configuring authentication against
+/// the domain controller, optionally adding servers and running CLI operations,
+/// then restarts in normal mode.
 // language=shell script
 pub static HOST_CONTROLLER_ENTRYPOINT_SH: &str = r#"#!/bin/bash
 

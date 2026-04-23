@@ -1,6 +1,11 @@
+//! WildFly server operating modes.
+
 use std::str::FromStr;
 
 /// WildFly server operating mode.
+///
+/// Each mode corresponds to a different container image variant and
+/// determines the container naming prefix (`sa`, `dc`, `hc`).
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub enum ServerType {
     Standalone,
@@ -9,6 +14,7 @@ pub enum ServerType {
 }
 
 impl ServerType {
+    /// Returns the two-letter abbreviation used in container names and identifiers.
     pub fn short_name(&self) -> &'static str {
         match self {
             ServerType::Standalone => "sa",
