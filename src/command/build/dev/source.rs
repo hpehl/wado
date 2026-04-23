@@ -24,7 +24,7 @@ const WILDFLY_MAVEN_ARGS: &[&str] = &["-pl", "dist", "-am"];
 
 const HAL_BUILD_IMAGE: &str = "maven:3.9-eclipse-temurin-11";
 const HAL_REPO: &str = "https://github.com/hal/console.git";
-const HAL_MAVEN_ARGS: &[&str] = &["-P", "prod,wildfly"];
+const HAL_MAVEN_ARGS: &[&str] = &["-P", "prod,theme-wildfly"];
 
 // ------------------------------------------------------ maven command
 
