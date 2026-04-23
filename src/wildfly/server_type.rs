@@ -6,7 +6,7 @@ use std::str::FromStr;
 ///
 /// Each mode corresponds to a different container image variant and
 /// determines the container naming prefix (`sa`, `dc`, `hc`).
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub enum ServerType {
     Standalone,
     DomainController,
@@ -34,5 +34,51 @@ impl FromStr for ServerType {
             "hc" => Ok(ServerType::HostController),
             _ => Err(()),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn short_name_standalone() {
+        assert_eq!(ServerType::Standalone.short_name(), "sa");
+    }
+
+    #[test]
+    fn short_name_domain_controller() {
+        assert_eq!(ServerType::DomainController.short_name(), "dc");
+    }
+
+    #[test]
+    fn short_name_host_controller() {
+        assert_eq!(ServerType::HostController.short_name(), "hc");
+    }
+
+    #[test]
+    fn from_str_valid() {
+        assert_eq!(ServerType::from_str("sa"), Ok(ServerType::Standalone));
+        assert_eq!(ServerType::from_str("dc"), Ok(ServerType::DomainController));
+        assert_eq!(ServerType::from_str("hc"), Ok(ServerType::HostController));
+    }
+
+    #[test]
+    fn from_str_invalid() {
+        assert_eq!(ServerType::from_str("xx"), Err(()));
+        assert_eq!(ServerType::from_str(""), Err(()));
+        assert_eq!(ServerType::from_str("SA"), Err(()));
+    }
+
+    #[test]
+    fn ordering() {
+        assert!(ServerType::Standalone < ServerType::DomainController);
+        assert!(ServerType::DomainController < ServerType::HostController);
+    }
+
+    #[test]
+    fn equality() {
+        assert_eq!(ServerType::Standalone, ServerType::Standalone);
+        assert_ne!(ServerType::Standalone, ServerType::DomainController);
     }
 }

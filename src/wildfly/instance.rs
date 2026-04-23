@@ -175,3 +175,120 @@ impl PartialOrd for ContainerInstance {
         Some(self.cmp(other))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::wildfly::ServerType;
+    use wildfly_container_versions::WildFlyContainer;
+
+    fn wc(version: &str) -> WildFlyContainer {
+        WildFlyContainer::version(version).unwrap()
+    }
+
+    #[test]
+    fn default_ports_from_version() {
+        let wfc = wc("39");
+        let ports = Ports::default_ports(&wfc);
+        assert_eq!(ports.http, wfc.http_port());
+        assert_eq!(ports.management, wfc.management_port());
+    }
+
+    #[test]
+    fn ports_with_offset() {
+        let ports = Ports { http: 8390, management: 9390 };
+        let shifted = ports.with_offset(2);
+        assert_eq!(shifted.http, 8392);
+        assert_eq!(shifted.management, 9392);
+    }
+
+    #[test]
+    fn standalone_instance_container_config() {
+        use crate::wildfly::ContainerConfig;
+        let ac = AdminContainer::new(wc("39"), ServerType::Standalone);
+        let si = StandaloneInstance::new(
+            ac.clone(),
+            "my-server".to_string(),
+            Ports::default_ports(&ac.wildfly_container),
+        );
+        assert_eq!(si.name(), "my-server");
+        assert_eq!(si.admin_container().server_type, ServerType::Standalone);
+    }
+
+    #[test]
+    fn domain_controller_container_config() {
+        use crate::wildfly::ContainerConfig;
+        let ac = AdminContainer::new(wc("39"), ServerType::DomainController);
+        let dc = DomainController::new(
+            ac.clone(),
+            "dc-1".to_string(),
+            Ports::default_ports(&ac.wildfly_container),
+        );
+        assert_eq!(dc.name(), "dc-1");
+        assert_eq!(dc.admin_container().server_type, ServerType::DomainController);
+    }
+
+    #[test]
+    fn host_controller_container_config() {
+        use crate::wildfly::ContainerConfig;
+        let ac = AdminContainer::new(wc("39"), ServerType::HostController);
+        let hc = HostController::new(ac.clone(), "hc-1".to_string(), "dc-1".to_string());
+        assert_eq!(hc.name(), "hc-1");
+        assert_eq!(hc.domain_controller, "dc-1");
+    }
+
+    #[test]
+    fn container_instance_new_valid() {
+        let ci = ContainerInstance::new("sa-390", "abc123", "wado-sa-390", "Up 5 minutes", "", "");
+        assert!(ci.is_ok());
+        let ci = ci.unwrap();
+        assert_eq!(ci.name, "wado-sa-390");
+        assert_eq!(ci.container_id, "abc123");
+        assert!(ci.running);
+        assert!(ci.topology.is_none());
+        assert!(ci.config.is_none());
+    }
+
+    #[test]
+    fn container_instance_new_with_labels() {
+        let ci = ContainerInstance::new(
+            "dc-390",
+            "def456",
+            "wado-dc-390",
+            "Up 10 minutes",
+            "my-topo",
+            "domain.xml",
+        );
+        assert!(ci.is_ok());
+        let ci = ci.unwrap();
+        assert_eq!(ci.topology, Some("my-topo".to_string()));
+        assert_eq!(ci.config, Some("domain.xml".to_string()));
+    }
+
+    #[test]
+    fn container_instance_new_invalid_identifier() {
+        let ci = ContainerInstance::new("xx-999", "abc", "name", "Up", "", "");
+        assert!(ci.is_err());
+    }
+
+    #[test]
+    fn container_instance_ordering_topology_before_no_topology() {
+        let with_topo = ContainerInstance::new("sa-390", "a", "a", "Up", "topo1", "").unwrap();
+        let without_topo = ContainerInstance::new("sa-390", "b", "b", "Up", "", "").unwrap();
+        assert!(with_topo < without_topo);
+    }
+
+    #[test]
+    fn container_instance_ordering_same_topology_by_admin_container() {
+        let ci1 = ContainerInstance::new("sa-350", "a", "a", "Up", "topo", "").unwrap();
+        let ci2 = ContainerInstance::new("sa-390", "b", "b", "Up", "topo", "").unwrap();
+        assert!(ci1 < ci2);
+    }
+
+    #[test]
+    fn container_instance_ordering_no_topology_by_name() {
+        let ci1 = ContainerInstance::new("sa-390", "a", "aaa", "Up", "", "").unwrap();
+        let ci2 = ContainerInstance::new("sa-390", "b", "zzz", "Up", "", "").unwrap();
+        assert!(ci1 < ci2);
+    }
+}

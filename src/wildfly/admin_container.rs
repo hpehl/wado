@@ -164,3 +164,142 @@ impl PartialOrd for AdminContainer {
         Some(self.cmp(other))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn wc(version: &str) -> WildFlyContainer {
+        WildFlyContainer::version(version).unwrap()
+    }
+
+    #[test]
+    fn new_sets_default_flags() {
+        let ac = AdminContainer::new(wc("39"), ServerType::Standalone);
+        assert!(!ac.local_image);
+        assert!(!ac.in_use);
+        assert_eq!(ac.server_type, ServerType::Standalone);
+    }
+
+    #[test]
+    fn domain_creates_dc_and_hc() {
+        let containers = AdminContainer::domain(wc("39"));
+        assert_eq!(containers.len(), 2);
+        assert_eq!(containers[0].server_type, ServerType::DomainController);
+        assert_eq!(containers[1].server_type, ServerType::HostController);
+    }
+
+    #[test]
+    fn all_types_creates_three() {
+        let containers = AdminContainer::all_types(wc("39"));
+        assert_eq!(containers.len(), 3);
+        assert_eq!(containers[0].server_type, ServerType::Standalone);
+        assert_eq!(containers[1].server_type, ServerType::DomainController);
+        assert_eq!(containers[2].server_type, ServerType::HostController);
+    }
+
+    #[test]
+    fn identifier_stable_version() {
+        let ac = AdminContainer::new(wc("39"), ServerType::Standalone);
+        assert_eq!(ac.identifier(), "sa-390");
+
+        let ac = AdminContainer::new(wc("35"), ServerType::DomainController);
+        assert_eq!(ac.identifier(), "dc-350");
+    }
+
+    #[test]
+    fn identifier_dev_version() {
+        let ac = AdminContainer::new(wc("dev"), ServerType::Standalone);
+        assert_eq!(ac.identifier(), "sa-dev");
+    }
+
+    #[test]
+    fn image_name_stable() {
+        let ac = AdminContainer::new(wc("39"), ServerType::Standalone);
+        let name = ac.image_name();
+        assert!(name.starts_with("quay.io/wado/wado-sa:"));
+        assert!(name.contains("39.0"));
+    }
+
+    #[test]
+    fn image_name_dev() {
+        let ac = AdminContainer::new(wc("dev"), ServerType::HostController);
+        let name = ac.image_name();
+        assert!(name.starts_with("quay.io/wado/wado-hc:"));
+        assert!(name.contains(wildfly_container_versions::DEVELOPMENT_TAG));
+    }
+
+    #[test]
+    fn container_name_format() {
+        let ac = AdminContainer::new(wc("39"), ServerType::Standalone);
+        assert_eq!(ac.container_name(), "wado-sa-390");
+
+        let ac = AdminContainer::new(wc("dev"), ServerType::DomainController);
+        assert_eq!(ac.container_name(), "wado-dc-dev");
+    }
+
+    #[test]
+    fn from_identifier_valid_stable() {
+        let ac = AdminContainer::from_identifier("sa-390".to_string());
+        assert!(ac.is_some());
+        let ac = ac.unwrap();
+        assert_eq!(ac.server_type, ServerType::Standalone);
+        assert_eq!(ac.wildfly_container.identifier, 390);
+    }
+
+    #[test]
+    fn from_identifier_valid_dev() {
+        let ac = AdminContainer::from_identifier("dc-dev".to_string());
+        assert!(ac.is_some());
+        let ac = ac.unwrap();
+        assert_eq!(ac.server_type, ServerType::DomainController);
+        assert!(ac.wildfly_container.is_dev());
+    }
+
+    #[test]
+    fn from_identifier_invalid_no_dash() {
+        assert!(AdminContainer::from_identifier("sa390".to_string()).is_none());
+    }
+
+    #[test]
+    fn from_identifier_invalid_server_type() {
+        assert!(AdminContainer::from_identifier("xx-390".to_string()).is_none());
+    }
+
+    #[test]
+    fn from_identifier_invalid_version() {
+        assert!(AdminContainer::from_identifier("sa-999".to_string()).is_none());
+    }
+
+    #[test]
+    fn ordering_dev_after_stable() {
+        let stable = AdminContainer::new(wc("39"), ServerType::Standalone);
+        let dev = AdminContainer::new(wc("dev"), ServerType::Standalone);
+        assert!(stable < dev);
+    }
+
+    #[test]
+    fn ordering_same_version_by_server_type() {
+        let sa = AdminContainer::new(wc("39"), ServerType::Standalone);
+        let dc = AdminContainer::new(wc("39"), ServerType::DomainController);
+        let hc = AdminContainer::new(wc("39"), ServerType::HostController);
+        assert!(sa < dc);
+        assert!(dc < hc);
+    }
+
+    #[test]
+    fn ordering_by_version() {
+        let v35 = AdminContainer::new(wc("35"), ServerType::Standalone);
+        let v39 = AdminContainer::new(wc("39"), ServerType::Standalone);
+        assert!(v35 < v39);
+    }
+
+    #[test]
+    fn all_versions_by_image_name_not_empty() {
+        let map = AdminContainer::all_versions_by_image_name();
+        assert!(!map.is_empty());
+        for (key, ac) in &map {
+            assert_eq!(key, &ac.image_name());
+        }
+    }
+}
