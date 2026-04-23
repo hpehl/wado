@@ -18,12 +18,12 @@
 
 # -------------------------------------------------------
 #
-# Creates a new release:
-#   - bump to release version
+# Creates a new release using cargo-release:
+#   - bump version in Cargo.toml
+#   - update CHANGELOG.md (Unreleased → version)
+#   - run cargo fmt
 #   - commit & push changes
-#   - create & push tag (trigger GitHub release workflow)
-#   - bump to next version
-#   - commit & push changes
+#   - create & push tag (triggers GitHub release workflow)
 #
 # -------------------------------------------------------
 
@@ -136,5 +136,5 @@ select yn in "Yes" "No"; do
 done
 
 msg ""
-cargo release "${RELEASE_VERSION}" --execute
+cargo release "${RELEASE_VERSION}" --no-confirm --execute
 msg "Done. Watch the release workflow at https://github.com/hpehl/wado/actions/workflows/release.yml"

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix cargo-release double confirmation prompt by adding `--no-confirm` flag
+- Fix tag not being pushed to GitHub by setting explicit `push-remote = "origin"`
+
 ## [0.4.11] - 2026-04-23
 
 ### Changed
