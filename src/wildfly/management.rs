@@ -114,9 +114,11 @@ mod tests {
         let wfc = wc("39");
         let client = ManagementClient::default_port(&wfc);
         assert!(client.cli_jar_url.contains(&wfc.core_version.to_string()));
-        assert!(client
-            .cli_config_url
-            .contains(&wfc.core_version.to_string()));
+        assert!(
+            client
+                .cli_config_url
+                .contains(&wfc.core_version.to_string())
+        );
     }
 
     #[test]
@@ -132,9 +134,11 @@ mod tests {
         let client = ManagementClient::default_port(&dev);
         assert!(!client.cli_jar_url.contains("0.0.0"));
         let latest = VERSIONS.last_key_value().unwrap().1;
-        assert!(client
-            .cli_jar_url
-            .contains(&latest.core_version.to_string()));
+        assert!(
+            client
+                .cli_jar_url
+                .contains(&latest.core_version.to_string())
+        );
     }
 
     #[test]
@@ -159,6 +163,9 @@ mod tests {
             config: None,
         };
         let client = ManagementClient::from_container_instance(&ci);
-        assert_eq!(client.management_port, ac.wildfly_container.management_port());
+        assert_eq!(
+            client.management_port,
+            ac.wildfly_container.management_port()
+        );
     }
 }

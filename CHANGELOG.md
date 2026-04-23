@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.11] - 2026-04-23
+
 ### Changed
 
 - Replace manual version bumping, changelog editing, and git operations in
@@ -391,7 +393,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - First release 🎉
 
-[Unreleased]: https://github.com/hpehl/wado/compare/v0.4.10...HEAD
+[Unreleased]: https://github.com/hpehl/wado/compare/v0.4.11...HEAD
+[0.4.11]: https://github.com/hpehl/wado/compare/v0.4.10...v0.4.11
 
 [0.4.10]: https://github.com/hpehl/wado/compare/v0.4.9...v0.4.10
 

@@ -37,9 +37,13 @@ impl ServerGroup {
 
     /// Parses a server group from its name or abbreviation (`"msg"`, `"osg"`).
     pub fn parse_group(input: &str) -> Option<ServerGroup> {
-        ServerGroup::ALL.iter().find(|sg| {
-            input.eq_ignore_ascii_case(sg.name()) || input.eq_ignore_ascii_case(sg.abbreviation())
-        }).cloned()
+        ServerGroup::ALL
+            .iter()
+            .find(|sg| {
+                input.eq_ignore_ascii_case(sg.name())
+                    || input.eq_ignore_ascii_case(sg.abbreviation())
+            })
+            .cloned()
     }
 }
 

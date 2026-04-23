@@ -196,7 +196,10 @@ mod tests {
 
     #[test]
     fn ports_with_offset() {
-        let ports = Ports { http: 8390, management: 9390 };
+        let ports = Ports {
+            http: 8390,
+            management: 9390,
+        };
         let shifted = ports.with_offset(2);
         assert_eq!(shifted.http, 8392);
         assert_eq!(shifted.management, 9392);
@@ -225,7 +228,10 @@ mod tests {
             Ports::default_ports(&ac.wildfly_container),
         );
         assert_eq!(dc.name(), "dc-1");
-        assert_eq!(dc.admin_container().server_type, ServerType::DomainController);
+        assert_eq!(
+            dc.admin_container().server_type,
+            ServerType::DomainController
+        );
     }
 
     #[test]

@@ -17,8 +17,10 @@ fn server_help(controller_type: &str) -> String {
          \x20               and '{}' or '{}'. If not specified, '{}' is used.\n\
          <offset>        The port offset. If not specified, 100 is used from the second server onwards.\n\
          start           Whether to start the server.",
-        msg.name(), msg.abbreviation(),
-        osg.name(), osg.abbreviation(),
+        msg.name(),
+        msg.abbreviation(),
+        osg.name(),
+        osg.abbreviation(),
         msg.name(),
     )
 }
