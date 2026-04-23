@@ -17,26 +17,35 @@ pub enum ServerGroup {
 }
 
 impl ServerGroup {
+    const ALL: [ServerGroup; 2] = [ServerGroup::MainServerGroup, ServerGroup::OtherServerGroup];
+
+    /// Returns the full server group name (e.g. `"main-server-group"`).
+    pub fn name(&self) -> &'static str {
+        match self {
+            ServerGroup::MainServerGroup => "main-server-group",
+            ServerGroup::OtherServerGroup => "other-server-group",
+        }
+    }
+
+    /// Returns the short abbreviation (e.g. `"msg"`).
+    pub fn abbreviation(&self) -> &'static str {
+        match self {
+            ServerGroup::MainServerGroup => "msg",
+            ServerGroup::OtherServerGroup => "osg",
+        }
+    }
+
     /// Parses a server group from its name or abbreviation (`"msg"`, `"osg"`).
     pub fn parse_group(input: &str) -> Option<ServerGroup> {
-        if input.eq_ignore_ascii_case("msg") || input.eq_ignore_ascii_case("main-server-group") {
-            Some(ServerGroup::MainServerGroup)
-        } else if input.eq_ignore_ascii_case("osg")
-            || input.eq_ignore_ascii_case("other-server-group")
-        {
-            Some(ServerGroup::OtherServerGroup)
-        } else {
-            None
-        }
+        ServerGroup::ALL.iter().find(|sg| {
+            input.eq_ignore_ascii_case(sg.name()) || input.eq_ignore_ascii_case(sg.abbreviation())
+        }).cloned()
     }
 }
 
 impl Display for ServerGroup {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ServerGroup::MainServerGroup => write!(f, "main-server-group"),
-            ServerGroup::OtherServerGroup => write!(f, "other-server-group"),
-        }
+        write!(f, "{}", self.name())
     }
 }
 

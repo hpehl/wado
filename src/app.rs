@@ -2,6 +2,27 @@ use clap::builder::Styles;
 use clap::builder::styling::{AnsiColor, Effects};
 use clap::{Arg, ArgAction, Command, crate_name, crate_version, value_parser};
 
+use crate::wildfly::ServerGroup;
+
+fn server_help(controller_type: &str) -> String {
+    let msg = ServerGroup::MainServerGroup;
+    let osg = ServerGroup::OtherServerGroup;
+    format!(
+        "Manage servers of the {controller_type}.\n\
+         Servers are specified as a comma seperated list of <name>[:<server-group>][:<offset>][:start]. \n\
+         The option can be specified multiple times. \n\
+         <name>          The name of the server. This part is mandatory and must be first.\n\
+         \x20               All other parts are optional.\n\
+         <server-group>  The name of the server group. Allowed values are '{}' or '{}',\n\
+         \x20               and '{}' or '{}'. If not specified, '{}' is used.\n\
+         <offset>        The port offset. If not specified, 100 is used from the second server onwards.\n\
+         start           Whether to start the server.",
+        msg.name(), msg.abbreviation(),
+        osg.name(), osg.abbreviation(),
+        msg.name(),
+    )
+}
+
 pub fn build_app() -> Command {
     Command::new(crate_name!())
         .version(crate_version!())
@@ -181,15 +202,7 @@ Not allowed when multiple versions are specified."))
                     .short('s')
                     .long("server")
                     .action(ArgAction::Append)
-                    .help("Manage servers of the domain controller.
-Servers are specified as a comma seperated list of <name>[:<server-group>][:<offset>][:start]. 
-The option can be specified multiple times. 
-<name>          The name of the server. This part is mandatory and must be first.
-                All other parts are optional.
-<server-group>  The name of the server group. Allowed values are 'main-server-group' or 'msg',
-                and 'other-server-group' or 'osg'. If not specified, 'main-server-group' is used.
-<offset>        The port offset. If not specified, 100 is used from the second server onwards.
-start           Whether to start the server."))
+                    .help(server_help("domain controller")))
                 .arg(Arg::new("operations")
                     .long("operations")
                     .action(ArgAction::Append)
@@ -257,15 +270,7 @@ Required if different versions are specified."))
                     .short('s')
                     .long("server")
                     .action(ArgAction::Append)
-                    .help("Manage servers of the host controller.
-Servers are specified as a comma seperated list of <name>[:<server-group>][:<offset>][:start]. 
-The option can be specified multiple times. 
-<name>          The name of the server. This part is mandatory and must be first.
-                All other parts are optional.
-<server-group>  The name of the server group. Allowed values are 'main-server-group' or 'msg',
-                and 'other-server-group' or 'osg'. If not specified, 'main-server-group' is used.
-<offset>        The port offset. If not specified, 100 is used from the second server onwards.
-start           Whether to start the server."))
+                    .help(server_help("host controller")))
                 .arg(Arg::new("operations")
                     .long("operations")
                     .action(ArgAction::Append)
