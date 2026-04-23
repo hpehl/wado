@@ -1,0 +1,22 @@
+allow-branch = ["main"]
+publish = false
+push = true
+tag = true
+sign-tag = false
+sign-commit = false
+pre-release-commit-message = "Release {{version}}"
+tag-prefix = "v"
+tag-message = "{{version}}"
+pre-release-hook = ["cargo", "fmt"]
+
+[[pre-release-replacements]]
+file = "CHANGELOG.md"
+search = "## \\[Unreleased\\]"
+replace = "## [Unreleased]\n\n## [{{version}}] - {{date}}"
+exactly = 1
+
+[[pre-release-replacements]]
+file = "CHANGELOG.md"
+search = "\\[Unreleased\\]: https://github.com/hpehl/wado/compare/v.*\\.\\.\\.HEAD"
+replace = "[Unreleased]: https://github.com/hpehl/wado/compare/v{{version}}...HEAD\n[{{version}}]: https://github.com/hpehl/wado/compare/v{{prev_version}}...v{{version}}"
+exactly = 1

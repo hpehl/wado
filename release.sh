@@ -136,14 +136,5 @@ select yn in "Yes" "No"; do
 done
 
 msg ""
-msg "Bump version"
-cargo bump "${RELEASE_VERSION}"
-msg "Format & build"
-cargo fmt && cargo build
-msg "Push changes"
-git commit --quiet -am "Release ${RELEASE_VERSION}"
-git push --quiet origin main &> /dev/null
-msg "Push tag"
-git tag "${TAG}"
-git push --quiet --tags origin main &> /dev/null
+cargo release "${RELEASE_VERSION}" --execute
 msg "Done. Watch the release workflow at https://github.com/hpehl/wado/actions/workflows/release.yml"
