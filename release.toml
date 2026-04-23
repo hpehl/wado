@@ -6,7 +6,6 @@ tag = true
 sign-tag = false
 sign-commit = false
 pre-release-commit-message = "Release {{version}}"
-tag-prefix = "v"
 tag-message = "{{version}}"
 pre-release-hook = ["cargo", "fmt"]
 
