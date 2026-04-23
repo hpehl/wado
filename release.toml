@@ -1,7 +1,6 @@
 allow-branch = ["main"]
 publish = false
 push = true
-push-remote = "origin"
 tag = true
 sign-tag = false
 sign-commit = false

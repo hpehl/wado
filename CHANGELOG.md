@@ -10,7 +10,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fix cargo-release double confirmation prompt by adding `--no-confirm` flag
-- Fix tag not being pushed to GitHub by setting explicit `push-remote = "origin"`
 - Fix double `v` prefix in tag name (`vv0.4.11` → `v0.4.11`) by removing
   redundant `tag-prefix` from `release.toml`
 
