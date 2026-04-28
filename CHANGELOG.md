@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.13] - 2026-04-28
+
 ### Added
 
 - Add `versions` subcommand to list all supported WildFly versions in a table
@@ -406,7 +408,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - First release 🎉
 
-[Unreleased]: https://github.com/hpehl/wado/compare/v0.4.12...HEAD
+[Unreleased]: https://github.com/hpehl/wado/compare/v0.4.13...HEAD
+[0.4.13]: https://github.com/hpehl/wado/compare/v0.4.12...v0.4.13
 [0.4.12]: https://github.com/hpehl/wado/compare/v0.4.11...v0.4.12
 [0.4.11]: https://github.com/hpehl/wado/compare/v0.4.10...v0.4.11
 
