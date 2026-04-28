@@ -35,7 +35,8 @@ The crate is both a library (`src/lib.rs`) and a binary (`src/main.rs`).
 - **`cli.rs`** - JBoss CLI integration. Downloads and runs `jboss-cli` against running containers.
 - **`console.rs`** - Opens the WildFly management console in a browser for running containers.
 - **`ps.rs`** - Lists running wado containers in a formatted table.
-- **`image.rs`** - Lists local wado images with status (local, in-use).
+- **`images.rs`** - Lists local wado images with status (local, in-use).
+- **`versions.rs`** - Lists all supported WildFly versions in a formatted table (version, full version, core version, repository).
 - **`push.rs`** - Pushes built images to the container registry, supports chunked parallel pushes.
 - **`progress.rs`** - Progress bar utilities for long-running container operations.
 - **`topology.rs`** - Topology subcommand (not yet implemented).

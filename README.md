@@ -28,6 +28,7 @@ The container names and published ports follow default values based on the WildF
         - [Topology](#topology)
     - [Images](#images-1)
     - [PS](#ps)
+    - [Versions](#versions)
     - [Management Clients](#management-clients)
         - [Console](#console)
         - [CLI](#cli)
@@ -430,6 +431,14 @@ Lists all running wado containers. Use `--standalone` or `--domain` to filter by
 wado ps
 wado ps --standalone
 wado ps --domain
+```
+
+## Versions
+
+Lists all supported WildFly versions with their full version number, WildFly Core version, and container image repository.
+
+```shell
+wado versions
 ```
 
 ## Management Clients
