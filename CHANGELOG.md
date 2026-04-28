@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add `versions` subcommand to list all supported WildFly versions in a table
+
 ## [0.4.12] - 2026-04-23
 
 ### Fixed

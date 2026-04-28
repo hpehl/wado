@@ -397,4 +397,8 @@ Supported shells: bash, zsh, fish, elvish, powershell"))
                 .long("install")
                 .action(ArgAction::SetTrue)
                 .help("Install completions to the standard location for the shell")))
+
+        // versions
+        .subcommand(Command::new("versions")
+            .about("List all supported WildFly versions"))
 }

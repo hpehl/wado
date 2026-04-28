@@ -20,6 +20,7 @@ use crate::command::ps::ps;
 use crate::command::push::push;
 use crate::command::standalone::{standalone_start, standalone_stop};
 use crate::command::topology::{topology_start, topology_stop};
+use crate::command::versions::versions;
 use crate::completion::{
     complete_running_names, complete_running_topologies, complete_running_versions,
     complete_versions,
@@ -203,6 +204,7 @@ async fn main() -> Result<()> {
         Some(("console", m)) => console(m),
         Some(("cli", m)) => cli(m),
         Some(("completions", m)) => completions(m),
+        Some(("versions", _)) => versions(),
 
         _ => unreachable!("Unknown subcommand"),
     }?;
