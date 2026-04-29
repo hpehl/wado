@@ -52,7 +52,11 @@ pub fn topology_start(matches: &ArgMatches, registry: &WildFlyImageRegistry) -> 
 
     let hc_hosts = setup.hc_hosts();
     let hc_specs = build_hc_specs(&hc_hosts, &setup.version, registry)?;
-    let hc_resolved = block_on(resolve_start_specs(ServerType::HostController, hc_specs, registry))?;
+    let hc_resolved = block_on(resolve_start_specs(
+        ServerType::HostController,
+        hc_specs,
+        registry,
+    ))?;
     let hcs: Vec<HostController> = hc_resolved
         .into_iter()
         .map(|r| HostController::new(r.admin_image, r.name, dc.name.clone()))

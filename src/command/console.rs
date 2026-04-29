@@ -15,7 +15,10 @@ pub fn console(matches: &ArgMatches, registry: &WildFlyImageRegistry) -> anyhow:
     Ok(())
 }
 
-fn get_management_clients(matches: &ArgMatches, registry: &WildFlyImageRegistry) -> anyhow::Result<Vec<ManagementClient>> {
+fn get_management_clients(
+    matches: &ArgMatches,
+    registry: &WildFlyImageRegistry,
+) -> anyhow::Result<Vec<ManagementClient>> {
     if let Some(name) = matches.get_one::<String>("name") {
         let wildfly_images = matches.get_one::<Vec<WildFlyImage>>("wildfly-version");
         if let Some(wildfly_images) = wildfly_images
@@ -28,10 +31,10 @@ fn get_management_clients(matches: &ArgMatches, registry: &WildFlyImageRegistry)
             Some(name),
             registry,
         ))?;
-        Ok(vec![ManagementClient::from_container_instance(&instance, registry)])
-    } else if let Some(wildfly_images) =
-        matches.get_one::<Vec<WildFlyImage>>("wildfly-version")
-    {
+        Ok(vec![ManagementClient::from_container_instance(
+            &instance, registry,
+        )])
+    } else if let Some(wildfly_images) = matches.get_one::<Vec<WildFlyImage>>("wildfly-version") {
         if wildfly_images.len() == 1 {
             Ok(vec![ManagementClient::custom_port(
                 &wildfly_images[0],

@@ -57,8 +57,7 @@ fn resolve_specs_with_counts(
 ) -> Vec<ResolvedStart> {
     let mut result = Vec::new();
     let chunks = specs.chunk_by(|a, b| {
-        a.admin_image.wildfly_image.identifier
-            == b.admin_image.wildfly_image.identifier
+        a.admin_image.wildfly_image.identifier == b.admin_image.wildfly_image.identifier
     });
     for chunk in chunks {
         let wc = &chunk[0].admin_image.wildfly_image;
@@ -268,10 +267,7 @@ mod tests {
         let id = spec.admin_image.wildfly_image.identifier;
         let result = resolve(&[spec.clone()], &[(id, 0, 1)]);
         let ports = result[0].ports.as_ref().unwrap();
-        assert_eq!(
-            ports.http,
-            spec.admin_image.wildfly_image.http_port() + 1
-        );
+        assert_eq!(ports.http, spec.admin_image.wildfly_image.http_port() + 1);
         assert_eq!(ports.management, 10000);
     }
 

@@ -24,20 +24,24 @@ pub async fn container_ps(
     resolve_ports: bool,
     registry: &WildFlyImageRegistry,
 ) -> anyhow::Result<Vec<ContainerInstance>> {
-    let mut instances = ps_instances(&Label::Id.filter(), |instance| {
-        let server_type_match = server_types.contains(&instance.admin_image.server_type);
-        let version_match = if let Some(versions) = &wildfly_images {
-            versions.contains(&instance.admin_image.wildfly_image)
-        } else {
-            true
-        };
-        let name_match = if let Some(name) = name {
-            name == instance.name
-        } else {
-            true
-        };
-        server_type_match && version_match && name_match
-    }, registry)
+    let mut instances = ps_instances(
+        &Label::Id.filter(),
+        |instance| {
+            let server_type_match = server_types.contains(&instance.admin_image.server_type);
+            let version_match = if let Some(versions) = &wildfly_images {
+                versions.contains(&instance.admin_image.wildfly_image)
+            } else {
+                true
+            };
+            let name_match = if let Some(name) = name {
+                name == instance.name
+            } else {
+                true
+            };
+            server_type_match && version_match && name_match
+        },
+        registry,
+    )
     .await?;
 
     if resolve_ports {
@@ -49,12 +53,22 @@ pub async fn container_ps(
 }
 
 /// Returns all containers belonging to a specific topology.
-pub async fn containers_by_topology(topology_name: &str, registry: &WildFlyImageRegistry) -> anyhow::Result<Vec<ContainerInstance>> {
-    ps_instances(&Label::Topology.filter_value(topology_name), |_| true, registry).await
+pub async fn containers_by_topology(
+    topology_name: &str,
+    registry: &WildFlyImageRegistry,
+) -> anyhow::Result<Vec<ContainerInstance>> {
+    ps_instances(
+        &Label::Topology.filter_value(topology_name),
+        |_| true,
+        registry,
+    )
+    .await
 }
 
 /// Returns the names of all currently running topologies.
-pub async fn running_topology_names(registry: &WildFlyImageRegistry) -> anyhow::Result<Vec<String>> {
+pub async fn running_topology_names(
+    registry: &WildFlyImageRegistry,
+) -> anyhow::Result<Vec<String>> {
     let instances = ps_instances(&Label::Topology.filter(), |_| true, registry).await?;
     let names: BTreeSet<String> = instances
         .iter()
@@ -171,8 +185,9 @@ pub(super) async fn ps_instances(
     for line in output.lines() {
         let parts: Vec<&str> = line.split('|').collect();
         if parts.len() == 6
-            && let Ok(instance) =
-                ContainerInstance::new(parts[1], parts[0], parts[2], parts[3], parts[4], parts[5], registry)
+            && let Ok(instance) = ContainerInstance::new(
+                parts[1], parts[0], parts[2], parts[3], parts[4], parts[5], registry,
+            )
             && predicate(&instance)
         {
             instances.push(instance);

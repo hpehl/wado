@@ -21,14 +21,13 @@ pub fn cli(matches: &ArgMatches, registry: &WildFlyImageRegistry) -> anyhow::Res
 
     let management_client = if let Some(name) = matches.get_one::<String>("name") {
         let mut v = vec![];
-        let wildfly_images = if let Some(wildfly_image) =
-            matches.get_one::<WildFlyImage>("wildfly-version")
-        {
-            v.push(wildfly_image.clone());
-            Some(&v)
-        } else {
-            None
-        };
+        let wildfly_images =
+            if let Some(wildfly_image) = matches.get_one::<WildFlyImage>("wildfly-version") {
+                v.push(wildfly_image.clone());
+                Some(&v)
+            } else {
+                None
+            };
         let instance = block_on(get_instance(
             wildfly_images.map(|v| v.as_slice()),
             Some(name),

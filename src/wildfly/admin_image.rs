@@ -4,7 +4,7 @@ use crate::constants::{WILDFLY_ADMIN_CONTAINER, WILDFLY_ADMIN_CONTAINER_REPOSITO
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::str::FromStr;
-use wildfly_meta::{WildFlyImage, WildFlyImageRegistry, wildfly_dev, DEVELOPMENT_TAG};
+use wildfly_meta::{DEVELOPMENT_TAG, WildFlyImage, WildFlyImageRegistry, wildfly_dev};
 
 use super::ServerType;
 
@@ -53,7 +53,9 @@ impl AdminImage {
     }
 
     /// Returns a map of all known admin images indexed by their full image name.
-    pub fn all_versions_by_image_name(registry: &WildFlyImageRegistry) -> HashMap<String, AdminImage> {
+    pub fn all_versions_by_image_name(
+        registry: &WildFlyImageRegistry,
+    ) -> HashMap<String, AdminImage> {
         let mut result = HashMap::new();
         for img in registry.all() {
             for ai in AdminImage::all_types(img.clone()) {
@@ -68,7 +70,10 @@ impl AdminImage {
     }
 
     /// Parses an identifier string (e.g. `"sa-390"` or `"dc-dev"`) into an admin image.
-    pub fn from_identifier(identifier: String, registry: &WildFlyImageRegistry) -> Option<AdminImage> {
+    pub fn from_identifier(
+        identifier: String,
+        registry: &WildFlyImageRegistry,
+    ) -> Option<AdminImage> {
         if identifier.contains('-') {
             let parts = identifier.split('-').collect::<Vec<&str>>();
             if parts.len() == 2

@@ -26,9 +26,7 @@ pub(super) fn write_entrypoint(context_dir: &Path, server_type: &ServerType) -> 
     Ok(())
 }
 
-pub(super) fn base_template_data(
-    admin_image: &AdminImage,
-) -> HashMap<&'static str, String> {
+pub(super) fn base_template_data(admin_image: &AdminImage) -> HashMap<&'static str, String> {
     let mut data = HashMap::new();
     data.insert("label-name", Label::Id.key().to_string());
     data.insert("label-value", admin_image.identifier());
@@ -51,8 +49,8 @@ pub(super) fn dockerfile_data(
         data.insert("base-image", admin_image.wildfly_image.image_ref());
     }
 
-    let use_legacy_names = !admin_image.wildfly_image.is_dev()
-        && admin_image.wildfly_image.version.major < 27;
+    let use_legacy_names =
+        !admin_image.wildfly_image.is_dev() && admin_image.wildfly_image.version.major < 27;
     match admin_image.server_type {
         ServerType::Standalone => {
             data.insert("is-standalone", "true".to_string());

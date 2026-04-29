@@ -33,7 +33,10 @@ use app::build_app;
 use clap::value_parser;
 use clap_complete::engine::ArgValueCompleter;
 use std::path::PathBuf;
-use wildfly_meta::{FeaturePackRegistry, WildFlyImage, WildFlyImageRegistry, parse_image, parse_list, ParseOptions, MetaItem};
+use wildfly_meta::{
+    FeaturePackRegistry, MetaItem, ParseOptions, WildFlyImage, WildFlyImageRegistry, parse_image,
+    parse_list,
+};
 
 fn build_app_full() -> clap::Command {
     build_app()
@@ -218,9 +221,11 @@ async fn main() -> Result<()> {
 
 fn parse_version_enumeration(range: &str) -> Result<Vec<WildFlyImage>, String> {
     let registry = WildFlyImageRegistry::load_default().map_err(|e| e.to_string())?;
-    let packs = FeaturePackRegistry::load_default()
-        .unwrap_or_else(|_| FeaturePackRegistry::from_toml("config_version = 1\nfeature_packs = []").unwrap());
-    let items = parse_list(range, &registry, &packs, &ParseOptions::all()).map_err(|e| e.to_string())?;
+    let packs = FeaturePackRegistry::load_default().unwrap_or_else(|_| {
+        FeaturePackRegistry::from_toml("config_version = 1\nfeature_packs = []").unwrap()
+    });
+    let items =
+        parse_list(range, &registry, &packs, &ParseOptions::all()).map_err(|e| e.to_string())?;
     let images: Vec<WildFlyImage> = items
         .into_iter()
         .filter_map(|item| match item {

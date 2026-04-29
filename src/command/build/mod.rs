@@ -11,12 +11,8 @@ pub async fn build(matches: &ArgMatches) -> anyhow::Result<()> {
     verify_container_command()?;
     let admin_images = admin_images_argument(matches);
 
-    let has_dev = admin_images
-        .iter()
-        .any(|ac| ac.wildfly_image.is_dev());
-    let has_stable = admin_images
-        .iter()
-        .any(|ac| !ac.wildfly_image.is_dev());
+    let has_dev = admin_images.iter().any(|ac| ac.wildfly_image.is_dev());
+    let has_stable = admin_images.iter().any(|ac| !ac.wildfly_image.is_dev());
     if has_dev && has_stable {
         anyhow::bail!(
             "Cannot mix dev and versioned builds. \

@@ -112,7 +112,11 @@ fn suggest_after_dots(after_dots: &str, start_after: &Version) -> Vec<String> {
 }
 
 fn all_versions() -> Vec<Version> {
-    registry().all().iter().map(|img| img.version.clone()).collect()
+    registry()
+        .all()
+        .iter()
+        .map(|img| img.version.clone())
+        .collect()
 }
 
 fn all_simple_versions() -> Vec<String> {

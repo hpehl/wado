@@ -93,11 +93,7 @@ pub struct HostController {
 }
 
 impl HostController {
-    pub fn new(
-        admin_image: AdminImage,
-        name: String,
-        domain_controller: String,
-    ) -> HostController {
+    pub fn new(admin_image: AdminImage, name: String, domain_controller: String) -> HostController {
         HostController {
             admin_image,
             name,
@@ -249,7 +245,15 @@ mod tests {
     #[test]
     fn container_instance_new_valid() {
         let registry = test_registry();
-        let ci = ContainerInstance::new("sa-390", "abc123", "wado-sa-390", "Up 5 minutes", "", "", &registry);
+        let ci = ContainerInstance::new(
+            "sa-390",
+            "abc123",
+            "wado-sa-390",
+            "Up 5 minutes",
+            "",
+            "",
+            &registry,
+        );
         assert!(ci.is_ok());
         let ci = ci.unwrap();
         assert_eq!(ci.name, "wado-sa-390");
@@ -287,8 +291,10 @@ mod tests {
     #[test]
     fn container_instance_ordering_topology_before_no_topology() {
         let registry = test_registry();
-        let with_topo = ContainerInstance::new("sa-390", "a", "a", "Up", "topo1", "", &registry).unwrap();
-        let without_topo = ContainerInstance::new("sa-390", "b", "b", "Up", "", "", &registry).unwrap();
+        let with_topo =
+            ContainerInstance::new("sa-390", "a", "a", "Up", "topo1", "", &registry).unwrap();
+        let without_topo =
+            ContainerInstance::new("sa-390", "b", "b", "Up", "", "", &registry).unwrap();
         assert!(with_topo < without_topo);
     }
 

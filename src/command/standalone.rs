@@ -8,7 +8,10 @@ use wildfly_meta::WildFlyImageRegistry;
 
 // ------------------------------------------------------ start
 
-pub fn standalone_start(matches: &ArgMatches, registry: &WildFlyImageRegistry) -> anyhow::Result<()> {
+pub fn standalone_start(
+    matches: &ArgMatches,
+    registry: &WildFlyImageRegistry,
+) -> anyhow::Result<()> {
     let instances: Vec<StandaloneInstance> = prepare_instances(
         matches,
         ServerType::Standalone,
@@ -49,6 +52,9 @@ async fn start_instances(
 
 // ------------------------------------------------------ stop
 
-pub fn standalone_stop(matches: &ArgMatches, registry: &WildFlyImageRegistry) -> anyhow::Result<()> {
+pub fn standalone_stop(
+    matches: &ArgMatches,
+    registry: &WildFlyImageRegistry,
+) -> anyhow::Result<()> {
     stop_containers_by_server_type(ServerType::Standalone, matches, registry)
 }

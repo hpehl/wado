@@ -31,8 +31,7 @@ pub fn ps(matches: &ArgMatches, registry: &WildFlyImageRegistry) -> anyhow::Resu
         ]);
     for instance in instances {
         table.add_row(vec![
-            Cell::new(instance.admin_image.wildfly_image.short_name())
-                .fg(Color::DarkMagenta),
+            Cell::new(instance.admin_image.wildfly_image.short_name()).fg(Color::DarkMagenta),
             Cell::new(instance.admin_image.server_type.short_name()).fg(Color::DarkCyan),
             Cell::new(instance.name).fg(Color::DarkYellow),
             Cell::new(instance.config.as_deref().unwrap_or("")).fg(Color::DarkCyan),

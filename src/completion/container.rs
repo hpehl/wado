@@ -23,7 +23,13 @@ pub fn complete_running_names(
     server_types: Vec<ServerType>,
 ) -> impl Fn(&OsStr) -> Vec<CompletionCandidate> {
     move |_current: &OsStr| {
-        let instances = block_on(container_ps(server_types.clone(), None, None, false, registry()));
+        let instances = block_on(container_ps(
+            server_types.clone(),
+            None,
+            None,
+            false,
+            registry(),
+        ));
         match instances {
             Ok(instances) => instances
                 .iter()
@@ -41,7 +47,13 @@ pub fn complete_running_versions(
         let input = current.to_str().unwrap_or("");
         let (prefix, _token) =
             parse_prefix_token(if input.is_empty() { None } else { Some(input) });
-        let instances = block_on(container_ps(server_types.clone(), None, None, false, registry()));
+        let instances = block_on(container_ps(
+            server_types.clone(),
+            None,
+            None,
+            false,
+            registry(),
+        ));
         match instances {
             Ok(instances) => {
                 let versions: BTreeSet<String> = instances

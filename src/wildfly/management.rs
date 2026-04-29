@@ -15,7 +15,10 @@ pub struct ManagementClient {
 
 impl ManagementClient {
     /// Creates a client using the version's default management port.
-    pub fn default_port(wildfly_image: &WildFlyImage, registry: &WildFlyImageRegistry) -> ManagementClient {
+    pub fn default_port(
+        wildfly_image: &WildFlyImage,
+        registry: &WildFlyImageRegistry,
+    ) -> ManagementClient {
         let (cli_jar_url, cli_config_url) = Self::urls(&wildfly_image.core_version, registry);
         ManagementClient {
             wildfly_image: wildfly_image.clone(),
@@ -41,7 +44,10 @@ impl ManagementClient {
     }
 
     /// Creates a client from a running container instance, using its actual port mappings.
-    pub fn from_container_instance(container_instance: &ContainerInstance, registry: &WildFlyImageRegistry) -> ManagementClient {
+    pub fn from_container_instance(
+        container_instance: &ContainerInstance,
+        registry: &WildFlyImageRegistry,
+    ) -> ManagementClient {
         let management_port = if let Some(ports) = &container_instance.ports {
             ports.management
         } else {
@@ -51,10 +57,7 @@ impl ManagementClient {
                 .management_port()
         };
         let (cli_jar_url, cli_config_url) = Self::urls(
-            &container_instance
-                .admin_image
-                .wildfly_image
-                .core_version,
+            &container_instance.admin_image.wildfly_image.core_version,
             registry,
         );
         ManagementClient {
@@ -124,7 +127,11 @@ mod tests {
         let img = wimg("39");
         let client = ManagementClient::default_port(&img, &registry);
         assert!(client.cli_jar_url.contains(&img.core_version.to_string()));
-        assert!(client.cli_config_url.contains(&img.core_version.to_string()));
+        assert!(
+            client
+                .cli_config_url
+                .contains(&img.core_version.to_string())
+        );
     }
 
     #[test]
@@ -142,13 +149,18 @@ mod tests {
         let client = ManagementClient::default_port(&dev, &registry);
         assert!(!client.cli_jar_url.contains("0.0.0"));
         let latest = registry.last().unwrap();
-        assert!(client.cli_jar_url.contains(&latest.core_version.to_string()));
+        assert!(
+            client
+                .cli_jar_url
+                .contains(&latest.core_version.to_string())
+        );
     }
 
     #[test]
     fn from_container_instance_with_ports() {
         let registry = test_registry();
-        let ci = ContainerInstance::new("sa-390", "abc", "wado-sa-390", "Up", "", "", &registry).unwrap();
+        let ci = ContainerInstance::new("sa-390", "abc", "wado-sa-390", "Up", "", "", &registry)
+            .unwrap();
         let client = ManagementClient::from_container_instance(&ci, &registry);
         let expected_port = ci.ports.as_ref().unwrap().management;
         assert_eq!(client.management_port, expected_port);

@@ -57,11 +57,7 @@ pub(super) fn build_stable(
         }
         all_status
     } else {
-        block_on(start_builds(
-            admin_images,
-            &username_path,
-            &password_path,
-        ))?
+        block_on(start_builds(admin_images, &username_path, &password_path))?
     };
 
     summary("Build", "images", count, instant, status);

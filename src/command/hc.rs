@@ -25,8 +25,7 @@ pub fn hc_start(matches: &ArgMatches, registry: &WildFlyImageRegistry) -> anyhow
 
     let wildfly_images = versions_argument(matches);
     let wildfly_image = wildfly_images[0].clone();
-    let admin_image_dc =
-        AdminImage::new(wildfly_image.clone(), ServerType::DomainController);
+    let admin_image_dc = AdminImage::new(wildfly_image.clone(), ServerType::DomainController);
     let dc_name = name_argument("domain-controller", matches, || {
         admin_image_dc.container_name()
     });
@@ -35,9 +34,7 @@ pub fn hc_start(matches: &ArgMatches, registry: &WildFlyImageRegistry) -> anyhow
         if matches.contains_id("name") {
             bail!("Option <name> is not allowed when multiple <wildfly-version> are specified!");
         }
-        if !same_versions(wildfly_images.as_slice())
-            && !matches.contains_id("domain-controller")
-        {
+        if !same_versions(wildfly_images.as_slice()) && !matches.contains_id("domain-controller") {
             bail!(
                 "Option <domain-controller> is required when multiple <wildfly-version> are specified!"
             );
@@ -53,7 +50,11 @@ pub fn hc_start(matches: &ArgMatches, registry: &WildFlyImageRegistry) -> anyhow
             custom_management: None,
         })
         .collect();
-    let resolved = block_on(resolve_start_specs(ServerType::HostController, specs, registry))?;
+    let resolved = block_on(resolve_start_specs(
+        ServerType::HostController,
+        specs,
+        registry,
+    ))?;
     let instances: Vec<HostController> = resolved
         .into_iter()
         .map(|r| HostController::new(r.admin_image, r.name, dc_name.clone()))

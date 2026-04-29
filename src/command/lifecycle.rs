@@ -66,10 +66,7 @@ where
 
     for instance in instances {
         let progress = Progress::new(
-            &instance
-                .admin_image()
-                .wildfly_image
-                .short_name(),
+            &instance.admin_image().wildfly_image.short_name(),
             &instance.admin_image().image_name(),
         );
         multi_progress.add(progress.bar.clone());

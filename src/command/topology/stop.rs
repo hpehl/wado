@@ -14,7 +14,10 @@ pub fn topology_stop(matches: &ArgMatches, registry: &WildFlyImageRegistry) -> a
     block_on(stop_topology(&topology_name, registry))
 }
 
-fn resolve_topology_name(setup_arg: &str, registry: &WildFlyImageRegistry) -> anyhow::Result<String> {
+fn resolve_topology_name(
+    setup_arg: &str,
+    registry: &WildFlyImageRegistry,
+) -> anyhow::Result<String> {
     let path = std::path::Path::new(setup_arg);
     if path.exists() {
         let setup = TopologySetup::load(path, registry)?;
