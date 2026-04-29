@@ -11,31 +11,31 @@ use crate::container::{
     add_servers, container_network_cmd, container_run_cmd, create_secret, resolve_start_specs,
     verify_container_command,
 };
-use crate::wildfly::{AdminContainer, HostController, Server, ServerType, StartSpec};
+use crate::wildfly::{AdminImage, HostController, Server, ServerType, StartSpec};
 use anyhow::bail;
 use clap::ArgMatches;
 use futures::executor::block_on;
 use tokio::try_join;
-use wildfly_container_versions::WildFlyContainer;
+use wildfly_meta::{WildFlyImage, WildFlyImageRegistry};
 
 // ------------------------------------------------------ start
 
-pub fn hc_start(matches: &ArgMatches) -> anyhow::Result<()> {
+pub fn hc_start(matches: &ArgMatches, registry: &WildFlyImageRegistry) -> anyhow::Result<()> {
     verify_container_command()?;
 
-    let wildfly_containers = versions_argument(matches);
-    let wildfly_container = wildfly_containers[0].clone();
-    let admin_container_dc =
-        AdminContainer::new(wildfly_container.clone(), ServerType::DomainController);
+    let wildfly_images = versions_argument(matches);
+    let wildfly_image = wildfly_images[0].clone();
+    let admin_image_dc =
+        AdminImage::new(wildfly_image.clone(), ServerType::DomainController);
     let dc_name = name_argument("domain-controller", matches, || {
-        admin_container_dc.container_name()
+        admin_image_dc.container_name()
     });
 
-    if wildfly_containers.len() > 1 {
+    if wildfly_images.len() > 1 {
         if matches.contains_id("name") {
             bail!("Option <name> is not allowed when multiple <wildfly-version> are specified!");
         }
-        if !same_versions(wildfly_containers.as_slice())
+        if !same_versions(wildfly_images.as_slice())
             && !matches.contains_id("domain-controller")
         {
             bail!(
@@ -44,19 +44,19 @@ pub fn hc_start(matches: &ArgMatches) -> anyhow::Result<()> {
         }
     }
 
-    let specs: Vec<StartSpec> = wildfly_containers
+    let specs: Vec<StartSpec> = wildfly_images
         .iter()
         .map(|wc| StartSpec {
-            admin_container: AdminContainer::new(wc.clone(), ServerType::HostController),
+            admin_image: AdminImage::new(wc.clone(), ServerType::HostController),
             custom_name: matches.get_one::<String>("name").cloned(),
             custom_http: None,
             custom_management: None,
         })
         .collect();
-    let resolved = block_on(resolve_start_specs(ServerType::HostController, specs))?;
+    let resolved = block_on(resolve_start_specs(ServerType::HostController, specs, registry))?;
     let instances: Vec<HostController> = resolved
         .into_iter()
-        .map(|r| HostController::new(r.admin_container, r.name, dc_name.clone()))
+        .map(|r| HostController::new(r.admin_image, r.name, dc_name.clone()))
         .collect();
 
     let (username, password) = username_password_argument(matches);
@@ -73,7 +73,7 @@ pub fn hc_start(matches: &ArgMatches) -> anyhow::Result<()> {
     ))
 }
 
-fn same_versions(instances: &[WildFlyContainer]) -> bool {
+fn same_versions(instances: &[WildFlyImage]) -> bool {
     instances
         .iter()
         .map(|c| c.identifier)
@@ -99,7 +99,7 @@ async fn start_instances(
             &instance.name,
             None,
             operations.clone(),
-            instance.admin_container.wildfly_container.is_dev(),
+            instance.admin_image.wildfly_image.is_dev(),
             None,
             Some(&config),
         );
@@ -123,7 +123,7 @@ async fn start_instances(
             ));
         let mut command = add_servers(command, &instance.name, servers.clone());
         command
-            .arg(instance.admin_container.image_name())
+            .arg(instance.admin_image.image_name())
             .args(parameters.clone());
         command
     })
@@ -132,6 +132,6 @@ async fn start_instances(
 
 // ------------------------------------------------------ stop
 
-pub fn hc_stop(matches: &ArgMatches) -> anyhow::Result<()> {
-    stop_containers_by_server_type(ServerType::HostController, matches)
+pub fn hc_stop(matches: &ArgMatches, registry: &WildFlyImageRegistry) -> anyhow::Result<()> {
+    stop_containers_by_server_type(ServerType::HostController, matches, registry)
 }

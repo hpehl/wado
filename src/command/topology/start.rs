@@ -8,7 +8,7 @@ use crate::container::{
     verify_container_command,
 };
 use crate::wildfly::{
-    AdminContainer, DEFAULT_SERVER_OFFSET, DomainController, HostController, Server, ServerType,
+    AdminImage, DEFAULT_SERVER_OFFSET, DomainController, HostController, Server, ServerType,
     StartSpec, apply_offsets,
 };
 use clap::ArgMatches;
@@ -16,22 +16,22 @@ use futures::executor::block_on;
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 use tokio::try_join;
-use wildfly_container_versions::WildFlyContainer;
+use wildfly_meta::{WildFlyImageRegistry, parse_image};
 
 use super::model::{HostSetup, TopologySetup};
 
-pub fn topology_start(matches: &ArgMatches) -> anyhow::Result<()> {
+pub fn topology_start(matches: &ArgMatches, registry: &WildFlyImageRegistry) -> anyhow::Result<()> {
     let path = matches.get_one::<PathBuf>("setup").unwrap();
-    let setup = TopologySetup::load(path)?;
+    let setup = TopologySetup::load(path, registry)?;
     verify_container_command()?;
 
     let topology_name = setup.name.clone();
 
     let dc_host = setup.dc_host();
     let dc_version = dc_host.effective_version(&setup.version);
-    let dc_wf = WildFlyContainer::version(dc_version).map_err(|e| anyhow::anyhow!("{}", e))?;
+    let dc_wf = parse_image(dc_version, registry).map_err(|e| anyhow::anyhow!("{}", e))?;
     let dc_spec = StartSpec {
-        admin_container: AdminContainer::new(dc_wf, ServerType::DomainController),
+        admin_image: AdminImage::new(dc_wf, ServerType::DomainController),
         custom_name: dc_host.name.clone(),
         custom_http: None,
         custom_management: None,
@@ -39,10 +39,11 @@ pub fn topology_start(matches: &ArgMatches) -> anyhow::Result<()> {
     let dc_resolved = block_on(resolve_start_specs(
         ServerType::DomainController,
         vec![dc_spec],
+        registry,
     ))?;
     let dc_r = &dc_resolved[0];
     let dc = DomainController::new(
-        dc_r.admin_container.clone(),
+        dc_r.admin_image.clone(),
         dc_r.name.clone(),
         dc_r.ports.clone().unwrap(),
     );
@@ -50,11 +51,11 @@ pub fn topology_start(matches: &ArgMatches) -> anyhow::Result<()> {
     let dc_servers = apply_offsets(dc_servers, DEFAULT_SERVER_OFFSET);
 
     let hc_hosts = setup.hc_hosts();
-    let hc_specs = build_hc_specs(&hc_hosts, &setup.version)?;
-    let hc_resolved = block_on(resolve_start_specs(ServerType::HostController, hc_specs))?;
+    let hc_specs = build_hc_specs(&hc_hosts, &setup.version, registry)?;
+    let hc_resolved = block_on(resolve_start_specs(ServerType::HostController, hc_specs, registry))?;
     let hcs: Vec<HostController> = hc_resolved
         .into_iter()
-        .map(|r| HostController::new(r.admin_container, r.name, dc.name.clone()))
+        .map(|r| HostController::new(r.admin_image, r.name, dc.name.clone()))
         .collect();
 
     let hc_server_map = build_server_map(&hc_hosts, &hcs);
@@ -71,14 +72,15 @@ pub fn topology_start(matches: &ArgMatches) -> anyhow::Result<()> {
 fn build_hc_specs(
     hc_hosts: &[&HostSetup],
     default_version: &str,
+    registry: &WildFlyImageRegistry,
 ) -> anyhow::Result<Vec<StartSpec>> {
     hc_hosts
         .iter()
         .map(|host| {
             let version = host.effective_version(default_version);
-            let wf = WildFlyContainer::version(version).map_err(|e| anyhow::anyhow!("{}", e))?;
+            let wf = parse_image(version, registry).map_err(|e| anyhow::anyhow!("{}", e))?;
             Ok(StartSpec {
-                admin_container: AdminContainer::new(wf, ServerType::HostController),
+                admin_image: AdminImage::new(wf, ServerType::HostController),
                 custom_name: host.name.clone(),
                 custom_http: None,
                 custom_management: None,
@@ -132,7 +134,7 @@ async fn start_topology(
             .arg("--env")
             .arg(format!("{}={}", HOSTNAME_VARIABLE, instance.name));
         let mut command = add_servers(command, &instance.name, dc_servers.clone());
-        command.arg(instance.admin_container.image_name());
+        command.arg(instance.admin_image.image_name());
         command
     })
     .await?;
@@ -171,7 +173,7 @@ async fn start_topology(
                 ));
             let mut command = add_servers(command, &instance.name, servers);
             command
-                .arg(instance.admin_container.image_name())
+                .arg(instance.admin_image.image_name())
                 .arg(format!("--primary-address={}", instance.domain_controller));
             command
         })

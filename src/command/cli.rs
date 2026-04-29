@@ -14,32 +14,34 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use tokio::process::Command;
 use which::which;
-use wildfly_container_versions::WildFlyContainer;
+use wildfly_meta::{WildFlyImage, WildFlyImageRegistry};
 
-pub fn cli(matches: &ArgMatches) -> anyhow::Result<()> {
+pub fn cli(matches: &ArgMatches, registry: &WildFlyImageRegistry) -> anyhow::Result<()> {
     which("java").with_context(|| "java not found. Install JDK 11 or later to run JBoss CLI")?;
 
     let management_client = if let Some(name) = matches.get_one::<String>("name") {
         let mut v = vec![];
-        let wildfly_containers = if let Some(wildfly_container) =
-            matches.get_one::<WildFlyContainer>("wildfly-version")
+        let wildfly_images = if let Some(wildfly_image) =
+            matches.get_one::<WildFlyImage>("wildfly-version")
         {
-            v.push(wildfly_container.clone());
+            v.push(wildfly_image.clone());
             Some(&v)
         } else {
             None
         };
         let instance = block_on(get_instance(
-            wildfly_containers.map(|v| v.as_slice()),
+            wildfly_images.map(|v| v.as_slice()),
             Some(name),
+            registry,
         ))?;
-        ManagementClient::from_container_instance(&instance)
-    } else if let Some(wildfly_container) = matches.get_one::<WildFlyContainer>("wildfly-version") {
+        ManagementClient::from_container_instance(&instance, registry)
+    } else if let Some(wildfly_image) = matches.get_one::<WildFlyImage>("wildfly-version") {
         ManagementClient::custom_port(
-            wildfly_container,
+            wildfly_image,
             *matches
                 .get_one::<u16>("management")
-                .unwrap_or(&wildfly_container.management_port()),
+                .unwrap_or(&wildfly_image.management_port()),
+            registry,
         )
     } else {
         let containers = block_on(container_ps(
@@ -47,13 +49,14 @@ pub fn cli(matches: &ArgMatches) -> anyhow::Result<()> {
             None,
             None,
             true,
+            registry,
         ))?;
         if containers.is_empty() {
             bail!("No running containers found.")
         } else if containers.len() > 1 {
             bail!("Multiple running containers found. Please specify a version or a name.")
         } else {
-            ManagementClient::from_container_instance(&containers[0])
+            ManagementClient::from_container_instance(&containers[0], registry)
         }
     };
     let (username, password) = username_password_argument(matches);
@@ -62,10 +65,10 @@ pub fn cli(matches: &ArgMatches) -> anyhow::Result<()> {
         .unwrap_or_default()
         .cloned()
         .collect::<Vec<_>>();
-    let dir_suffix = if management_client.wildfly_container.is_dev() {
+    let dir_suffix = if management_client.wildfly_image.is_dev() {
         "dev".to_string()
     } else {
-        management_client.wildfly_container.identifier.to_string()
+        management_client.wildfly_image.identifier.to_string()
     };
     let temp_dir = temp_dir().join(format!("{}-cli-{}", WILDFLY_ADMIN_CONTAINER, dir_suffix));
 
@@ -87,8 +90,8 @@ async fn connect_to_cli(
     parameters: Vec<String>,
 ) -> anyhow::Result<()> {
     let progress = Progress::new(
-        &management_client.wildfly_container.display_version(),
-        &management_client.wildfly_container.image_name(),
+        &management_client.wildfly_image.short_name(),
+        &management_client.wildfly_image.image_ref(),
     );
 
     let cli_jar = cli_dir.join("cli.jar");

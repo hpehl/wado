@@ -1,21 +1,22 @@
 use crate::container::{container_images_cmd, container_ps};
-use crate::wildfly::{AdminContainer, ServerType};
+use crate::wildfly::{AdminImage, ServerType};
 use comfy_table::presets::UTF8_BORDERS_ONLY;
 use comfy_table::{Cell, Color, ContentArrangement, Table};
 use console::style;
 use futures::executor::block_on;
 use std::collections::HashSet;
 use std::process::Stdio;
+use wildfly_meta::WildFlyImageRegistry;
 
-pub fn images() -> anyhow::Result<()> {
-    let all = AdminContainer::all_versions_by_image_name();
+pub fn images(registry: &WildFlyImageRegistry) -> anyhow::Result<()> {
+    let all = AdminImage::all_versions_by_image_name(registry);
     let local = block_on(local_image_names())?;
-    let in_use = block_on(image_names_in_use())?;
-    let mut image_values: Vec<AdminContainer> = all
+    let in_use = block_on(image_names_in_use(registry))?;
+    let mut image_values: Vec<AdminImage> = all
         .into_values()
         .map(|ac| {
             let name = ac.image_name();
-            AdminContainer {
+            AdminImage {
                 local_image: local.contains(&name),
                 in_use: in_use.contains(&name),
                 ..ac
@@ -31,7 +32,7 @@ pub fn images() -> anyhow::Result<()> {
         .set_header(vec!["Version", "Type", "Image"]);
     for image in &image_values {
         let cells = vec![
-            Cell::new(image.wildfly_container.display_version()).fg(Color::DarkMagenta),
+            Cell::new(image.wildfly_image.short_name()).fg(Color::DarkMagenta),
             Cell::new(image.server_type.short_name()).fg(Color::DarkCyan),
             if image.in_use {
                 Cell::new(image.image_name()).fg(Color::Green)
@@ -63,7 +64,7 @@ async fn local_image_names() -> anyhow::Result<HashSet<String>> {
     Ok(output.lines().map(String::from).collect())
 }
 
-async fn image_names_in_use() -> anyhow::Result<HashSet<String>> {
+async fn image_names_in_use(registry: &WildFlyImageRegistry) -> anyhow::Result<HashSet<String>> {
     let instances = container_ps(
         vec![
             ServerType::Standalone,
@@ -73,10 +74,11 @@ async fn image_names_in_use() -> anyhow::Result<HashSet<String>> {
         None,
         None,
         false,
+        registry,
     )
     .await?;
     Ok(instances
         .iter()
-        .map(|i| i.admin_container.image_name())
+        .map(|i| i.admin_image.image_name())
         .collect())
 }

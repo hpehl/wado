@@ -9,7 +9,7 @@ use crate::wildfly::{ContainerInstance, Ports, ServerType};
 use futures::future::join_all;
 use std::collections::BTreeSet;
 use std::process::Stdio;
-use wildfly_container_versions::WildFlyContainer;
+use wildfly_meta::{WildFlyImage, WildFlyImageRegistry};
 
 use super::command::container_command;
 
@@ -19,14 +19,15 @@ use super::command::container_command;
 /// actual host port mappings — this adds one `podman inspect` call per container.
 pub async fn container_ps(
     server_types: Vec<ServerType>,
-    wildfly_containers: Option<&[WildFlyContainer]>,
+    wildfly_images: Option<&[WildFlyImage]>,
     name: Option<&str>,
     resolve_ports: bool,
+    registry: &WildFlyImageRegistry,
 ) -> anyhow::Result<Vec<ContainerInstance>> {
     let mut instances = ps_instances(&Label::Id.filter(), |instance| {
-        let server_type_match = server_types.contains(&instance.admin_container.server_type);
-        let version_match = if let Some(versions) = &wildfly_containers {
-            versions.contains(&instance.admin_container.wildfly_container)
+        let server_type_match = server_types.contains(&instance.admin_image.server_type);
+        let version_match = if let Some(versions) = &wildfly_images {
+            versions.contains(&instance.admin_image.wildfly_image)
         } else {
             true
         };
@@ -36,7 +37,7 @@ pub async fn container_ps(
             true
         };
         server_type_match && version_match && name_match
-    })
+    }, registry)
     .await?;
 
     if resolve_ports {
@@ -48,13 +49,13 @@ pub async fn container_ps(
 }
 
 /// Returns all containers belonging to a specific topology.
-pub async fn containers_by_topology(topology_name: &str) -> anyhow::Result<Vec<ContainerInstance>> {
-    ps_instances(&Label::Topology.filter_value(topology_name), |_| true).await
+pub async fn containers_by_topology(topology_name: &str, registry: &WildFlyImageRegistry) -> anyhow::Result<Vec<ContainerInstance>> {
+    ps_instances(&Label::Topology.filter_value(topology_name), |_| true, registry).await
 }
 
 /// Returns the names of all currently running topologies.
-pub async fn running_topology_names() -> anyhow::Result<Vec<String>> {
-    let instances = ps_instances(&Label::Topology.filter(), |_| true).await?;
+pub async fn running_topology_names(registry: &WildFlyImageRegistry) -> anyhow::Result<Vec<String>> {
+    let instances = ps_instances(&Label::Topology.filter(), |_| true, registry).await?;
     let names: BTreeSet<String> = instances
         .iter()
         .filter_map(|i| i.topology.clone())
@@ -67,14 +68,16 @@ pub async fn running_topology_names() -> anyhow::Result<Vec<String>> {
 /// Returns an error if zero or more than one container matches — callers
 /// should provide enough filters (version, name) to identify a single instance.
 pub async fn get_instance(
-    wildfly_containers: Option<&[WildFlyContainer]>,
+    wildfly_images: Option<&[WildFlyImage]>,
     name: Option<&str>,
+    registry: &WildFlyImageRegistry,
 ) -> anyhow::Result<ContainerInstance> {
     let instances = container_ps(
         vec![ServerType::Standalone, DomainController],
-        wildfly_containers,
+        wildfly_images,
         name,
         true,
+        registry,
     )
     .await?;
     if instances.is_empty() || instances.len() > 1 {
@@ -83,12 +86,12 @@ pub async fn get_instance(
         } else {
             "Multiple containers"
         };
-        let why = match (name, wildfly_containers) {
+        let why = match (name, wildfly_images) {
             (Some(name), Some(wcs)) => format!(
                 "for name '{}' and version '{}'",
                 name,
                 wcs.iter()
-                    .map(|x| x.display_version())
+                    .map(|x| x.short_name())
                     .collect::<Vec<String>>()
                     .join(", ")
             ),
@@ -96,7 +99,7 @@ pub async fn get_instance(
             (None, Some(wcs)) => format!(
                 "for version '{}'",
                 wcs.iter()
-                    .map(|x| x.display_version())
+                    .map(|x| x.short_name())
                     .collect::<Vec<String>>()
                     .join(", ")
             ),
@@ -144,6 +147,7 @@ pub(super) async fn container_ports(
 pub(super) async fn ps_instances(
     filter: &str,
     predicate: impl Fn(&ContainerInstance) -> bool,
+    registry: &WildFlyImageRegistry,
 ) -> anyhow::Result<Vec<ContainerInstance>> {
     let mut command = container_command()?;
     command
@@ -168,7 +172,7 @@ pub(super) async fn ps_instances(
         let parts: Vec<&str> = line.split('|').collect();
         if parts.len() == 6
             && let Ok(instance) =
-                ContainerInstance::new(parts[1], parts[0], parts[2], parts[3], parts[4], parts[5])
+                ContainerInstance::new(parts[1], parts[0], parts[2], parts[3], parts[4], parts[5], registry)
             && predicate(&instance)
         {
             instances.push(instance);

@@ -4,8 +4,9 @@ use clap::ArgMatches;
 use comfy_table::presets::UTF8_BORDERS_ONLY;
 use comfy_table::{Cell, Color, ContentArrangement, Table};
 use futures::executor::block_on;
+use wildfly_meta::WildFlyImageRegistry;
 
-pub fn ps(matches: &ArgMatches) -> anyhow::Result<()> {
+pub fn ps(matches: &ArgMatches, registry: &WildFlyImageRegistry) -> anyhow::Result<()> {
     let mut server_types = vec![];
     if matches.get_flag("standalone") {
         server_types.push(Standalone);
@@ -19,7 +20,7 @@ pub fn ps(matches: &ArgMatches) -> anyhow::Result<()> {
         server_types.push(DomainController);
         server_types.push(HostController);
     }
-    let mut instances = block_on(container_ps(server_types, None, None, true))?;
+    let mut instances = block_on(container_ps(server_types, None, None, true, registry))?;
     instances.sort();
     let mut table = Table::new();
     table
@@ -30,9 +31,9 @@ pub fn ps(matches: &ArgMatches) -> anyhow::Result<()> {
         ]);
     for instance in instances {
         table.add_row(vec![
-            Cell::new(instance.admin_container.wildfly_container.display_version())
+            Cell::new(instance.admin_image.wildfly_image.short_name())
                 .fg(Color::DarkMagenta),
-            Cell::new(instance.admin_container.server_type.short_name()).fg(Color::DarkCyan),
+            Cell::new(instance.admin_image.server_type.short_name()).fg(Color::DarkCyan),
             Cell::new(instance.name).fg(Color::DarkYellow),
             Cell::new(instance.config.as_deref().unwrap_or("")).fg(Color::DarkCyan),
             if let Some(ports) = instance.ports {

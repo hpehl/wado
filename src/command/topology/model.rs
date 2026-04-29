@@ -4,7 +4,7 @@ use serde::Deserialize;
 use serde::de;
 use std::collections::HashSet;
 use std::path::Path;
-use wildfly_container_versions::WildFlyContainer;
+use wildfly_meta::{WildFlyImage, WildFlyImageRegistry, parse_image};
 
 #[derive(Deserialize)]
 pub struct TopologySetup {
@@ -36,18 +36,18 @@ pub struct ServerSetup {
 }
 
 impl TopologySetup {
-    pub fn load(path: &Path) -> anyhow::Result<TopologySetup> {
+    pub fn load(path: &Path, registry: &WildFlyImageRegistry) -> anyhow::Result<TopologySetup> {
         let content = std::fs::read_to_string(path)
             .with_context(|| format!("Failed to read topology file: {}", path.display()))?;
         let setup: TopologySetup = serde_yml::from_str(&content)
             .with_context(|| format!("Failed to parse topology file: {}", path.display()))?;
-        setup.validate()?;
-        resolve_version(&setup.version)
+        setup.validate(registry)?;
+        resolve_version(&setup.version, registry)
             .with_context(|| format!("Unknown WildFly version: {}", setup.version))?;
         Ok(setup)
     }
 
-    pub fn validate(&self) -> anyhow::Result<()> {
+    pub fn validate(&self, registry: &WildFlyImageRegistry) -> anyhow::Result<()> {
         let dc_count = self.hosts.iter().filter(|h| h.domain_controller).count();
         if dc_count == 0 {
             bail!("No domain controller defined in topology");
@@ -74,7 +74,7 @@ impl TopologySetup {
         for host in &self.hosts {
             let host_label = host.name.as_deref().unwrap_or("<unnamed>");
             if let Some(v) = &host.version {
-                resolve_version(v).with_context(|| {
+                resolve_version(v, registry).with_context(|| {
                     format!("Unknown WildFly version '{}' for host '{}'", v, host_label)
                 })?;
             }
@@ -112,8 +112,8 @@ impl HostSetup {
     }
 }
 
-fn resolve_version(version: &str) -> anyhow::Result<WildFlyContainer> {
-    WildFlyContainer::version(version).map_err(|e| anyhow::anyhow!("{}", e))
+fn resolve_version(version: &str, registry: &WildFlyImageRegistry) -> anyhow::Result<WildFlyImage> {
+    parse_image(version, registry).map_err(|e| anyhow::anyhow!("{}", e))
 }
 
 struct VersionVisitor;
@@ -176,6 +176,10 @@ impl ServerSetup {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn test_registry() -> WildFlyImageRegistry {
+        WildFlyImageRegistry::load_default().expect("failed to load image registry")
+    }
 
     #[test]
     fn deserialize_minimal() {
@@ -309,7 +313,7 @@ hosts:
         group: other-server-group
 "#;
         let setup: TopologySetup = serde_yml::from_str(yaml).unwrap();
-        assert!(setup.validate().is_ok());
+        assert!(setup.validate(&test_registry()).is_ok());
         let servers = &setup.hosts[1].servers;
         assert!(servers[0].group.is_none());
         assert_eq!(
@@ -331,7 +335,7 @@ hosts:
   - name: host1
 "#;
         let setup: TopologySetup = serde_yml::from_str(yaml).unwrap();
-        let result = setup.validate();
+        let result = setup.validate(&test_registry());
         assert!(result.is_err());
         assert!(
             result
@@ -353,7 +357,7 @@ hosts:
     domain-controller: true
 "#;
         let setup: TopologySetup = serde_yml::from_str(yaml).unwrap();
-        let result = setup.validate();
+        let result = setup.validate(&test_registry());
         assert!(result.is_err());
         assert!(
             result
@@ -375,7 +379,7 @@ hosts:
   - name: host1
 "#;
         let setup: TopologySetup = serde_yml::from_str(yaml).unwrap();
-        let result = setup.validate();
+        let result = setup.validate(&test_registry());
         assert!(result.is_err());
         assert!(
             result
@@ -399,7 +403,7 @@ hosts:
         group: invalid-group
 "#;
         let setup: TopologySetup = serde_yml::from_str(yaml).unwrap();
-        let result = setup.validate();
+        let result = setup.validate(&test_registry());
         assert!(result.is_err());
         assert!(
             result
@@ -424,7 +428,7 @@ hosts:
         group: other-server-group
 "#;
         let setup: TopologySetup = serde_yml::from_str(yaml).unwrap();
-        assert!(setup.validate().is_ok());
+        assert!(setup.validate(&test_registry()).is_ok());
     }
 
     #[test]
@@ -439,7 +443,7 @@ hosts:
     version: dev
 "#;
         let setup: TopologySetup = serde_yml::from_str(yaml).unwrap();
-        assert!(setup.validate().is_ok());
+        assert!(setup.validate(&test_registry()).is_ok());
         assert_eq!(setup.hosts[1].version, Some("dev".to_string()));
         assert_eq!(setup.hosts[1].effective_version("34"), "dev");
     }

@@ -16,7 +16,7 @@ use std::process::Stdio;
 use tokio::process::Command;
 use tokio::task::JoinSet;
 use tokio::time::Instant;
-use wildfly_container_versions::WildFlyContainer;
+use wildfly_meta::{WildFlyImage, WildFlyImageRegistry};
 
 use crate::container::{
     container_command, container_ps, container_stop_cmd, resolve_start_specs,
@@ -31,17 +31,18 @@ pub fn prepare_instances<T>(
     server_type: ServerType,
     restricted_options: &[&str],
     convert: impl Fn(ResolvedStart) -> T,
+    registry: &WildFlyImageRegistry,
 ) -> anyhow::Result<Vec<T>> {
     verify_container_command()?;
-    let wildfly_containers = versions_argument(matches);
-    if wildfly_containers.len() > 1 {
+    let wildfly_images = versions_argument(matches);
+    if wildfly_images.len() > 1 {
         validate_multiple_versions(matches, restricted_options)?;
     }
-    let specs = wildfly_containers
+    let specs = wildfly_images
         .iter()
         .map(|wc| start_spec(matches, wc, server_type))
         .collect();
-    let resolved = block_on(resolve_start_specs(server_type, specs))?;
+    let resolved = block_on(resolve_start_specs(server_type, specs, registry))?;
     Ok(resolved.into_iter().map(convert).collect())
 }
 
@@ -66,10 +67,10 @@ where
     for instance in instances {
         let progress = Progress::new(
             &instance
-                .admin_container()
-                .wildfly_container
-                .display_version(),
-            &instance.admin_container().image_name(),
+                .admin_image()
+                .wildfly_image
+                .short_name(),
+            &instance.admin_image().image_name(),
         );
         multi_progress.add(progress.bar.clone());
         let mut child = build_command(instance)
@@ -99,16 +100,18 @@ where
 pub fn stop_containers_by_server_type(
     server_type: ServerType,
     matches: &ArgMatches,
+    registry: &WildFlyImageRegistry,
 ) -> anyhow::Result<()> {
     verify_container_command()?;
-    let wildfly_containers = matches.get_one::<Vec<WildFlyContainer>>("wildfly-version");
+    let wildfly_images = matches.get_one::<Vec<WildFlyImage>>("wildfly-version");
     let name = matches.get_one::<String>("name").map(|s| s.as_str());
     block_on(async {
         let instances = container_ps(
             vec![server_type],
-            wildfly_containers.map(|v| v.as_slice()),
+            wildfly_images.map(|v| v.as_slice()),
             name,
             false,
+            registry,
         )
         .await?;
         let count = instances.len();
@@ -118,8 +121,8 @@ pub fn stop_containers_by_server_type(
 
         for instance in instances {
             let progress = Progress::new(
-                &instance.admin_container.wildfly_container.display_version(),
-                &instance.admin_container.image_name(),
+                &instance.admin_image.wildfly_image.short_name(),
+                &instance.admin_image.image_name(),
             );
             multi_progress.add(progress.bar.clone());
             let mut command = container_stop_cmd(&instance.name);

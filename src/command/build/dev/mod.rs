@@ -9,7 +9,7 @@ use crate::args::username_password_argument;
 use crate::container::container_command;
 use crate::progress::{CommandStatus, Progress, stdout_reader};
 use crate::resources::DOCKERFILE;
-use crate::wildfly::AdminContainer;
+use crate::wildfly::AdminImage;
 use clap::ArgMatches;
 use console::{Emoji, style};
 use indicatif::{HumanDuration, MultiProgress};
@@ -25,7 +25,7 @@ use std::process::Stdio;
 use tempfile::tempdir;
 use tokio::task::JoinSet;
 use tokio::time::Instant;
-use wildfly_container_versions::VERSIONS;
+use wildfly_meta::WildFlyImageRegistry;
 
 // ------------------------------------------------------ emojis & constants
 
@@ -35,9 +35,9 @@ static PACKAGE: Emoji<'_, '_> = Emoji("\u{1f4e6}  ", "");
 static SPARKLE: Emoji<'_, '_> = Emoji("\u{2728}  ", ":-)  ");
 
 fn latest_platforms() -> Vec<String> {
-    VERSIONS
-        .last_key_value()
-        .map(|(_, wfc)| wfc.platforms.clone())
+    WildFlyImageRegistry::load_default()
+        .ok()
+        .and_then(|r| r.last().map(|img| img.platforms.clone()))
         .unwrap_or_default()
 }
 
@@ -55,7 +55,7 @@ struct DevBuildConfig<'a> {
 
 pub(in crate::command::build) async fn build_dev(
     matches: &ArgMatches,
-    admin_containers: Vec<AdminContainer>,
+    admin_images: Vec<AdminImage>,
 ) -> anyhow::Result<()> {
     let wildfly_branch = matches
         .get_one::<String>("wildfly-branch")
@@ -87,7 +87,7 @@ pub(in crate::command::build) async fn build_dev(
     };
 
     let instant = Instant::now();
-    let statuses = run_dev_build(&config, admin_containers).await?;
+    let statuses = run_dev_build(&config, admin_images).await?;
 
     let failed: Vec<_> = statuses.iter().filter(|s| !s.success).collect();
     if failed.is_empty() {
@@ -115,7 +115,7 @@ pub(in crate::command::build) async fn build_dev(
 
 async fn run_dev_build(
     config: &DevBuildConfig<'_>,
-    admin_containers: Vec<AdminContainer>,
+    admin_images: Vec<AdminImage>,
 ) -> anyhow::Result<Vec<CommandStatus>> {
     let pid = std::process::id();
     let wf_volume = format!("wado-wildfly-build-{}", pid);
@@ -125,7 +125,7 @@ async fn run_dev_build(
     create_volume(&wf_volume).await?;
     create_volume(&hal_volume).await?;
 
-    let result = run_dev_build_inner(config, admin_containers, &wf_volume, &hal_volume).await;
+    let result = run_dev_build_inner(config, admin_images, &wf_volume, &hal_volume).await;
 
     // Always clean up volumes
     if let Err(e) = remove_volume(&wf_volume).await {
@@ -140,7 +140,7 @@ async fn run_dev_build(
 
 async fn run_dev_build_inner(
     config: &DevBuildConfig<'_>,
-    admin_containers: Vec<AdminContainer>,
+    admin_images: Vec<AdminImage>,
     wf_volume: &str,
     hal_volume: &str,
 ) -> anyhow::Result<Vec<CommandStatus>> {
@@ -192,7 +192,7 @@ async fn run_dev_build_inner(
     );
     if config.verbose {
         build_containers_verbose(
-            admin_containers,
+            admin_images,
             config.username_path,
             config.password_path,
             &wildfly_dist,
@@ -200,7 +200,7 @@ async fn run_dev_build_inner(
         .await
     } else {
         build_containers(
-            admin_containers,
+            admin_images,
             config.username_path,
             config.password_path,
             &wildfly_dist,
@@ -245,7 +245,7 @@ async fn remove_volume(name: &str) -> anyhow::Result<()> {
 // ------------------------------------------------------ container build (progress)
 
 async fn build_containers(
-    admin_containers: Vec<AdminContainer>,
+    admin_images: Vec<AdminImage>,
     username_path: &Path,
     password_path: &Path,
     wildfly_dist: &Path,
@@ -253,16 +253,16 @@ async fn build_containers(
     let multi_progress = MultiProgress::new();
     let mut commands = JoinSet::new();
 
-    for admin_container in admin_containers {
+    for admin_image in admin_images {
         let progress = Progress::join(
             &multi_progress,
-            &admin_container.wildfly_container.display_version(),
-            &admin_container.image_name(),
+            &admin_image.wildfly_image.short_name(),
+            &admin_image.image_name(),
         );
 
         let temp_dir = tempdir()?;
         let mut child = run_preconditions(dev_podman_build(
-            &admin_container,
+            &admin_image,
             temp_dir.as_ref(),
             username_path,
             password_path,
@@ -295,12 +295,12 @@ async fn build_containers(
 // ------------------------------------------------------ container build (verbose)
 
 async fn build_containers_verbose(
-    admin_containers: Vec<AdminContainer>,
+    admin_images: Vec<AdminImage>,
     username_path: &Path,
     password_path: &Path,
     wildfly_dist: &Path,
 ) -> anyhow::Result<Vec<CommandStatus>> {
-    run_builds_verbose(&admin_containers, |ac, dir| {
+    run_builds_verbose(&admin_images, |ac, dir| {
         dev_podman_build(ac, dir, username_path, password_path, wildfly_dist)
     })
     .await
@@ -309,7 +309,7 @@ async fn build_containers_verbose(
 // ------------------------------------------------------ podman build command
 
 fn dev_podman_build(
-    admin_container: &AdminContainer,
+    admin_image: &AdminImage,
     context_dir: &Path,
     username_path: &Path,
     password_path: &Path,
@@ -319,12 +319,12 @@ fn dev_podman_build(
     let context_wildfly = context_dir.join("wildfly");
     copy_dir_recursive(wildfly_dist, &context_wildfly)?;
 
-    write_entrypoint(context_dir, &admin_container.server_type)?;
+    write_entrypoint(context_dir, &admin_image.server_type)?;
 
-    let data = dockerfile_data(admin_container, true);
+    let data = dockerfile_data(admin_image, true);
     render_dockerfile(context_dir, DOCKERFILE, &data)?;
     container_build_commands(
-        &admin_container.image_name(),
+        &admin_image.image_name(),
         &latest_platforms(),
         username_path,
         password_path,

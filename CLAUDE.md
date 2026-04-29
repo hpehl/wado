@@ -39,7 +39,8 @@ The crate is both a library (`src/lib.rs`) and a binary (`src/main.rs`).
 - **`versions.rs`** - Lists all supported WildFly versions in a formatted table (version, full version, core version, repository).
 - **`push.rs`** - Pushes built images to the container registry, supports chunked parallel pushes.
 - **`progress.rs`** - Progress bar utilities for long-running container operations.
-- **`topology.rs`** - Topology subcommand (not yet implemented).
+- **`topology.rs`** - Topology subcommand for starting/stopping complete domain topologies from YAML files.
+- **`update.rs`** - Downloads or updates WildFly version data from GitHub using `wildfly_meta::update_images()`.
 - **`resources.rs`** - Embedded Dockerfile templates and entrypoint shell scripts for all three server types (standalone, domain controller, host controller).
 - **`constants.rs`** - Container naming, labels, environment variables, sed expressions for XML config modifications.
 - **`args.rs`** - Shared argument extraction helpers used across subcommands.

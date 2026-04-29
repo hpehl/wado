@@ -20,6 +20,7 @@ use crate::command::ps::ps;
 use crate::command::push::push;
 use crate::command::standalone::{standalone_start, standalone_stop};
 use crate::command::topology::{topology_start, topology_stop};
+use crate::command::update::update;
 use crate::command::versions::versions;
 use crate::completion::{
     complete_running_names, complete_running_topologies, complete_running_versions,
@@ -32,7 +33,7 @@ use app::build_app;
 use clap::value_parser;
 use clap_complete::engine::ArgValueCompleter;
 use std::path::PathBuf;
-use wildfly_container_versions::WildFlyContainer;
+use wildfly_meta::{FeaturePackRegistry, WildFlyImage, WildFlyImageRegistry, parse_image, parse_list, ParseOptions, MetaItem};
 
 fn build_app_full() -> clap::Command {
     build_app()
@@ -173,38 +174,40 @@ fn build_app_full() -> clap::Command {
 async fn main() -> Result<()> {
     clap_complete::CompleteEnv::with_factory(build_app_full).complete();
 
+    let registry = WildFlyImageRegistry::load_default()?;
     let matches = build_app_full().get_matches();
     match matches.subcommand() {
         Some(("build", m)) => build(m).await,
         Some(("push", m)) => push(m),
 
-        Some(("start", m)) => standalone_start(m),
-        Some(("stop", m)) => standalone_stop(m),
+        Some(("start", m)) => standalone_start(m, &registry),
+        Some(("stop", m)) => standalone_stop(m, &registry),
 
         Some(("dc", sub_matches)) => match sub_matches.subcommand() {
-            Some(("start", m)) => dc_start(m),
-            Some(("stop", m)) => dc_stop(m),
+            Some(("start", m)) => dc_start(m, &registry),
+            Some(("stop", m)) => dc_stop(m, &registry),
             _ => unreachable!("Unknown subcommand"),
         },
 
         Some(("hc", sub_matches)) => match sub_matches.subcommand() {
-            Some(("start", m)) => hc_start(m),
-            Some(("stop", m)) => hc_stop(m),
+            Some(("start", m)) => hc_start(m, &registry),
+            Some(("stop", m)) => hc_stop(m, &registry),
             _ => unreachable!("Unknown subcommand"),
         },
 
         Some(("topology", sub_matches)) => match sub_matches.subcommand() {
-            Some(("start", m)) => topology_start(m),
-            Some(("stop", m)) => topology_stop(m),
+            Some(("start", m)) => topology_start(m, &registry),
+            Some(("stop", m)) => topology_stop(m, &registry),
             _ => unreachable!("Unknown subcommand"),
         },
 
-        Some(("images", _)) => images(),
-        Some(("ps", m)) => ps(m),
-        Some(("console", m)) => console(m),
-        Some(("cli", m)) => cli(m),
+        Some(("images", _)) => images(&registry),
+        Some(("ps", m)) => ps(m, &registry),
+        Some(("console", m)) => console(m, &registry),
+        Some(("cli", m)) => cli(m, &registry),
         Some(("completions", m)) => completions(m),
-        Some(("versions", _)) => versions(),
+        Some(("update", _)) => update(),
+        Some(("versions", _)) => versions(&registry),
 
         _ => unreachable!("Unknown subcommand"),
     }?;
@@ -213,12 +216,28 @@ async fn main() -> Result<()> {
 
 // ------------------------------------------------------ validation
 
-fn parse_version_enumeration(range: &str) -> Result<Vec<WildFlyContainer>, String> {
-    WildFlyContainer::enumeration(range).map_err(|err| err.to_string())
+fn parse_version_enumeration(range: &str) -> Result<Vec<WildFlyImage>, String> {
+    let registry = WildFlyImageRegistry::load_default().map_err(|e| e.to_string())?;
+    let packs = FeaturePackRegistry::load_default()
+        .unwrap_or_else(|_| FeaturePackRegistry::from_toml("config_version = 1\nfeature_packs = []").unwrap());
+    let items = parse_list(range, &registry, &packs, &ParseOptions::all()).map_err(|e| e.to_string())?;
+    let images: Vec<WildFlyImage> = items
+        .into_iter()
+        .filter_map(|item| match item {
+            MetaItem::Image(img) => Some(img),
+            _ => None,
+        })
+        .collect();
+    if images.is_empty() {
+        Err(format!("No valid WildFly versions found in '{}'", range))
+    } else {
+        Ok(images)
+    }
 }
 
-fn parse_version(version: &str) -> Result<WildFlyContainer, String> {
-    WildFlyContainer::version(version).map_err(|e| e.to_string())
+fn parse_version(version: &str) -> Result<WildFlyImage, String> {
+    let registry = WildFlyImageRegistry::load_default().map_err(|e| e.to_string())?;
+    parse_image(version, &registry).map_err(|e| e.to_string())
 }
 
 fn parse_servers(server: &str) -> Result<Vec<Server>, String> {

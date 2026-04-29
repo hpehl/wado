@@ -4,15 +4,17 @@ use crate::container::{container_network_cmd, container_run_cmd};
 use crate::wildfly::{ServerType, StandaloneInstance};
 use clap::ArgMatches;
 use futures::executor::block_on;
+use wildfly_meta::WildFlyImageRegistry;
 
 // ------------------------------------------------------ start
 
-pub fn standalone_start(matches: &ArgMatches) -> anyhow::Result<()> {
+pub fn standalone_start(matches: &ArgMatches, registry: &WildFlyImageRegistry) -> anyhow::Result<()> {
     let instances: Vec<StandaloneInstance> = prepare_instances(
         matches,
         ServerType::Standalone,
         &["name", "http", "management", "offset"],
-        |r| StandaloneInstance::new(r.admin_container, r.name, r.ports.unwrap()),
+        |r| StandaloneInstance::new(r.admin_image, r.name, r.ports.unwrap()),
+        registry,
     )?;
     block_on(start_instances(
         instances,
@@ -33,12 +35,12 @@ async fn start_instances(
             &instance.name,
             Some(&instance.ports),
             operations.clone(),
-            instance.admin_container.wildfly_container.is_dev(),
+            instance.admin_image.wildfly_image.is_dev(),
             None,
             Some(&config),
         );
         command
-            .arg(instance.admin_container.image_name())
+            .arg(instance.admin_image.image_name())
             .args(parameters.clone());
         command
     })
@@ -47,6 +49,6 @@ async fn start_instances(
 
 // ------------------------------------------------------ stop
 
-pub fn standalone_stop(matches: &ArgMatches) -> anyhow::Result<()> {
-    stop_containers_by_server_type(ServerType::Standalone, matches)
+pub fn standalone_stop(matches: &ArgMatches, registry: &WildFlyImageRegistry) -> anyhow::Result<()> {
+    stop_containers_by_server_type(ServerType::Standalone, matches, registry)
 }

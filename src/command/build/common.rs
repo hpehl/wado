@@ -5,7 +5,7 @@ use crate::progress::CommandStatus;
 use crate::resources::{
     DOMAIN_CONTROLLER_ENTRYPOINT_SH, HOST_CONTROLLER_ENTRYPOINT_SH, STANDALONE_ENTRYPOINT_SH,
 };
-use crate::wildfly::{AdminContainer, ServerType};
+use crate::wildfly::{AdminImage, ServerType};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
@@ -27,11 +27,11 @@ pub(super) fn write_entrypoint(context_dir: &Path, server_type: &ServerType) -> 
 }
 
 pub(super) fn base_template_data(
-    admin_container: &AdminContainer,
+    admin_image: &AdminImage,
 ) -> HashMap<&'static str, String> {
     let mut data = HashMap::new();
     data.insert("label-name", Label::Id.key().to_string());
-    data.insert("label-value", admin_container.identifier());
+    data.insert("label-value", admin_image.identifier());
     data.insert("entrypoint", ENTRYPOINT.to_string());
     data.insert("add-user", ADD_USER.to_string());
     data.insert("allowed-origins", ALLOWED_ORIGINS.to_string());
@@ -40,20 +40,20 @@ pub(super) fn base_template_data(
 }
 
 pub(super) fn dockerfile_data(
-    admin_container: &AdminContainer,
+    admin_image: &AdminImage,
     is_dev: bool,
 ) -> HashMap<&'static str, String> {
-    let mut data = base_template_data(admin_container);
+    let mut data = base_template_data(admin_image);
 
     if is_dev {
         data.insert("is-dev", "true".to_string());
     } else {
-        data.insert("base-image", admin_container.wildfly_container.image_name());
+        data.insert("base-image", admin_image.wildfly_image.image_ref());
     }
 
-    let use_legacy_names = !admin_container.wildfly_container.is_dev()
-        && admin_container.wildfly_container.version.major < 27;
-    match admin_container.server_type {
+    let use_legacy_names = !admin_image.wildfly_image.is_dev()
+        && admin_image.wildfly_image.version.major < 27;
+    match admin_image.server_type {
         ServerType::Standalone => {
             data.insert("is-standalone", "true".to_string());
         }
@@ -153,17 +153,17 @@ pub(super) async fn run_preconditions(mut commands: Vec<Command>) -> anyhow::Res
 }
 
 pub(super) async fn run_builds_verbose(
-    admin_containers: &[AdminContainer],
-    build_fn: impl Fn(&AdminContainer, &Path) -> anyhow::Result<Vec<Command>>,
+    admin_images: &[AdminImage],
+    build_fn: impl Fn(&AdminImage, &Path) -> anyhow::Result<Vec<Command>>,
 ) -> anyhow::Result<Vec<CommandStatus>> {
     let mut statuses = Vec::new();
 
-    for admin_container in admin_containers {
-        let image_name = admin_container.image_name();
+    for admin_image in admin_images {
+        let image_name = admin_image.image_name();
         println!("\n--- {} ---", image_name);
 
         let temp_dir = tempdir()?;
-        let status = run_preconditions(build_fn(admin_container, temp_dir.as_ref())?)
+        let status = run_preconditions(build_fn(admin_image, temp_dir.as_ref())?)
             .await?
             .stdout(Stdio::inherit())
             .stderr(Stdio::inherit())

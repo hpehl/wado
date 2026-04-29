@@ -1,7 +1,7 @@
-use crate::args::admin_containers_argument;
+use crate::args::admin_images_argument;
 use crate::container::{container_command, verify_container_command};
 use crate::progress::{CommandStatus, Progress, stderr_reader, summary};
-use crate::wildfly::AdminContainer;
+use crate::wildfly::AdminImage;
 use clap::ArgMatches;
 use futures::executor::block_on;
 use indicatif::MultiProgress;
@@ -12,21 +12,21 @@ use tokio::time::Instant;
 pub fn push(matches: &ArgMatches) -> anyhow::Result<()> {
     verify_container_command()?;
 
-    let admin_containers = admin_containers_argument(matches);
+    let admin_images = admin_images_argument(matches);
     let chunk_size = *matches.get_one::<u16>("chunks").unwrap_or(&0);
     if chunk_size > 0 {
-        push_chunks(&admin_containers, chunk_size)?;
+        push_chunks(&admin_images, chunk_size)?;
     } else {
-        push_all(&admin_containers)?;
+        push_all(&admin_images)?;
     }
     Ok(())
 }
 
-fn push_chunks(admin_containers: &[AdminContainer], chunk_size: u16) -> anyhow::Result<()> {
-    let count = admin_containers.len();
+fn push_chunks(admin_images: &[AdminImage], chunk_size: u16) -> anyhow::Result<()> {
+    let count = admin_images.len();
     let instant = Instant::now();
     let mut all_status: Vec<CommandStatus> = Vec::with_capacity(count);
-    let chunks = admin_containers.chunks(chunk_size as usize);
+    let chunks = admin_images.chunks(chunk_size as usize);
     for chunk in chunks {
         match block_on(start_push(chunk.to_vec())) {
             Ok(status) => {
@@ -42,32 +42,32 @@ fn push_chunks(admin_containers: &[AdminContainer], chunk_size: u16) -> anyhow::
     Ok(())
 }
 
-fn push_all(admin_containers: &[AdminContainer]) -> anyhow::Result<()> {
-    let count = admin_containers.len();
+fn push_all(admin_images: &[AdminImage]) -> anyhow::Result<()> {
+    let count = admin_images.len();
     let instant = Instant::now();
-    let status = block_on(start_push(admin_containers.to_vec()))?;
+    let status = block_on(start_push(admin_images.to_vec()))?;
     summary("Push", "images", count, instant, status);
     Ok(())
 }
 
-async fn start_push(admin_containers: Vec<AdminContainer>) -> anyhow::Result<Vec<CommandStatus>> {
+async fn start_push(admin_images: Vec<AdminImage>) -> anyhow::Result<Vec<CommandStatus>> {
     let multi_progress = MultiProgress::new();
     let mut commands = JoinSet::new();
 
-    for admin_container in admin_containers {
+    for admin_image in admin_images {
         let progress = Progress::join(
             &multi_progress,
-            &admin_container.wildfly_container.display_version(),
-            &admin_container.image_name(),
+            &admin_image.wildfly_image.short_name(),
+            &admin_image.image_name(),
         );
 
         let mut command = container_command()?;
-        if admin_container.wildfly_container.is_dev()
-            || !admin_container.wildfly_container.platforms.is_empty()
+        if admin_image.wildfly_image.is_dev()
+            || !admin_image.wildfly_image.platforms.is_empty()
         {
             command.arg("manifest");
         }
-        command.arg("push").arg(admin_container.image_name());
+        command.arg("push").arg(admin_image.image_name());
 
         let mut child = command
             .stdout(Stdio::piped())

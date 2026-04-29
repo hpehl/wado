@@ -1,27 +1,27 @@
 use crate::wildfly::{
-    AdminContainer, DEFAULT_SERVER_OFFSET, Server, ServerType, StartSpec, apply_offsets,
+    AdminImage, DEFAULT_SERVER_OFFSET, Server, ServerType, StartSpec, apply_offsets,
 };
 use anyhow::bail;
 use clap::ArgMatches;
 use fs::read_to_string;
 use std::fs;
 use std::path::Path;
-use wildfly_container_versions::WildFlyContainer;
+use wildfly_meta::WildFlyImage;
 
 // ------------------------------------------------------ sorted a-z
 
-pub fn admin_containers_argument(matches: &ArgMatches) -> Vec<AdminContainer> {
+pub fn admin_images_argument(matches: &ArgMatches) -> Vec<AdminImage> {
     let standalone = matches.get_flag("standalone");
     let domain = matches.get_flag("domain");
     versions_argument(matches)
         .iter()
         .flat_map(|wc| {
             if standalone {
-                vec![AdminContainer::new(wc.clone(), ServerType::Standalone)]
+                vec![AdminImage::new(wc.clone(), ServerType::Standalone)]
             } else if domain {
-                AdminContainer::domain(wc.clone())
+                AdminImage::domain(wc.clone())
             } else {
-                AdminContainer::all_types(wc.clone())
+                AdminImage::all_types(wc.clone())
             }
         })
         .collect::<Vec<_>>()
@@ -97,10 +97,10 @@ pub fn parameters_argument(matches: &ArgMatches) -> Vec<String> {
 
 pub fn start_spec(
     matches: &ArgMatches,
-    wildfly_container: &WildFlyContainer,
+    wildfly_image: &WildFlyImage,
     server_type: ServerType,
 ) -> StartSpec {
-    let admin_container = AdminContainer::new(wildfly_container.clone(), server_type);
+    let admin_image = AdminImage::new(wildfly_image.clone(), server_type);
     let offset = matches.get_one::<u16>("offset").copied().unwrap_or(0);
     let has_offset = offset > 0;
     let custom_http = matches
@@ -108,7 +108,7 @@ pub fn start_spec(
         .map(|p| p + offset)
         .or_else(|| {
             if has_offset {
-                Some(wildfly_container.http_port() + offset)
+                Some(wildfly_image.http_port() + offset)
             } else {
                 None
             }
@@ -118,13 +118,13 @@ pub fn start_spec(
         .map(|p| p + offset)
         .or_else(|| {
             if has_offset {
-                Some(wildfly_container.management_port() + offset)
+                Some(wildfly_image.management_port() + offset)
             } else {
                 None
             }
         });
     StartSpec {
-        admin_container,
+        admin_image,
         custom_name: matches.get_one::<String>("name").cloned(),
         custom_http,
         custom_management,
@@ -156,9 +156,9 @@ pub fn username_password_argument(matches: &ArgMatches) -> (&str, &str) {
     (username, password)
 }
 
-pub fn versions_argument(matches: &ArgMatches) -> Vec<WildFlyContainer> {
+pub fn versions_argument(matches: &ArgMatches) -> Vec<WildFlyImage> {
     matches
-        .get_one::<Vec<WildFlyContainer>>("wildfly-version")
+        .get_one::<Vec<WildFlyImage>>("wildfly-version")
         .expect("Argument <wildfly-version> expected!")
         .clone()
 }

@@ -28,6 +28,7 @@ The container names and published ports follow default values based on the WildF
         - [Topology](#topology)
     - [Images](#images-1)
     - [PS](#ps)
+    - [Update](#update)
     - [Versions](#versions)
     - [Management Clients](#management-clients)
         - [Console](#console)
@@ -431,6 +432,14 @@ Lists all running wado containers. Use `--standalone` or `--domain` to filter by
 wado ps
 wado ps --standalone
 wado ps --domain
+```
+
+## Update
+
+Downloads or updates the WildFly version data from GitHub. The data is stored in `~/.config/wildfly-meta/` and contains all supported WildFly versions with their metadata. Run this command to get the latest version information.
+
+```shell
+wado update
 ```
 
 ## Versions

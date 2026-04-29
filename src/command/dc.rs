@@ -5,15 +5,17 @@ use crate::container::{add_servers, container_network_cmd, container_run_cmd};
 use crate::wildfly::{DomainController, Server, ServerType};
 use clap::ArgMatches;
 use futures::executor::block_on;
+use wildfly_meta::WildFlyImageRegistry;
 
 // ------------------------------------------------------ start
 
-pub fn dc_start(matches: &ArgMatches) -> anyhow::Result<()> {
+pub fn dc_start(matches: &ArgMatches, registry: &WildFlyImageRegistry) -> anyhow::Result<()> {
     let instances: Vec<DomainController> = prepare_instances(
         matches,
         ServerType::DomainController,
         &["name", "http", "management", "offset"],
-        |r| DomainController::new(r.admin_container, r.name, r.ports.unwrap()),
+        |r| DomainController::new(r.admin_image, r.name, r.ports.unwrap()),
+        registry,
     )?;
     block_on(start_instances(
         instances,
@@ -36,7 +38,7 @@ async fn start_instances(
             &instance.name,
             Some(&instance.ports),
             operations.clone(),
-            instance.admin_container.wildfly_container.is_dev(),
+            instance.admin_image.wildfly_image.is_dev(),
             None,
             Some(&config),
         );
@@ -47,7 +49,7 @@ async fn start_instances(
             .arg(format!("{}={}", HOSTNAME_VARIABLE, instance.name));
         let mut command = add_servers(command, &instance.name, servers.clone());
         command
-            .arg(instance.admin_container.image_name())
+            .arg(instance.admin_image.image_name())
             .args(parameters.clone());
         command
     })
@@ -56,6 +58,6 @@ async fn start_instances(
 
 // ------------------------------------------------------ stop
 
-pub fn dc_stop(matches: &ArgMatches) -> anyhow::Result<()> {
-    stop_containers_by_server_type(ServerType::DomainController, matches)
+pub fn dc_stop(matches: &ArgMatches, registry: &WildFlyImageRegistry) -> anyhow::Result<()> {
+    stop_containers_by_server_type(ServerType::DomainController, matches, registry)
 }

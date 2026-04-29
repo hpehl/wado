@@ -1,8 +1,17 @@
 use std::ffi::OsStr;
+use std::sync::OnceLock;
 
 use clap_complete::engine::CompletionCandidate;
 use semver::Version;
-use wildfly_container_versions::{VERSIONS, WildFlyContainer};
+use wildfly_meta::{WildFlyImageRegistry, parse_image};
+
+static REGISTRY: OnceLock<WildFlyImageRegistry> = OnceLock::new();
+
+fn registry() -> &'static WildFlyImageRegistry {
+    REGISTRY.get_or_init(|| {
+        WildFlyImageRegistry::load_default().expect("failed to load image registry")
+    })
+}
 
 pub fn complete_versions(current: &OsStr) -> Vec<CompletionCandidate> {
     let input = current.to_str().unwrap_or("");
@@ -54,7 +63,7 @@ pub fn parse_prefix_token(parameter: Option<&str>) -> (&str, &str) {
 }
 
 fn parse_version(input: &str) -> Option<Version> {
-    WildFlyContainer::version(input).ok().map(|wfc| wfc.version)
+    parse_image(input, registry()).ok().map(|img| img.version)
 }
 
 fn versions_after(start: &Version) -> Vec<String> {
@@ -72,7 +81,7 @@ fn versions_after(start: &Version) -> Vec<String> {
 }
 
 fn suggest_after_dots(after_dots: &str, start_after: &Version) -> Vec<String> {
-    if WildFlyContainer::version(after_dots).is_ok() {
+    if parse_image(after_dots, registry()).is_ok() {
         return vec![];
     }
 
@@ -103,12 +112,12 @@ fn suggest_after_dots(after_dots: &str, start_after: &Version) -> Vec<String> {
 }
 
 fn all_versions() -> Vec<Version> {
-    VERSIONS.values().map(|wfc| wfc.version.clone()).collect()
+    registry().all().iter().map(|img| img.version.clone()).collect()
 }
 
 fn all_simple_versions() -> Vec<String> {
     let mut versions: Vec<String> = all_versions().iter().map(simple_version).collect();
-    if WildFlyContainer::version("dev").is_ok() {
+    if parse_image("dev", registry()).is_ok() {
         versions.push("dev".to_string());
     }
     versions
