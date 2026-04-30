@@ -178,7 +178,7 @@ mod tests {
     use super::*;
 
     fn test_registry() -> WildFlyImageRegistry {
-        WildFlyImageRegistry::load_default().expect("failed to load image registry")
+        WildFlyImageRegistry::load_default("").expect("failed to load image registry")
     }
 
     #[test]

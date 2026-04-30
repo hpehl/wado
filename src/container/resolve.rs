@@ -137,7 +137,7 @@ mod tests {
     use wildfly_meta::parse_wildfly_image;
 
     fn test_registry() -> WildFlyImageRegistry {
-        WildFlyImageRegistry::load_default().expect("failed to load image registry")
+        WildFlyImageRegistry::load_default("").expect("failed to load image registry")
     }
 
     fn sa_spec(version: &str) -> StartSpec {

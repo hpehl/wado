@@ -35,7 +35,6 @@ use clap_complete::engine::ArgValueCompleter;
 use std::path::PathBuf;
 use wildfly_meta::{
     ParseOptions, WildFlyImage, WildFlyImageRegistry, parse_wildfly_image, parse_wildfly_images,
-    wildfly_images_path,
 };
 
 fn build_app_full() -> clap::Command {
@@ -223,23 +222,23 @@ async fn main() -> Result<()> {
 
 // ------------------------------------------------------ registry
 
+const RESOLUTION_HINT: &str = "Run 'wado update' to fix this.";
+
 fn load_registry() -> Result<WildFlyImageRegistry> {
-    if !wildfly_images_path().exists() {
-        eprintln!("WildFly version data not found. Downloading...");
-        update()?;
-    }
-    WildFlyImageRegistry::load_default()
+    WildFlyImageRegistry::load_or_update(RESOLUTION_HINT)
 }
 
 // ------------------------------------------------------ validation
 
 fn parse_version_enumeration(range: &str) -> Result<Vec<WildFlyImage>, String> {
-    let registry = WildFlyImageRegistry::load_default().map_err(|e| e.to_string())?;
+    let registry =
+        WildFlyImageRegistry::load_default(RESOLUTION_HINT).map_err(|e| e.to_string())?;
     parse_wildfly_images(range, &registry, &ParseOptions::all()).map_err(|e| e.to_string())
 }
 
 fn parse_version(version: &str) -> Result<WildFlyImage, String> {
-    let registry = WildFlyImageRegistry::load_default().map_err(|e| e.to_string())?;
+    let registry =
+        WildFlyImageRegistry::load_default(RESOLUTION_HINT).map_err(|e| e.to_string())?;
     parse_wildfly_image(version, &registry).map_err(|e| e.to_string())
 }
 

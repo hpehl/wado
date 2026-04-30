@@ -35,7 +35,7 @@ static PACKAGE: Emoji<'_, '_> = Emoji("\u{1f4e6}  ", "");
 static SPARKLE: Emoji<'_, '_> = Emoji("\u{2728}  ", ":-)  ");
 
 fn latest_platforms() -> Vec<String> {
-    WildFlyImageRegistry::load_default()
+    WildFlyImageRegistry::load_default("")
         .ok()
         .and_then(|r| r.last().map(|img| img.platforms.clone()))
         .unwrap_or_default()

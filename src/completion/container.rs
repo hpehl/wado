@@ -15,7 +15,8 @@ static REGISTRY: OnceLock<WildFlyImageRegistry> = OnceLock::new();
 
 fn registry() -> &'static WildFlyImageRegistry {
     REGISTRY.get_or_init(|| {
-        WildFlyImageRegistry::load_default().expect("failed to load image registry")
+        WildFlyImageRegistry::load_default("Run 'wado update' to fix this.")
+            .expect("failed to load image registry")
     })
 }
 
