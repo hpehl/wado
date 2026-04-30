@@ -116,9 +116,6 @@ this [BNF](https://bnfplayground.pauliankline.com/?bnf=%3Cexpression%3E%20%3A%3A
 - 5x33..35
 - 20,25..29,2x31,3x32,4x33..35
 
-All supported versions are
-listed [here](https://github.com/hpehl/wildfly-container-versions?tab=readme-ov-file#supported-versions).
-
 ## Dev Version
 
 In addition to released versions, the special keyword `dev` can be used to build WildFly from source. Dev builds clone
@@ -141,7 +138,7 @@ variants:
 - Host controller: [quay.io/wado/wado-hc](https://quay.io/repository/wado/wado-hc)
 
 Each image contains tags for
-all [supported versions](https://github.com/hpehl/wildfly-container-versions?tab=readme-ov-file#supported-versions).
+all [supported versions](https://github.com/hpehl/wildfly-meta?tab=readme-ov-file#supported-versions).
 
 ## Image Modifications
 
@@ -214,7 +211,7 @@ Builds standalone, domain controller, and host controller images based on the of
 `admin:admin` by default). You can restrict the build to `--standalone` or `--domain` images only, and use
 `--chunks` to build in parallel batches.
 
-Predefined images for all [supported versions](https://github.com/hpehl/wildfly-container-versions?tab=readme-ov-file#supported-versions) are available at https://quay.io/organization/wado. Build your own local images if you want to change the username and password.
+Predefined images for all [supported versions](https://github.com/hpehl/wildfly-meta?tab=readme-ov-file#supported-versions) are available at https://quay.io/organization/wado. Build your own local images if you want to change the username and password.
 
 ```shell
 wado build 34

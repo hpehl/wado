@@ -26,30 +26,19 @@ The crate is a binary (`src/main.rs`).
 
 - **`main.rs`** - Entry point. Builds the full CLI with clap, wires up argument parsers and version completers, dispatches subcommands. Uses `#[tokio::main]` for async runtime.
 - **`app.rs`** - Defines the CLI structure (subcommands, args, flags) using clap's builder API. Separated from `main.rs` to keep the parser/completer wiring out of the app definition.
-- **`wildfly.rs`** - Core domain model: `ServerType` (sa/dc/hc), `AdminContainer`, `Ports`, `StandaloneInstance`, `DomainController`, `HostController`, `ContainerInstance`, `Server`, `ManagementClient`. Contains the `Server::parse_server()` parser and all unit tests.
-- **`container.rs`** - Orchestrates podman/docker commands: run, stop, ps, network, inspect. Detects container runtime via `which`. Handles auto-incrementing container names/ports for duplicate versions (`ensure_unique_names`, `running_counts`). All container operations are async (tokio).
-- **`standalone.rs`** - Standalone server start/stop logic. Builds `StandaloneInstance` from CLI args.
-- **`dc.rs`** - Domain controller start/stop logic. Builds `DomainController` from CLI args.
-- **`hc.rs`** - Host controller start/stop logic. Builds `HostController` from CLI args, connects to a running domain controller.
-- **`build/`** - Image build logic (module directory: `mod.rs`, `common.rs`, `stable.rs`, `dev.rs`). Renders Dockerfiles from Handlebars templates, manages secrets for credentials, supports chunked parallel builds. Separate paths for stable and dev image builds.
-- **`cli.rs`** - JBoss CLI integration. Downloads and runs `jboss-cli` against running containers.
-- **`console.rs`** - Opens the WildFly management console in a browser for running containers.
-- **`ps.rs`** - Lists running wado containers in a formatted table.
-- **`images.rs`** - Lists local wado images with status (local, in-use).
-- **`versions.rs`** - Lists all supported WildFly versions in a formatted table (version, full version, core version, repository).
-- **`push.rs`** - Pushes built images to the container registry, supports chunked parallel pushes.
+- **`wildfly/`** - Core domain model (module directory): `ServerType` (sa/dc/hc), `AdminImage`, `Ports`, `StandaloneInstance`, `DomainController`, `HostController`, `ContainerInstance`, `Server`, `ManagementClient`. Contains the `Server::parse_server()` parser and all unit tests.
+- **`container/`** - Container runtime interaction (module directory): orchestrates podman/docker commands (run, stop, ps, network, inspect), detects runtime via `which`, handles auto-incrementing container names/ports for duplicate versions. All container operations are async (tokio).
+- **`command/`** - Subcommand implementations (module directory): `standalone.rs`, `dc.rs`, `hc.rs`, `build/` (image builds with Handlebars templates), `cli.rs` (JBoss CLI), `console.rs` (management console), `ps.rs`, `images.rs`, `versions.rs`, `push.rs`, `topology/` (YAML-based domain topologies), `update.rs`, `completions.rs`, `lifecycle.rs`.
 - **`progress.rs`** - Progress bar utilities for long-running container operations.
-- **`topology.rs`** - Topology subcommand for starting/stopping complete domain topologies from YAML files.
-- **`update.rs`** - Downloads or updates WildFly version data from GitHub using `wildfly_meta::update_images()`.
+- **`completion/`** - Shell completion logic (module directory): version completers, running container completers, topology completers.
 - **`resources.rs`** - Embedded Dockerfile templates and entrypoint shell scripts for all three server types (standalone, domain controller, host controller).
 - **`constants.rs`** - Container naming, labels, environment variables, sed expressions for XML config modifications.
 - **`args.rs`** - Shared argument extraction helpers used across subcommands.
-- **`completions.rs`** - Shell completion generation for bash, zsh, fish, etc.
-- **`wildfly_version.rs`** - Shell completion logic for WildFly version arguments.
+- **`label.rs`** - OCI label helpers for filtering and formatting container metadata.
 
 ### External Dependency
 
-`wildfly_container_versions` crate provides the `WildFlyContainer` type and `VERSIONS` map with all supported WildFly versions, their base images, platform support, and version metadata. Version parsing (`WildFlyContainer::enumeration()`, `WildFlyContainer::version()`) lives there.
+`wildfly_meta` crate provides `WildFlyImage`, `WildFlyImageRegistry`, and version expression parsing (`parse_wildfly_image()`, `parse_wildfly_images()`). The registry is loaded from `~/.config/wildfly-meta/` and can be updated via `wado update`.
 
 ### Patterns
 
