@@ -16,7 +16,7 @@ use futures::executor::block_on;
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 use tokio::try_join;
-use wildfly_meta::{WildFlyImageRegistry, parse_image};
+use wildfly_meta::{WildFlyImageRegistry, parse_wildfly_image};
 
 use super::model::{HostSetup, TopologySetup};
 
@@ -29,7 +29,7 @@ pub fn topology_start(matches: &ArgMatches, registry: &WildFlyImageRegistry) -> 
 
     let dc_host = setup.dc_host();
     let dc_version = dc_host.effective_version(&setup.version);
-    let dc_wf = parse_image(dc_version, registry).map_err(|e| anyhow::anyhow!("{}", e))?;
+    let dc_wf = parse_wildfly_image(dc_version, registry).map_err(|e| anyhow::anyhow!("{}", e))?;
     let dc_spec = StartSpec {
         admin_image: AdminImage::new(dc_wf, ServerType::DomainController),
         custom_name: dc_host.name.clone(),
@@ -82,7 +82,7 @@ fn build_hc_specs(
         .iter()
         .map(|host| {
             let version = host.effective_version(default_version);
-            let wf = parse_image(version, registry).map_err(|e| anyhow::anyhow!("{}", e))?;
+            let wf = parse_wildfly_image(version, registry).map_err(|e| anyhow::anyhow!("{}", e))?;
             Ok(StartSpec {
                 admin_image: AdminImage::new(wf, ServerType::HostController),
                 custom_name: host.name.clone(),

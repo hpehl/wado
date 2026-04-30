@@ -94,7 +94,7 @@ impl ManagementClient {
 mod tests {
     use super::*;
     use crate::wildfly::{AdminImage, ServerType};
-    use wildfly_meta::parse_image;
+    use wildfly_meta::parse_wildfly_image;
 
     fn test_registry() -> WildFlyImageRegistry {
         WildFlyImageRegistry::load_default().expect("failed to load image registry")
@@ -102,7 +102,7 @@ mod tests {
 
     fn wimg(version: &str) -> WildFlyImage {
         let registry = test_registry();
-        parse_image(version, &registry).unwrap()
+        parse_wildfly_image(version, &registry).unwrap()
     }
 
     #[test]

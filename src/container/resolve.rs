@@ -134,7 +134,7 @@ pub async fn running_instance_counts(
 mod tests {
     use super::*;
     use crate::wildfly::{AdminImage, Ports, StartSpec};
-    use wildfly_meta::parse_image;
+    use wildfly_meta::parse_wildfly_image;
 
     fn test_registry() -> WildFlyImageRegistry {
         WildFlyImageRegistry::load_default().expect("failed to load image registry")
@@ -142,7 +142,7 @@ mod tests {
 
     fn sa_spec(version: &str) -> StartSpec {
         let registry = test_registry();
-        let wc = parse_image(version, &registry).unwrap();
+        let wc = parse_wildfly_image(version, &registry).unwrap();
         StartSpec {
             admin_image: AdminImage::new(wc, ServerType::Standalone),
             custom_name: None,
@@ -287,7 +287,7 @@ mod tests {
     #[test]
     fn hc_no_ports() {
         let registry = test_registry();
-        let wc = parse_image("39", &registry).unwrap();
+        let wc = parse_wildfly_image("39", &registry).unwrap();
         let spec = StartSpec {
             admin_image: AdminImage::new(wc, ServerType::HostController),
             custom_name: None,

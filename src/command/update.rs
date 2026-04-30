@@ -1,9 +1,9 @@
 use std::thread;
 
-use wildfly_meta::{UpdateStatus, update_images};
+use wildfly_meta::{UpdateStatus, update_wildfly_images};
 
 pub fn update() -> anyhow::Result<()> {
-    let status = thread::spawn(update_images)
+    let status = thread::spawn(update_wildfly_images)
         .join()
         .map_err(|_| anyhow::anyhow!("Update thread panicked"))??;
     match &status {

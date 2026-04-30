@@ -3,17 +3,20 @@ use std::sync::OnceLock;
 
 use clap_complete::engine::CompletionCandidate;
 use semver::Version;
-use wildfly_meta::{WildFlyImageRegistry, parse_image};
+use wildfly_meta::{WildFlyImageRegistry, parse_wildfly_image};
 
-static REGISTRY: OnceLock<WildFlyImageRegistry> = OnceLock::new();
+static REGISTRY: OnceLock<Option<WildFlyImageRegistry>> = OnceLock::new();
 
-fn registry() -> &'static WildFlyImageRegistry {
-    REGISTRY.get_or_init(|| {
-        WildFlyImageRegistry::load_default().expect("failed to load image registry")
-    })
+fn registry() -> Option<&'static WildFlyImageRegistry> {
+    REGISTRY
+        .get_or_init(|| WildFlyImageRegistry::load_default().ok())
+        .as_ref()
 }
 
 pub fn complete_versions(current: &OsStr) -> Vec<CompletionCandidate> {
+    if registry().is_none() {
+        return vec![];
+    }
     let input = current.to_str().unwrap_or("");
     let parameter = if input.is_empty() { None } else { Some(input) };
     let (prefix_0, prefix_1, suggestions) = find_suggestions(parameter);
@@ -63,7 +66,9 @@ pub fn parse_prefix_token(parameter: Option<&str>) -> (&str, &str) {
 }
 
 fn parse_version(input: &str) -> Option<Version> {
-    parse_image(input, registry()).ok().map(|img| img.version)
+    registry()
+        .and_then(|r| parse_wildfly_image(input, r).ok())
+        .map(|img| img.version)
 }
 
 fn versions_after(start: &Version) -> Vec<String> {
@@ -81,7 +86,9 @@ fn versions_after(start: &Version) -> Vec<String> {
 }
 
 fn suggest_after_dots(after_dots: &str, start_after: &Version) -> Vec<String> {
-    if parse_image(after_dots, registry()).is_ok() {
+    if let Some(r) = registry()
+        && parse_wildfly_image(after_dots, r).is_ok()
+    {
         return vec![];
     }
 
@@ -113,15 +120,15 @@ fn suggest_after_dots(after_dots: &str, start_after: &Version) -> Vec<String> {
 
 fn all_versions() -> Vec<Version> {
     registry()
-        .all()
-        .iter()
-        .map(|img| img.version.clone())
-        .collect()
+        .map(|r| r.all().iter().map(|img| img.version.clone()).collect())
+        .unwrap_or_default()
 }
 
 fn all_simple_versions() -> Vec<String> {
     let mut versions: Vec<String> = all_versions().iter().map(simple_version).collect();
-    if parse_image("dev", registry()).is_ok() {
+    if let Some(r) = registry()
+        && parse_wildfly_image("dev", r).is_ok()
+    {
         versions.push("dev".to_string());
     }
     versions

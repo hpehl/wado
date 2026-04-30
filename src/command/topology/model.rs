@@ -4,7 +4,7 @@ use serde::Deserialize;
 use serde::de;
 use std::collections::HashSet;
 use std::path::Path;
-use wildfly_meta::{WildFlyImage, WildFlyImageRegistry, parse_image};
+use wildfly_meta::{WildFlyImage, WildFlyImageRegistry, parse_wildfly_image};
 
 #[derive(Deserialize)]
 pub struct TopologySetup {
@@ -113,7 +113,7 @@ impl HostSetup {
 }
 
 fn resolve_version(version: &str, registry: &WildFlyImageRegistry) -> anyhow::Result<WildFlyImage> {
-    parse_image(version, registry).map_err(|e| anyhow::anyhow!("{}", e))
+    parse_wildfly_image(version, registry).map_err(|e| anyhow::anyhow!("{}", e))
 }
 
 struct VersionVisitor;
