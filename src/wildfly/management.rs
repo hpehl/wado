@@ -97,7 +97,8 @@ mod tests {
     use wildfly_meta::parse_wildfly_image;
 
     fn test_registry() -> WildFlyImageRegistry {
-        WildFlyImageRegistry::load_default("").expect("failed to load image registry")
+        WildFlyImageRegistry::from_toml(include_str!("../../testdata/wildfly-images.toml"))
+            .expect("failed to parse test registry")
     }
 
     fn wimg(version: &str) -> WildFlyImage {

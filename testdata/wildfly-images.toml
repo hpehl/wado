@@ -1,0 +1,55 @@
+config_version = 1
+
+[[wildfly_images]]
+major = 10
+minor = 0
+version = "10.0.0"
+core_version = "2.0.10"
+suffix = "Final"
+repository = "docker.io/jboss/wildfly"
+platforms = []
+
+[[wildfly_images]]
+major = 26
+minor = 1
+version = "26.1.3"
+core_version = "18.1.2"
+suffix = "Final-jdk17"
+repository = "quay.io/wildfly/wildfly"
+platforms = ["linux/amd64", "linux/arm64"]
+
+[[wildfly_images]]
+major = 33
+minor = 0
+version = "33.0.2"
+core_version = "25.0.2"
+suffix = "Final-jdk21"
+repository = "quay.io/wildfly/wildfly"
+platforms = ["linux/amd64", "linux/arm64", "linux/s390x", "linux/ppc64le"]
+
+[[wildfly_images]]
+major = 34
+minor = 0
+version = "34.0.1"
+core_version = "26.0.1"
+suffix = "Final-jdk21"
+repository = "quay.io/wildfly/wildfly"
+platforms = ["linux/amd64", "linux/arm64", "linux/s390x", "linux/ppc64le"]
+
+[[wildfly_images]]
+major = 35
+minor = 0
+version = "35.0.1"
+core_version = "27.0.1"
+suffix = "Final-jdk21"
+repository = "quay.io/wildfly/wildfly"
+platforms = ["linux/amd64", "linux/arm64", "linux/s390x", "linux/ppc64le"]
+
+[[wildfly_images]]
+major = 39
+minor = 0
+version = "39.0.1"
+core_version = "31.0.3"
+suffix = "Final-2-jdk21"
+repository = "quay.io/wildfly/wildfly"
+platforms = ["linux/amd64", "linux/arm64", "linux/s390x", "linux/ppc64le"]
