@@ -34,7 +34,7 @@ use clap::value_parser;
 use clap_complete::engine::ArgValueCompleter;
 use std::path::PathBuf;
 use wildfly_meta::{
-    ParseOptions, WildFlyImage, WildFlyImageRegistry, parse_wildfly_image, parse_wildfly_images,
+    DslOptions, WildFlyImage, WildFlyImageRegistry, parse_wildfly_image, parse_wildfly_images,
 };
 
 fn build_app_full() -> clap::Command {
@@ -233,7 +233,7 @@ fn load_registry() -> Result<WildFlyImageRegistry> {
 fn parse_version_enumeration(range: &str) -> Result<Vec<WildFlyImage>, String> {
     let registry =
         WildFlyImageRegistry::load_default(RESOLUTION_HINT).map_err(|e| e.to_string())?;
-    parse_wildfly_images(range, &registry, &ParseOptions::all()).map_err(|e| e.to_string())
+    parse_wildfly_images(range, &registry, &DslOptions::all()).map_err(|e| e.to_string())
 }
 
 fn parse_version(version: &str) -> Result<WildFlyImage, String> {

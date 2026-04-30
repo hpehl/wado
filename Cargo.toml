@@ -28,7 +28,7 @@ tempfile = "3.27.0"
 tokio = { version = "1.52.0", features = ["full"] }
 webbrowser = "1.2.0"
 which = "8.0.2"
-wildfly_meta = "0.4.1"
+wildfly_meta = "0.5.0"
 serde = { version = "1", features = ["derive"] }
 serde_yml = "0.0.12"
 

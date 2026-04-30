@@ -2,7 +2,7 @@ use std::ffi::OsStr;
 use std::sync::OnceLock;
 
 use clap_complete::engine::CompletionCandidate;
-use wildfly_meta::{CompletionOptions, WildFlyImageRegistry, suggest_wildfly_images};
+use wildfly_meta::{DslOptions, WildFlyImageRegistry, suggest_wildfly_images};
 
 static REGISTRY: OnceLock<Option<WildFlyImageRegistry>> = OnceLock::new();
 
@@ -17,7 +17,7 @@ pub fn complete_versions(current: &OsStr) -> Vec<CompletionCandidate> {
         return vec![];
     };
     let input = current.to_str().unwrap_or("");
-    suggest_wildfly_images(input, registry, &CompletionOptions::all())
+    suggest_wildfly_images(input, registry, &DslOptions::all())
         .into_iter()
         .map(CompletionCandidate::new)
         .collect()
