@@ -82,7 +82,8 @@ fn build_hc_specs(
         .iter()
         .map(|host| {
             let version = host.effective_version(default_version);
-            let wf = parse_wildfly_image(version, registry).map_err(|e| anyhow::anyhow!("{}", e))?;
+            let wf =
+                parse_wildfly_image(version, registry).map_err(|e| anyhow::anyhow!("{}", e))?;
             Ok(StartSpec {
                 admin_image: AdminImage::new(wf, ServerType::HostController),
                 custom_name: host.name.clone(),
