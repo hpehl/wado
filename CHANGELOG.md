@@ -7,15 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.5.0] - 2026-04-30
-
 ### Added
 
 - Add `update` subcommand to download or update WildFly version data from GitHub
 
 ### Changed
 
-- Replace `wildfly_container_versions` with `wildfly_meta` crate for version metadata, registry loading, and version expression parsing
+- Replace `wildfly_container_versions` with
+  `wildfly_meta` crate for version metadata, registry loading, and version expression parsing
 - Delegate version completion logic to `wildfly_meta`
 - Remove library target — wado is now a pure binary crate
 - Update documentation links from `wildfly-container-versions` to `wildfly-meta`
@@ -421,10 +420,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - First release 🎉
 
-[Unreleased]: https://github.com/hpehl/wado/compare/v0.5.0...HEAD
-[0.5.0]: https://github.com/hpehl/wado/compare/v0.4.13...v0.5.0
+[Unreleased]: https://github.com/hpehl/wado/compare/v0.4.13...HEAD
+
 [0.4.13]: https://github.com/hpehl/wado/compare/v0.4.12...v0.4.13
+
 [0.4.12]: https://github.com/hpehl/wado/compare/v0.4.11...v0.4.12
+
 [0.4.11]: https://github.com/hpehl/wado/compare/v0.4.10...v0.4.11
 
 [0.4.10]: https://github.com/hpehl/wado/compare/v0.4.9...v0.4.10
