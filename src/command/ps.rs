@@ -21,6 +21,11 @@ pub fn ps(matches: &ArgMatches, registry: &WildFlyImageRegistry) -> anyhow::Resu
         server_types.push(HostController);
     }
     let mut instances = block_on(container_ps(server_types, None, None, true, registry))?;
+    if instances.is_empty() {
+        println!("\nNo running WildFly containers found.");
+        return Ok(());
+    }
+
     instances.sort();
     let mut table = Table::new();
     table
@@ -45,6 +50,6 @@ pub fn ps(matches: &ArgMatches, registry: &WildFlyImageRegistry) -> anyhow::Resu
             Cell::new(instance.container_id).fg(Color::Grey),
         ]);
     }
-    println!("{table}");
+    println!("\n{table}");
     Ok(())
 }
