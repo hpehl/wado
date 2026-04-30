@@ -9,7 +9,7 @@ images but are intended more for the development and testing of WildFly and its 
 The container names and published ports follow default values based on the WildFly version.
 
 - [Installation](#installation)
-- [Versions](#versions)
+- [Versions](#wildfly-versions)
 - [Images](#images)
 - [Containers](#containers)
 - [Commands](#commands)
@@ -27,12 +27,12 @@ The container names and published ports follow default values based on the WildF
             - [Stop](#stop-2)
         - [Topology](#topology)
     - [Images](#images-1)
-    - [PS](#ps)
-    - [Update](#update)
     - [Versions](#versions)
+    - [PS](#ps)
     - [Management Clients](#management-clients)
         - [Console](#console)
         - [CLI](#cli)
+    - [Update](#update)
 
 # Installation
 
@@ -83,7 +83,7 @@ wado completions fish
 
 Supported shells: `bash`, `zsh`, `fish`, `elvish`, `powershell`.
 
-# Versions
+# WildFly Versions
 
 Most commands require a WildFly version expression.
 Version expressions are either short versions, multipliers, ranges, enumerations, or a combination of them.
@@ -424,6 +424,14 @@ Lists all locally available standalone, domain controller, and host controller i
 wado images
 ```
 
+## Versions
+
+Lists all supported WildFly versions with their full version number, WildFly Core version, and container image repository.
+
+```shell
+wado versions
+```
+
 ## PS
 
 Lists all running wado containers. Use `--standalone` or `--domain` to filter by operation mode.
@@ -432,22 +440,6 @@ Lists all running wado containers. Use `--standalone` or `--domain` to filter by
 wado ps
 wado ps --standalone
 wado ps --domain
-```
-
-## Update
-
-Downloads or updates the WildFly version data from GitHub. The data is stored in `~/.config/wildfly-meta/` and contains all supported WildFly versions with their metadata. Run this command to get the latest version information.
-
-```shell
-wado update
-```
-
-## Versions
-
-Lists all supported WildFly versions with their full version number, WildFly Core version, and container image repository.
-
-```shell
-wado versions
 ```
 
 ## Management Clients
@@ -474,4 +466,13 @@ Connects to the JBoss CLI of a running container. If not already present, this c
 wado cli
 wado cli 34
 wado cli 34 -- --command "/subsystem=logging/console-handler=CONSOLE:write-attribute(name=level,value=DEBUG)"
+```
+
+## Update
+
+Downloads or updates the WildFly version data from GitHub. The data is stored in
+`~/.config/wildfly-meta/` and contains all supported WildFly versions with their metadata. Run this command to get the latest version information.
+
+```shell
+wado update
 ```
