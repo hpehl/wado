@@ -35,10 +35,5 @@ serde_yml = "0.0.12"
 # use LTO for smaller binaries (that take longer to build)
 [profile.release]
 lto = true
-
-[lib]
-name = "wado"
-path = "src/lib.rs"
-
 [[bin]]
 name = "wado"

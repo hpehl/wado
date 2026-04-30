@@ -20,12 +20,12 @@ cargo fmt                      # Format
 
 ## Architecture
 
-The crate is both a library (`src/lib.rs`) and a binary (`src/main.rs`).
+The crate is a binary (`src/main.rs`).
 
 ### Key Modules
 
 - **`main.rs`** - Entry point. Builds the full CLI with clap, wires up argument parsers and version completers, dispatches subcommands. Uses `#[tokio::main]` for async runtime.
-- **`app.rs`** - Defines the CLI structure (subcommands, args, flags) using clap's builder API. Separated from `main.rs` so `lib.rs` can reuse it without the parser/completer wiring.
+- **`app.rs`** - Defines the CLI structure (subcommands, args, flags) using clap's builder API. Separated from `main.rs` to keep the parser/completer wiring out of the app definition.
 - **`wildfly.rs`** - Core domain model: `ServerType` (sa/dc/hc), `AdminContainer`, `Ports`, `StandaloneInstance`, `DomainController`, `HostController`, `ContainerInstance`, `Server`, `ManagementClient`. Contains the `Server::parse_server()` parser and all unit tests.
 - **`container.rs`** - Orchestrates podman/docker commands: run, stop, ps, network, inspect. Detects container runtime via `which`. Handles auto-incrementing container names/ports for duplicate versions (`ensure_unique_names`, `running_counts`). All container operations are async (tokio).
 - **`standalone.rs`** - Standalone server start/stop logic. Builds `StandaloneInstance` from CLI args.
