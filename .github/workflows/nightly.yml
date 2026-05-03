@@ -31,6 +31,8 @@ jobs:
           password: ${{ secrets.QUAY_ROBOT_TOKEN }}
       - name: Build wado
         run: cargo build --release
+      - name: Update WildFly image registry
+        run: ./target/release/wado update
       - name: Build dev containers
         run: ./target/release/wado build dev --verbose
       - name: Push dev containers
