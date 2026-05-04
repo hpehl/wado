@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-05-04
+
 ### Added
 - Add `install.sh` script for quick installation via `curl | sh` with automatic OS and architecture detection
 - Add `aarch64-apple-darwin` (Apple Silicon) build target to release workflow
@@ -429,7 +431,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - First release 🎉
 
-[Unreleased]: https://github.com/hpehl/wado/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/hpehl/wado/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/hpehl/wado/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/hpehl/wado/compare/v0.4.13...v0.5.0
 
 [0.4.13]: https://github.com/hpehl/wado/compare/v0.4.12...v0.4.13
