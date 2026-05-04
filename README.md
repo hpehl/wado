@@ -36,7 +36,19 @@ The container names and published ports follow default values based on the WildF
 
 # Installation
 
-[Precompiled binaries](https://github.com/hpehl/wado/releases) are available for macOS, Linux, and Windows.
+[Precompiled binaries](https://github.com/hpehl/wado/releases) are available for macOS (Intel & Apple Silicon), Linux, and Windows.
+
+## Quick Install
+
+```shell
+curl -fsSL https://raw.githubusercontent.com/hpehl/wado/main/install.sh | sh
+```
+
+This detects your OS and architecture, downloads the latest binary, and installs it to `~/.local/bin`. To install to a different directory:
+
+```shell
+curl -fsSL https://raw.githubusercontent.com/hpehl/wado/main/install.sh | WADO_INSTALL_DIR=/usr/local/bin sh
+```
 
 ## Brew
 

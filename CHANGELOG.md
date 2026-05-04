@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Add `install.sh` script for quick installation via `curl | sh` with automatic OS and architecture detection
+- Add `aarch64-apple-darwin` (Apple Silicon) build target to release workflow
+
+### Changed
+- Update Homebrew formula to serve native binaries for both Apple Silicon and Intel Macs via `on_arm`/`on_intel` blocks
+
 ## [0.5.0] - 2026-04-30
 
 ### Added

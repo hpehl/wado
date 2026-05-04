@@ -53,6 +53,8 @@ jobs:
             os: ubuntu-latest
           - target: x86_64-apple-darwin
             os: macos-latest
+          - target: aarch64-apple-darwin
+            os: macos-latest
           - target: x86_64-pc-windows-msvc
             os: windows-latest
     runs-on: ${{ matrix.os }}
@@ -71,9 +73,14 @@ jobs:
       - uses: actions/checkout@v6
       - id: get-version
         uses: battila7/get-version-action@v2.3.0
-      - id: checksum
+      - id: checksums
         run: |
-          echo ::set-output name=sha::"$(wget -qO- https://github.com/hpehl/wado/releases/download/${{steps.get-version.outputs.version}}/wado-x86_64-apple-darwin.tar.gz | shasum -a 256 | head -c 64)"
+          VERSION=${{steps.get-version.outputs.version}}
+          BASE_URL="https://github.com/hpehl/wado/releases/download/${VERSION}"
+          SHA_ARM=$(wget -qO- "${BASE_URL}/wado-aarch64-apple-darwin.tar.gz" | shasum -a 256 | head -c 64)
+          SHA_INTEL=$(wget -qO- "${BASE_URL}/wado-x86_64-apple-darwin.tar.gz" | shasum -a 256 | head -c 64)
+          echo "sha_arm=${SHA_ARM}" >> "$GITHUB_OUTPUT"
+          echo "sha_intel=${SHA_INTEL}" >> "$GITHUB_OUTPUT"
       - name: Set up Git identity
         run: |
           git config --global user.name "github-actions[bot]"
@@ -88,9 +95,12 @@ jobs:
       - name: Update formula
         run: |
           cd homebrew-tap
-          sed -i 's|url ".*"|url "https://github.com/hpehl/wado/releases/download/${{steps.get-version.outputs.version}}/wado-x86_64-apple-darwin.tar.gz"|' Formula/wado.rb
-          sed -i 's|sha256 ".*"|sha256 "${{steps.checksum.outputs.sha}}"|' Formula/wado.rb
-          sed -i 's|version ".*"|version "${{steps.get-version.outputs.version-without-v}}"|' Formula/wado.rb
+          VERSION=${{steps.get-version.outputs.version}}
+          VERSION_NUM=${{steps.get-version.outputs.version-without-v}}
+          BASE_URL="https://github.com/hpehl/wado/releases/download/${VERSION}"
+          sed -i 's|version ".*"|version "'"${VERSION_NUM}"'"|' Formula/wado.rb
+          sed -i '/on_arm do/,/end/{s|url ".*"|url "'"${BASE_URL}/wado-aarch64-apple-darwin.tar.gz"'"|;s|sha256 ".*"|sha256 "'"${{steps.checksums.outputs.sha_arm}}"'"|;}' Formula/wado.rb
+          sed -i '/on_intel do/,/end/{s|url ".*"|url "'"${BASE_URL}/wado-x86_64-apple-darwin.tar.gz"'"|;s|sha256 ".*"|sha256 "'"${{steps.checksums.outputs.sha_intel}}"'"|;}' Formula/wado.rb
       - name: Commit and push changes
         env:
           TOKEN: ${{ secrets.FORMULA_TOKEN }}
