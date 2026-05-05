@@ -9,8 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.2] - 2026-05-05
 
-## [0.5.2] - 2026-05-05
-
 ### Changed
 
 - Update `wildfly_meta` to 0.7.0
@@ -22,10 +20,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.5.1] - 2026-05-04
 
 ### Added
+
 - Add `install.sh` script for quick installation via `curl | sh` with automatic OS and architecture detection
 - Add `aarch64-apple-darwin` (Apple Silicon) build target to release workflow
 
 ### Changed
+
 - Update Homebrew formula to serve native binaries for both Apple Silicon and Intel Macs via `on_arm`/`on_intel` blocks
 
 ## [0.5.0] - 2026-04-30
@@ -444,9 +444,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - First release 🎉
 
 [Unreleased]: https://github.com/hpehl/wado/compare/v0.5.2...HEAD
-[0.5.2]: https://github.com/hpehl/wado/compare/v0.5.2...v0.5.2
+
 [0.5.2]: https://github.com/hpehl/wado/compare/v0.5.1...v0.5.2
+
 [0.5.1]: https://github.com/hpehl/wado/compare/v0.5.0...v0.5.1
+
 [0.5.0]: https://github.com/hpehl/wado/compare/v0.4.13...v0.5.0
 
 [0.4.13]: https://github.com/hpehl/wado/compare/v0.4.12...v0.4.13
