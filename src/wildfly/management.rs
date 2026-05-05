@@ -58,7 +58,10 @@ impl ManagementClient {
                 .management_port()
         };
         let (cli_jar_url, cli_config_url) = Self::urls(
-            &container_instance.admin_image.wildfly_image.core_release_version,
+            &container_instance
+                .admin_image
+                .wildfly_image
+                .core_release_version,
             registry,
         );
         ManagementClient {
@@ -147,11 +150,7 @@ mod tests {
         let client = ManagementClient::default_port(&dev, &registry);
         assert!(!client.cli_jar_url.contains("0.0.0"));
         let latest = registry.last().unwrap();
-        assert!(
-            client
-                .cli_jar_url
-                .contains(&latest.core_release_version)
-        );
+        assert!(client.cli_jar_url.contains(&latest.core_release_version));
     }
 
     #[test]
