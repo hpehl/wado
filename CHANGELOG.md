@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.2] - 2026-05-05
 
+## [0.5.2] - 2026-05-05
+
 ### Changed
 
 - Update `wildfly_meta` to 0.7.0
@@ -442,6 +444,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - First release 🎉
 
 [Unreleased]: https://github.com/hpehl/wado/compare/v0.5.2...HEAD
+[0.5.2]: https://github.com/hpehl/wado/compare/v0.5.2...v0.5.2
 [0.5.2]: https://github.com/hpehl/wado/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/hpehl/wado/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/hpehl/wado/compare/v0.4.13...v0.5.0
