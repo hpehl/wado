@@ -19,20 +19,12 @@ pub fn versions(registry: &WildFlyImageRegistry) -> anyhow::Result<()> {
     for wc in registry.all() {
         table.add_row(vec![
             Cell::new(wc.short_name()).fg(Color::DarkMagenta),
-            Cell::new(format!("{}{}", wc.version, suffix_display(&wc.suffix))),
-            Cell::new(format!("{}{}", wc.core_version, suffix_display(&wc.suffix))),
+            Cell::new(&wc.release_version),
+            Cell::new(&wc.core_release_version),
             Cell::new(&wc.repository).fg(Color::AnsiValue(248)),
         ]);
     }
 
     println!("\n{table}");
     Ok(())
-}
-
-fn suffix_display(suffix: &str) -> String {
-    if suffix.is_empty() {
-        String::new()
-    } else {
-        format!(".{suffix}")
-    }
 }

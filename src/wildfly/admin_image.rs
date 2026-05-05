@@ -125,10 +125,7 @@ impl AdminImage {
         if self.wildfly_image.is_dev() {
             format!("{}:{}", base_name, DEVELOPMENT_TAG)
         } else {
-            format!(
-                "{}:{}.{}",
-                base_name, self.wildfly_image.version, self.wildfly_image.suffix
-            )
+            format!("{}:{}", base_name, self.wildfly_image.image_tag)
         }
     }
 

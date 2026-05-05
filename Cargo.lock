@@ -2429,9 +2429,9 @@ dependencies = [
 
 [[package]]
 name = "wildfly_meta"
-version = "0.6.1"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f43bae86a1ecd1cbfa66567a53190003fd3b9c339aa966c9c1bfeddd263855e"
+checksum = "c554106f978ea3023c099d0ac6cd1f2c4b3fdd8b47eae3d7af01ae1f68441352"
 dependencies = [
  "anyhow",
  "regex",

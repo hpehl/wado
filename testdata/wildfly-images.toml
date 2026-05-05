@@ -1,11 +1,13 @@
-config_version = 1
+config_version = 2
 
 [[wildfly_images]]
 major = 10
 minor = 0
 version = "10.0.0"
+release_version = "10.0.0.Final"
 core_version = "2.0.10"
-suffix = "Final"
+core_release_version = "2.0.10.Final"
+image_tag = "10.0.0.Final"
 repository = "docker.io/jboss/wildfly"
 platforms = []
 
@@ -13,8 +15,10 @@ platforms = []
 major = 26
 minor = 1
 version = "26.1.3"
+release_version = "26.1.3.Final"
 core_version = "18.1.2"
-suffix = "Final-jdk17"
+core_release_version = "18.1.2.Final"
+image_tag = "26.1.3.Final-jdk17"
 repository = "quay.io/wildfly/wildfly"
 platforms = ["linux/amd64", "linux/arm64"]
 
@@ -22,8 +26,10 @@ platforms = ["linux/amd64", "linux/arm64"]
 major = 33
 minor = 0
 version = "33.0.2"
+release_version = "33.0.2.Final"
 core_version = "25.0.2"
-suffix = "Final-jdk21"
+core_release_version = "25.0.2.Final"
+image_tag = "33.0.2.Final-jdk21"
 repository = "quay.io/wildfly/wildfly"
 platforms = ["linux/amd64", "linux/arm64", "linux/s390x", "linux/ppc64le"]
 
@@ -31,8 +37,10 @@ platforms = ["linux/amd64", "linux/arm64", "linux/s390x", "linux/ppc64le"]
 major = 34
 minor = 0
 version = "34.0.1"
+release_version = "34.0.1.Final"
 core_version = "26.0.1"
-suffix = "Final-jdk21"
+core_release_version = "26.0.1.Final"
+image_tag = "34.0.1.Final-jdk21"
 repository = "quay.io/wildfly/wildfly"
 platforms = ["linux/amd64", "linux/arm64", "linux/s390x", "linux/ppc64le"]
 
@@ -40,8 +48,10 @@ platforms = ["linux/amd64", "linux/arm64", "linux/s390x", "linux/ppc64le"]
 major = 35
 minor = 0
 version = "35.0.1"
+release_version = "35.0.1.Final"
 core_version = "27.0.1"
-suffix = "Final-jdk21"
+core_release_version = "27.0.1.Final"
+image_tag = "35.0.1.Final-jdk21"
 repository = "quay.io/wildfly/wildfly"
 platforms = ["linux/amd64", "linux/arm64", "linux/s390x", "linux/ppc64le"]
 
@@ -49,7 +59,9 @@ platforms = ["linux/amd64", "linux/arm64", "linux/s390x", "linux/ppc64le"]
 major = 39
 minor = 0
 version = "39.0.1"
+release_version = "39.0.1.Final"
 core_version = "31.0.3"
-suffix = "Final-2-jdk21"
+core_release_version = "31.0.3.Final"
+image_tag = "39.0.1.Final-2-jdk21"
 repository = "quay.io/wildfly/wildfly"
 platforms = ["linux/amd64", "linux/arm64", "linux/s390x", "linux/ppc64le"]

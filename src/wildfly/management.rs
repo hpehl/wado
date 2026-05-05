@@ -1,6 +1,5 @@
 //! Management client configuration for JBoss CLI connections.
 
-use semver::Version;
 use wildfly_meta::{WildFlyImage, WildFlyImageRegistry};
 
 use super::ContainerInstance;
@@ -19,7 +18,8 @@ impl ManagementClient {
         wildfly_image: &WildFlyImage,
         registry: &WildFlyImageRegistry,
     ) -> ManagementClient {
-        let (cli_jar_url, cli_config_url) = Self::urls(&wildfly_image.core_version, registry);
+        let (cli_jar_url, cli_config_url) =
+            Self::urls(&wildfly_image.core_release_version, registry);
         ManagementClient {
             wildfly_image: wildfly_image.clone(),
             management_port: wildfly_image.management_port(),
@@ -34,7 +34,8 @@ impl ManagementClient {
         management_port: u16,
         registry: &WildFlyImageRegistry,
     ) -> ManagementClient {
-        let (cli_jar_url, cli_config_url) = Self::urls(&wildfly_image.core_version, registry);
+        let (cli_jar_url, cli_config_url) =
+            Self::urls(&wildfly_image.core_release_version, registry);
         ManagementClient {
             wildfly_image: wildfly_image.clone(),
             management_port,
@@ -57,7 +58,7 @@ impl ManagementClient {
                 .management_port()
         };
         let (cli_jar_url, cli_config_url) = Self::urls(
-            &container_instance.admin_image.wildfly_image.core_version,
+            &container_instance.admin_image.wildfly_image.core_release_version,
             registry,
         );
         ManagementClient {
@@ -68,22 +69,22 @@ impl ManagementClient {
         }
     }
 
-    fn urls(version: &Version, registry: &WildFlyImageRegistry) -> (String, String) {
-        let effective_version = if *version == Version::new(0, 0, 0) {
+    fn urls(core_release_version: &str, registry: &WildFlyImageRegistry) -> (String, String) {
+        let effective_version = if core_release_version.is_empty() {
             registry
                 .last()
-                .map(|img| img.core_version.clone())
-                .unwrap_or_else(|| version.clone())
+                .map(|img| img.core_release_version.clone())
+                .unwrap_or_default()
         } else {
-            version.clone()
+            core_release_version.to_string()
         };
         (
             format!(
-                "https://repo1.maven.org/maven2/org/wildfly/core/wildfly-cli/{v}.Final/wildfly-cli-{v}.Final-client.jar",
+                "https://repo1.maven.org/maven2/org/wildfly/core/wildfly-cli/{v}/wildfly-cli-{v}-client.jar",
                 v = effective_version
             ),
             format!(
-                "https://raw.githubusercontent.com/wildfly/wildfly-core/refs/tags/{}.Final/core-feature-pack/common/src/main/resources/content/bin/jboss-cli.xml",
+                "https://raw.githubusercontent.com/wildfly/wildfly-core/refs/tags/{}/core-feature-pack/common/src/main/resources/content/bin/jboss-cli.xml",
                 effective_version
             ),
         )
@@ -123,16 +124,12 @@ mod tests {
     }
 
     #[test]
-    fn urls_contain_version() {
+    fn urls_contain_core_release_version() {
         let registry = test_registry();
         let img = wimg("39");
         let client = ManagementClient::default_port(&img, &registry);
-        assert!(client.cli_jar_url.contains(&img.core_version.to_string()));
-        assert!(
-            client
-                .cli_config_url
-                .contains(&img.core_version.to_string())
-        );
+        assert!(client.cli_jar_url.contains(&img.core_release_version));
+        assert!(client.cli_config_url.contains(&img.core_release_version));
     }
 
     #[test]
@@ -153,7 +150,7 @@ mod tests {
         assert!(
             client
                 .cli_jar_url
-                .contains(&latest.core_version.to_string())
+                .contains(&latest.core_release_version)
         );
     }
 

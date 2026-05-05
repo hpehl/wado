@@ -30,7 +30,7 @@ tempfile = "3.27.0"
 tokio = { version = "1.52.0", features = ["full"] }
 webbrowser = "1.2.0"
 which = "8.0.2"
-wildfly_meta = "0.6.1"
+wildfly_meta = "0.7.0"
 
 # use LTO for smaller binaries (that take longer to build)
 [profile.release]
