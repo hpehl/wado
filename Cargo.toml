@@ -27,7 +27,7 @@ semver = "1.0.28"
 serde = { version = "1", features = ["derive"] }
 serde_yml = "0.0.12"
 tempfile = "3.27.0"
-tokio = { version = "1.52.2", features = ["full"] }
+tokio = { version = "1.52.3", features = ["full"] }
 webbrowser = "1.2.0"
 which = "8.0.2"
 wildfly_meta = "0.7.1"
