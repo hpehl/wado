@@ -1,4 +1,6 @@
-use super::lifecycle::{prepare_instances, run_instances, stop_containers_by_server_type};
+use super::lifecycle::{
+    prepare_instances, print_json_results, run_instances, stop_containers_by_server_type,
+};
 use crate::args::{extract_config, operations_argument, parameters_argument, server_argument};
 use crate::constants::{HOSTNAME_VARIABLE, WILDFLY_ADMIN_CONTAINER};
 use crate::container::{add_servers, container_network_cmd, container_run_cmd};
@@ -9,7 +11,11 @@ use wildfly_meta::WildFlyImageRegistry;
 
 // ------------------------------------------------------ start
 
-pub fn dc_start(matches: &ArgMatches, registry: &WildFlyImageRegistry) -> anyhow::Result<()> {
+pub fn dc_start(
+    matches: &ArgMatches,
+    registry: &WildFlyImageRegistry,
+    json: bool,
+) -> anyhow::Result<()> {
     let instances: Vec<DomainController> = prepare_instances(
         matches,
         ServerType::DomainController,
@@ -22,6 +28,7 @@ pub fn dc_start(matches: &ArgMatches, registry: &WildFlyImageRegistry) -> anyhow
         server_argument(matches),
         operations_argument(matches),
         parameters_argument(matches),
+        json,
     ))
 }
 
@@ -30,10 +37,17 @@ async fn start_instances(
     servers: Vec<Server>,
     operations: Vec<String>,
     parameters: Vec<String>,
+    json: bool,
 ) -> anyhow::Result<()> {
     let config = extract_config(&parameters, "domain.xml");
     container_network_cmd().await?;
-    run_instances(&instances, |instance| {
+
+    let port_map: Vec<(String, u16, u16)> = instances
+        .iter()
+        .map(|i| (i.name.clone(), i.ports.http, i.ports.management))
+        .collect();
+
+    let mut status = run_instances(&instances, |instance| {
         let mut command = container_run_cmd(
             &instance.name,
             Some(&instance.ports),
@@ -52,12 +66,33 @@ async fn start_instances(
             .arg(instance.admin_image.image_name())
             .args(parameters.clone());
         command
-    })
-    .await
+    }, json)
+    .await?;
+
+    for s in &mut status {
+        if let Some((_, http, mgmt)) = port_map.iter().find(|(n, _, _)| *n == s.identifier) {
+            s.http = Some(*http);
+            s.management = Some(*mgmt);
+        }
+    }
+
+    if json {
+        print_json_results(&status);
+    }
+    Ok(())
 }
 
 // ------------------------------------------------------ stop
 
-pub fn dc_stop(matches: &ArgMatches, registry: &WildFlyImageRegistry) -> anyhow::Result<()> {
-    stop_containers_by_server_type(ServerType::DomainController, matches, registry)
+pub fn dc_stop(
+    matches: &ArgMatches,
+    registry: &WildFlyImageRegistry,
+    json: bool,
+) -> anyhow::Result<()> {
+    let status =
+        stop_containers_by_server_type(ServerType::DomainController, matches, registry, json)?;
+    if json {
+        print_json_results(&status);
+    }
+    Ok(())
 }

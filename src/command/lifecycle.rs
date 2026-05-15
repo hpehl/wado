@@ -5,7 +5,8 @@
 //! [`indicatif::MultiProgress`] for visual feedback.
 
 use crate::args::{start_spec, validate_multiple_versions, versions_argument};
-use crate::progress::{Progress, stderr_reader, summary};
+use crate::json::CommandResult;
+use crate::progress::{CommandStatus, Progress, stderr_reader, summary};
 use crate::wildfly::{ContainerConfig, ResolvedStart, ServerType};
 use anyhow::bail;
 use clap::ArgMatches;
@@ -48,10 +49,13 @@ pub fn prepare_instances<T>(
 
 /// Starts multiple containers in parallel with progress bars.
 ///
-/// Each container is spawned as a separate task. Progress is tracked via
-/// `stderr` output from the container runtime. Blocks until all containers
-/// have started (or failed).
-pub async fn run_instances<T, F>(instances: &[T], build_command: F) -> anyhow::Result<()>
+/// Returns the status of each container operation. When `json` is true,
+/// progress bars and summary output are suppressed.
+pub async fn run_instances<T, F>(
+    instances: &[T],
+    build_command: F,
+    json: bool,
+) -> anyhow::Result<Vec<CommandStatus>>
 where
     T: ContainerConfig,
     F: Fn(&T) -> Command,
@@ -62,6 +66,9 @@ where
     let count = instances.len();
     let instant = Instant::now();
     let multi_progress = MultiProgress::new();
+    if json {
+        multi_progress.set_draw_target(indicatif::ProgressDrawTarget::hidden());
+    }
     let mut commands = JoinSet::new();
 
     for instance in instances {
@@ -70,6 +77,11 @@ where
             &instance.admin_image().image_name(),
         );
         multi_progress.add(progress.bar.clone());
+        if json {
+            progress
+                .bar
+                .set_draw_target(indicatif::ProgressDrawTarget::hidden());
+        }
         let mut child = build_command(instance)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -83,14 +95,18 @@ where
             let output = child.wait_with_output().await;
             progress.finish(output, Some(&name))
         });
-        tokio::spawn(async move {
-            progress_clone.trace_progress(stderr).await;
-        });
+        if !json {
+            tokio::spawn(async move {
+                progress_clone.trace_progress(stderr).await;
+            });
+        }
     }
 
     let status = commands.join_all().await;
-    summary("Started", "container", count, instant, status);
-    Ok(())
+    if !json {
+        summary("Started", "container", count, instant, status.clone());
+    }
+    Ok(status)
 }
 
 /// Stops containers matching the server type, version, and name from CLI args.
@@ -98,7 +114,8 @@ pub fn stop_containers_by_server_type(
     server_type: ServerType,
     matches: &ArgMatches,
     registry: &WildFlyImageRegistry,
-) -> anyhow::Result<()> {
+    json: bool,
+) -> anyhow::Result<Vec<CommandStatus>> {
     verify_container_command()?;
     let wildfly_images = matches.get_one::<Vec<WildFlyImage>>("wildfly-version");
     let name = matches.get_one::<String>("name").map(|s| s.as_str());
@@ -114,6 +131,9 @@ pub fn stop_containers_by_server_type(
         let count = instances.len();
         let instant = Instant::now();
         let multi_progress = MultiProgress::new();
+        if json {
+            multi_progress.set_draw_target(indicatif::ProgressDrawTarget::hidden());
+        }
         let mut commands = JoinSet::new();
 
         for instance in instances {
@@ -122,6 +142,11 @@ pub fn stop_containers_by_server_type(
                 &instance.admin_image.image_name(),
             );
             multi_progress.add(progress.bar.clone());
+            if json {
+                progress
+                    .bar
+                    .set_draw_target(indicatif::ProgressDrawTarget::hidden());
+            }
             let mut command = container_stop_cmd(&instance.name);
             let child = command
                 .stdout(Stdio::piped())
@@ -136,21 +161,34 @@ pub fn stop_containers_by_server_type(
         }
 
         let status = commands.join_all().await;
-        summary("Stopped", "container", count, instant, status);
-        Ok(())
+        if !json {
+            summary("Stopped", "container", count, instant, status.clone());
+        }
+        Ok(status)
     })
 }
 
 /// Stops multiple containers by their names.
-pub async fn stop_containers_by_name(names: &[String]) -> anyhow::Result<()> {
+pub async fn stop_containers_by_name(
+    names: &[String],
+    json: bool,
+) -> anyhow::Result<Vec<CommandStatus>> {
     let count = names.len();
     let instant = Instant::now();
     let multi_progress = MultiProgress::new();
+    if json {
+        multi_progress.set_draw_target(indicatif::ProgressDrawTarget::hidden());
+    }
     let mut commands = JoinSet::new();
 
     for name in names {
         let progress = Progress::new(name, name);
         multi_progress.add(progress.bar.clone());
+        if json {
+            progress
+                .bar
+                .set_draw_target(indicatif::ProgressDrawTarget::hidden());
+        }
         let mut command = container_stop_cmd(name);
         let child = command
             .stdout(Stdio::piped())
@@ -165,16 +203,35 @@ pub async fn stop_containers_by_name(names: &[String]) -> anyhow::Result<()> {
     }
 
     let status = commands.join_all().await;
-    summary("Stopped", "container", count, instant, status);
-    Ok(())
+    if !json {
+        summary("Stopped", "container", count, instant, status.clone());
+    }
+    Ok(status)
+}
+
+// ------------------------------------------------------ json helpers
+
+fn status_to_json(status: &[CommandStatus]) -> Vec<CommandResult> {
+    status
+        .iter()
+        .map(|s| {
+            if s.success {
+                CommandResult::success(&s.identifier, s.http, s.management)
+            } else {
+                CommandResult::error(&s.identifier, &s.error_message)
+            }
+        })
+        .collect()
+}
+
+pub fn print_json_results(status: &[CommandStatus]) {
+    let results = status_to_json(status);
+    println!("{}", serde_json::to_string(&results).unwrap_or_default());
 }
 
 // ------------------------------------------------------ internal
 
 /// Checks for name collisions against all running containers, not just wado-managed ones.
-///
-/// This catches conflicts with non-wado containers and race conditions that
-/// [`super::resolve::resolve_start_specs`] cannot detect.
 async fn check_name_conflicts(names: &[&str]) -> anyhow::Result<()> {
     let mut cmd = container_command()?;
     cmd.arg("ps").arg("--format").arg("{{.Names}}");

@@ -1,10 +1,26 @@
 //! Lists all supported WildFly versions.
 
+use crate::json::VersionInfo;
 use comfy_table::presets::UTF8_BORDERS_ONLY;
 use comfy_table::{Cell, Color, ContentArrangement, Table};
 use wildfly_meta::WildFlyImageRegistry;
 
-pub fn versions(registry: &WildFlyImageRegistry) -> anyhow::Result<()> {
+pub fn versions(registry: &WildFlyImageRegistry, json: bool) -> anyhow::Result<()> {
+    if json {
+        let infos: Vec<VersionInfo> = registry
+            .all()
+            .iter()
+            .map(|wc| VersionInfo {
+                version: wc.short_name(),
+                wildfly_version: wc.release_version.clone(),
+                core_version: wc.core_release_version.clone(),
+                repository: wc.repository.clone(),
+            })
+            .collect();
+        println!("{}", serde_json::to_string(&infos)?);
+        return Ok(());
+    }
+
     let mut table = Table::new();
     table
         .load_preset(UTF8_BORDERS_ONLY)

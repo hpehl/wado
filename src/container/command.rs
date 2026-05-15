@@ -11,6 +11,7 @@ use crate::constants::{
     BOOTSTRAP_OPERATIONS_VARIABLE, SERVERS_VARIABLE, WILDFLY_ADMIN_CONTAINER,
     WILDFLY_ADMIN_CONTAINER_REPOSITORY,
 };
+use crate::error::WadoError;
 use crate::label::Label;
 use crate::wildfly::Server;
 use anyhow::Error;
@@ -24,9 +25,7 @@ use tokio::process::Command;
 fn detect_runtime() -> Result<PathBuf, Error> {
     which::which("podman")
         .or_else(|_| which::which("docker"))
-        .map_err(|_| {
-            anyhow::anyhow!("Neither podman nor docker found. Install one of them to continue")
-        })
+        .map_err(|_| WadoError::container_runtime_not_found().into())
 }
 
 /// Verifies that a container runtime (podman or docker) is available on the system PATH.

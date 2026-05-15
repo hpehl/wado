@@ -1,4 +1,6 @@
-use super::lifecycle::{prepare_instances, run_instances, stop_containers_by_server_type};
+use super::lifecycle::{
+    prepare_instances, print_json_results, run_instances, stop_containers_by_server_type,
+};
 use crate::args::{extract_config, operations_argument, parameters_argument};
 use crate::container::{container_network_cmd, container_run_cmd};
 use crate::wildfly::{ServerType, StandaloneInstance};
@@ -11,6 +13,7 @@ use wildfly_meta::WildFlyImageRegistry;
 pub fn standalone_start(
     matches: &ArgMatches,
     registry: &WildFlyImageRegistry,
+    json: bool,
 ) -> anyhow::Result<()> {
     let instances: Vec<StandaloneInstance> = prepare_instances(
         matches,
@@ -23,6 +26,7 @@ pub fn standalone_start(
         instances,
         parameters_argument(matches),
         operations_argument(matches),
+        json,
     ))
 }
 
@@ -30,10 +34,17 @@ async fn start_instances(
     instances: Vec<StandaloneInstance>,
     parameters: Vec<String>,
     operations: Vec<String>,
+    json: bool,
 ) -> anyhow::Result<()> {
     let config = extract_config(&parameters, "standalone.xml");
     container_network_cmd().await?;
-    run_instances(&instances, |instance| {
+
+    let port_map: Vec<(String, u16, u16)> = instances
+        .iter()
+        .map(|i| (i.name.clone(), i.ports.http, i.ports.management))
+        .collect();
+
+    let mut status = run_instances(&instances, |instance| {
         let mut command = container_run_cmd(
             &instance.name,
             Some(&instance.ports),
@@ -46,8 +57,20 @@ async fn start_instances(
             .arg(instance.admin_image.image_name())
             .args(parameters.clone());
         command
-    })
-    .await
+    }, json)
+    .await?;
+
+    for s in &mut status {
+        if let Some((_, http, mgmt)) = port_map.iter().find(|(n, _, _)| *n == s.identifier) {
+            s.http = Some(*http);
+            s.management = Some(*mgmt);
+        }
+    }
+
+    if json {
+        print_json_results(&status);
+    }
+    Ok(())
 }
 
 // ------------------------------------------------------ stop
@@ -55,6 +78,11 @@ async fn start_instances(
 pub fn standalone_stop(
     matches: &ArgMatches,
     registry: &WildFlyImageRegistry,
+    json: bool,
 ) -> anyhow::Result<()> {
-    stop_containers_by_server_type(ServerType::Standalone, matches, registry)
+    let status = stop_containers_by_server_type(ServerType::Standalone, matches, registry, json)?;
+    if json {
+        print_json_results(&status);
+    }
+    Ok(())
 }

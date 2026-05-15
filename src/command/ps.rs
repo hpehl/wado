@@ -1,4 +1,5 @@
 use crate::container::container_ps;
+use crate::json::ContainerInfo;
 use crate::wildfly::ServerType::{DomainController, HostController, Standalone};
 use clap::ArgMatches;
 use comfy_table::presets::UTF8_BORDERS_ONLY;
@@ -6,7 +7,11 @@ use comfy_table::{Cell, Color, ContentArrangement, Table};
 use futures::executor::block_on;
 use wildfly_meta::WildFlyImageRegistry;
 
-pub fn ps(matches: &ArgMatches, registry: &WildFlyImageRegistry) -> anyhow::Result<()> {
+pub fn ps(
+    matches: &ArgMatches,
+    registry: &WildFlyImageRegistry,
+    json: bool,
+) -> anyhow::Result<()> {
     let mut server_types = vec![];
     if matches.get_flag("standalone") {
         server_types.push(Standalone);
@@ -21,6 +26,28 @@ pub fn ps(matches: &ArgMatches, registry: &WildFlyImageRegistry) -> anyhow::Resu
         server_types.push(HostController);
     }
     let mut instances = block_on(container_ps(server_types, None, None, true, registry))?;
+
+    if json {
+        instances.sort();
+        let infos: Vec<ContainerInfo> = instances
+            .iter()
+            .map(|i| ContainerInfo {
+                name: i.name.clone(),
+                image: i.admin_image.image_name(),
+                server_type: i.admin_image.server_type.short_name().to_string(),
+                version: i.admin_image.wildfly_image.short_name(),
+                http: i.ports.as_ref().map(|p| p.http),
+                management: i.ports.as_ref().map(|p| p.management),
+                config: i.config.clone(),
+                topology: i.topology.clone(),
+                status: i.status.clone(),
+                container_id: i.container_id.clone(),
+            })
+            .collect();
+        println!("{}", serde_json::to_string(&infos)?);
+        return Ok(());
+    }
+
     if instances.is_empty() {
         println!("\nNo running WildFly containers found.");
         return Ok(());

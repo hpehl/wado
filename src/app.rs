@@ -36,6 +36,11 @@ pub fn build_app() -> Command {
             .placeholder(AnsiColor::Cyan.on_default()))
         .propagate_version(true)
         .subcommand_required(true)
+        .arg(Arg::new("json")
+            .long("json")
+            .global(true)
+            .action(ArgAction::SetTrue)
+            .help("Output results as JSON instead of human-readable text"))
 
         // build
         .subcommand(Command::new("build")

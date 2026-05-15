@@ -20,6 +20,8 @@ pub struct CommandStatus {
     pub identifier: String,
     pub success: bool,
     pub error_message: String,
+    pub http: Option<u16>,
+    pub management: Option<u16>,
 }
 
 impl CommandStatus {
@@ -29,6 +31,8 @@ impl CommandStatus {
             identifier: identifier.to_string(),
             success: true,
             error_message: "".to_string(),
+            http: None,
+            management: None,
         }
     }
 
@@ -38,6 +42,8 @@ impl CommandStatus {
             identifier: identifier.to_string(),
             success: false,
             error_message: error_message.to_string(),
+            http: None,
+            management: None,
         }
     }
 }

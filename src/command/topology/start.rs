@@ -1,4 +1,4 @@
-use crate::command::lifecycle::run_instances;
+use crate::command::lifecycle::{print_json_results, run_instances};
 use crate::constants::{
     DOMAIN_CONTROLLER_VARIABLE, HOSTNAME_VARIABLE, PASSWORD_VARIABLE, USERNAME_VARIABLE,
     WILDFLY_ADMIN_CONTAINER,
@@ -20,7 +20,11 @@ use wildfly_meta::{WildFlyImageRegistry, parse_wildfly_image};
 
 use super::model::{HostSetup, TopologySetup};
 
-pub fn topology_start(matches: &ArgMatches, registry: &WildFlyImageRegistry) -> anyhow::Result<()> {
+pub fn topology_start(
+    matches: &ArgMatches,
+    registry: &WildFlyImageRegistry,
+    json: bool,
+) -> anyhow::Result<()> {
     let path = matches.get_one::<PathBuf>("setup").unwrap();
     let setup = TopologySetup::load(path, registry)?;
     verify_container_command()?;
@@ -70,6 +74,7 @@ pub fn topology_start(matches: &ArgMatches, registry: &WildFlyImageRegistry) -> 
         dc_servers,
         hcs,
         hc_server_map,
+        json,
     ))
 }
 
@@ -115,6 +120,7 @@ async fn start_topology(
     dc_servers: Vec<Server>,
     hcs: Vec<HostController>,
     hc_server_map: BTreeMap<String, Vec<Server>>,
+    json: bool,
 ) -> anyhow::Result<()> {
     try_join!(
         container_network_cmd(),
@@ -124,7 +130,10 @@ async fn start_topology(
 
     let topology = topology_name.as_str();
 
-    run_instances(std::slice::from_ref(&dc), |instance| {
+    let dc_port_http = dc.ports.http;
+    let dc_port_mgmt = dc.ports.management;
+
+    let mut dc_status = run_instances(std::slice::from_ref(&dc), |instance| {
         let mut command = container_run_cmd(
             &instance.name,
             Some(&instance.ports),
@@ -141,11 +150,18 @@ async fn start_topology(
         let mut command = add_servers(command, &instance.name, dc_servers.clone());
         command.arg(instance.admin_image.image_name());
         command
-    })
+    }, json)
     .await?;
 
+    for s in &mut dc_status {
+        s.http = Some(dc_port_http);
+        s.management = Some(dc_port_mgmt);
+    }
+
+    let mut all_status = dc_status;
+
     if !hcs.is_empty() {
-        run_instances(&hcs, |instance| {
+        let hc_status = run_instances(&hcs, |instance| {
             let servers = hc_server_map
                 .get(&instance.name)
                 .cloned()
@@ -181,9 +197,14 @@ async fn start_topology(
                 .arg(instance.admin_image.image_name())
                 .arg(format!("--primary-address={}", instance.domain_controller));
             command
-        })
+        }, json)
         .await?;
+
+        all_status.extend(hc_status);
     }
 
+    if json {
+        print_json_results(&all_status);
+    }
     Ok(())
 }

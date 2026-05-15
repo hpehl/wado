@@ -1,4 +1,4 @@
-use super::lifecycle::{run_instances, stop_containers_by_server_type};
+use super::lifecycle::{print_json_results, run_instances, stop_containers_by_server_type};
 use crate::args::{
     extract_config, name_argument, operations_argument, parameters_argument, server_argument,
     username_password_argument, versions_argument,
@@ -20,7 +20,11 @@ use wildfly_meta::{WildFlyImage, WildFlyImageRegistry};
 
 // ------------------------------------------------------ start
 
-pub fn hc_start(matches: &ArgMatches, registry: &WildFlyImageRegistry) -> anyhow::Result<()> {
+pub fn hc_start(
+    matches: &ArgMatches,
+    registry: &WildFlyImageRegistry,
+    json: bool,
+) -> anyhow::Result<()> {
     verify_container_command()?;
 
     let wildfly_images = versions_argument(matches);
@@ -71,6 +75,7 @@ pub fn hc_start(matches: &ArgMatches, registry: &WildFlyImageRegistry) -> anyhow
         server_argument(matches),
         operations_argument(matches),
         parameters,
+        json,
     ))
 }
 
@@ -88,6 +93,7 @@ async fn start_instances(
     servers: Vec<Server>,
     operations: Vec<String>,
     parameters: Vec<String>,
+    json: bool,
 ) -> anyhow::Result<()> {
     try_join!(
         container_network_cmd(),
@@ -95,7 +101,7 @@ async fn start_instances(
         create_secret("password", password)
     )?;
     let config = extract_config(&parameters, "domain.xml");
-    run_instances(&instances, |instance| {
+    let status = run_instances(&instances, |instance| {
         let mut command = container_run_cmd(
             &instance.name,
             None,
@@ -127,12 +133,26 @@ async fn start_instances(
             .arg(instance.admin_image.image_name())
             .args(parameters.clone());
         command
-    })
-    .await
+    }, json)
+    .await?;
+
+    if json {
+        print_json_results(&status);
+    }
+    Ok(())
 }
 
 // ------------------------------------------------------ stop
 
-pub fn hc_stop(matches: &ArgMatches, registry: &WildFlyImageRegistry) -> anyhow::Result<()> {
-    stop_containers_by_server_type(ServerType::HostController, matches, registry)
+pub fn hc_stop(
+    matches: &ArgMatches,
+    registry: &WildFlyImageRegistry,
+    json: bool,
+) -> anyhow::Result<()> {
+    let status =
+        stop_containers_by_server_type(ServerType::HostController, matches, registry, json)?;
+    if json {
+        print_json_results(&status);
+    }
+    Ok(())
 }

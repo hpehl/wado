@@ -4,6 +4,8 @@ mod command;
 mod completion;
 mod constants;
 mod container;
+mod error;
+mod json;
 mod label;
 mod progress;
 mod resources;
@@ -176,6 +178,20 @@ fn build_app_full() -> clap::Command {
 async fn main() -> Result<()> {
     clap_complete::CompleteEnv::with_factory(build_app_full).complete();
 
+    let json = std::env::args().any(|a| a == "--json");
+    if let Err(e) = run(json).await {
+        if json {
+            let envelope = error::JsonErrorEnvelope::from_anyhow(&e);
+            println!("{}", serde_json::to_string(&envelope).unwrap_or_default());
+        } else {
+            eprintln!("Error: {e:#}");
+        }
+        std::process::exit(1);
+    }
+    Ok(())
+}
+
+async fn run(json: bool) -> Result<()> {
     let matches = build_app_full().get_matches();
     match matches.subcommand() {
         Some(("build", m)) => build(m).await?,
@@ -186,32 +202,32 @@ async fn main() -> Result<()> {
         _ => {
             let registry = load_registry()?;
             match matches.subcommand() {
-                Some(("start", m)) => standalone_start(m, &registry)?,
-                Some(("stop", m)) => standalone_stop(m, &registry)?,
+                Some(("start", m)) => standalone_start(m, &registry, json)?,
+                Some(("stop", m)) => standalone_stop(m, &registry, json)?,
 
                 Some(("dc", sub_matches)) => match sub_matches.subcommand() {
-                    Some(("start", m)) => dc_start(m, &registry)?,
-                    Some(("stop", m)) => dc_stop(m, &registry)?,
+                    Some(("start", m)) => dc_start(m, &registry, json)?,
+                    Some(("stop", m)) => dc_stop(m, &registry, json)?,
                     _ => unreachable!("Unknown subcommand"),
                 },
 
                 Some(("hc", sub_matches)) => match sub_matches.subcommand() {
-                    Some(("start", m)) => hc_start(m, &registry)?,
-                    Some(("stop", m)) => hc_stop(m, &registry)?,
+                    Some(("start", m)) => hc_start(m, &registry, json)?,
+                    Some(("stop", m)) => hc_stop(m, &registry, json)?,
                     _ => unreachable!("Unknown subcommand"),
                 },
 
                 Some(("topology", sub_matches)) => match sub_matches.subcommand() {
-                    Some(("start", m)) => topology_start(m, &registry)?,
-                    Some(("stop", m)) => topology_stop(m, &registry)?,
+                    Some(("start", m)) => topology_start(m, &registry, json)?,
+                    Some(("stop", m)) => topology_stop(m, &registry, json)?,
                     _ => unreachable!("Unknown subcommand"),
                 },
 
                 Some(("images", _)) => images(&registry)?,
-                Some(("ps", m)) => ps(m, &registry)?,
+                Some(("ps", m)) => ps(m, &registry, json)?,
                 Some(("console", m)) => console(m, &registry)?,
                 Some(("cli", m)) => cli(m, &registry)?,
-                Some(("versions", _)) => versions(&registry)?,
+                Some(("versions", _)) => versions(&registry, json)?,
 
                 _ => unreachable!("Unknown subcommand"),
             }

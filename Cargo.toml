@@ -25,7 +25,9 @@ regex = "1.12.3"
 reqwest = "0.13.3"
 semver = "1.0.28"
 serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 serde_yml = "0.0.12"
+thiserror = "2"
 tempfile = "3.27.0"
 tokio = { version = "1.52.3", features = ["full"] }
 webbrowser = "1.2.0"
