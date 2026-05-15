@@ -109,3 +109,57 @@ jobs:
           git add Formula/wado.rb
           git commit -m "Update wado formula: version ${{steps.get-version.outputs.version-without-v}}"
           git push origin main
+  publish-npm:
+    if: github.repository_owner == 'hpehl'
+    needs: upload-assets
+    name: npm / ${{ matrix.pkg }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - pkg: wado-linux-x64
+            target: x86_64-unknown-linux-gnu
+          - pkg: wado-darwin-x64
+            target: x86_64-apple-darwin
+          - pkg: wado-darwin-arm64
+            target: aarch64-apple-darwin
+          - pkg: wado-win32-x64
+            target: x86_64-pc-windows-msvc
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+      - id: get-version
+        uses: battila7/get-version-action@v2.3.0
+      - name: Download, extract, and publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          VERSION="${{ steps.get-version.outputs.version-without-v }}"
+          TAG="${{ steps.get-version.outputs.version }}"
+          TARGET="${{ matrix.target }}"
+          PKG_DIR="npm/${{ matrix.pkg }}"
+          BASE_URL="https://github.com/hpehl/wado/releases/download/${TAG}"
+
+          if [[ "${{ matrix.pkg }}" == *win32* ]]; then
+            ARCHIVE="wado-${TARGET}.zip"
+            BINARY="wado.exe"
+          else
+            ARCHIVE="wado-${TARGET}.tar.gz"
+            BINARY="wado"
+          fi
+
+          curl -fsSL -o "${ARCHIVE}" "${BASE_URL}/${ARCHIVE}"
+          if [[ "${ARCHIVE}" == *.zip ]]; then
+            unzip -qo "${ARCHIVE}" -d extracted
+          else
+            mkdir extracted && tar -xzf "${ARCHIVE}" -C extracted
+          fi
+
+          cp "extracted/${BINARY}" "${PKG_DIR}/bin/${BINARY}"
+          chmod +x "${PKG_DIR}/bin/${BINARY}"
+          sed -i "s/\"version\": \".*\"/\"version\": \"${VERSION}\"/" "${PKG_DIR}/package.json"
+
+          cd "${PKG_DIR}" && npm publish --access public

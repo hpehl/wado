@@ -1,0 +1,27 @@
+{
+  "name": "@wildfly-admin-container/wado-win32-x64",
+  "version": "0.5.2",
+  "description": "Pre-built wado binary for Windows x64",
+  "license": "Apache-2.0",
+  "author": {
+    "name": "Harald Pehl",
+    "email": "harald.pehl@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hpehl/wado.git"
+  },
+  "homepage": "https://github.com/hpehl/wado",
+  "os": [
+    "win32"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "bin": {
+    "wado": "bin/wado.exe"
+  },
+  "files": [
+    "bin/"
+  ]
+}

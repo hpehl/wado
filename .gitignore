@@ -1,2 +1,4 @@
 .claude
 /target
+npm/*/bin/*
+!npm/*/bin/.gitkeep
