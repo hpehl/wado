@@ -141,6 +141,6 @@ for pkg_json in npm/*/package.json; do
   sed -i '' "s/\"version\": \".*\"/\"version\": \"${RELEASE_VERSION}\"/" "${pkg_json}"
   git add "${pkg_json}"
 done
-git commit -m "Bump NPM package versions to ${RELEASE_VERSION}"
+git diff --cached --quiet || git commit -m "Bump NPM package versions to ${RELEASE_VERSION}"
 cargo release "${RELEASE_VERSION}" --no-confirm --execute
 msg "Done. Watch the release workflow at https://github.com/hpehl/wado/actions/workflows/release.yml"
