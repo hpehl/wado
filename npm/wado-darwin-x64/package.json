@@ -1,6 +1,6 @@
 {
   "name": "@wildfly-admin-container/wado-darwin-x64",
-  "version": "0.5.2",
+  "version": "0.6.0",
   "description": "Pre-built wado binary for macOS x64 (Intel)",
   "license": "Apache-2.0",
   "author": {

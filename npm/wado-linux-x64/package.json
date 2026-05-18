@@ -1,6 +1,6 @@
 {
   "name": "@wildfly-admin-container/wado-linux-x64",
-  "version": "0.5.2",
+  "version": "0.6.0",
   "description": "Pre-built wado binary for Linux x64",
   "license": "Apache-2.0",
   "author": {
