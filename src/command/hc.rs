@@ -101,8 +101,7 @@ async fn start_instances(
         create_secret("password", password)
     )?;
     let config = extract_config(&parameters, "domain.xml");
-    // HC doesn't expose management ports, so no health check or port mapping needed
-    let (status, _instant) = run_instances(
+    let (results, _instant) = run_instances(
         &instances,
         |instance| {
             let mut command = container_run_cmd(
@@ -141,8 +140,12 @@ async fn start_instances(
     )
     .await?;
 
+    for (s, p) in &results {
+        p.finish_if_alive(Some(&s.identifier));
+    }
+
     if json {
-        print_json_results(&status);
+        print_json_results(&results);
     }
     Ok(())
 }

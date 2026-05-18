@@ -135,7 +135,7 @@ async fn start_topology(
     let dc_port_map: Vec<(String, u16, u16)> =
         vec![(dc.name.clone(), dc.ports.http, dc.ports.management)];
 
-    let (dc_status, _instant) = run_instances(
+    let (dc_results, _instant) = run_instances(
         std::slice::from_ref(&dc),
         |instance| {
             let mut command = container_run_cmd(
@@ -159,13 +159,13 @@ async fn start_topology(
     )
     .await?;
 
-    let mut dc_status = apply_ports(dc_status, &dc_port_map);
+    let mut dc_status = apply_ports(dc_results, &dc_port_map);
     wait_for_instances(&mut dc_status, json).await;
 
     let mut all_status = dc_status;
 
     if !hcs.is_empty() {
-        let (hc_status, _instant) = run_instances(
+        let (hc_results, _instant) = run_instances(
             &hcs,
             |instance| {
                 let servers = hc_server_map
@@ -208,7 +208,10 @@ async fn start_topology(
         )
         .await?;
 
-        all_status.extend(hc_status);
+        for (s, p) in &hc_results {
+            p.finish_if_alive(Some(&s.identifier));
+        }
+        all_status.extend(hc_results);
     }
 
     if json {

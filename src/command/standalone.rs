@@ -45,7 +45,7 @@ async fn start_instances(
         .map(|i| (i.name.clone(), i.ports.http, i.ports.management))
         .collect();
 
-    let (status, _instant) = run_instances(
+    let (results, _instant) = run_instances(
         &instances,
         |instance| {
             let mut command = container_run_cmd(
@@ -65,7 +65,7 @@ async fn start_instances(
     )
     .await?;
 
-    let mut status = apply_ports(status, &port_map);
+    let mut status = apply_ports(results, &port_map);
     wait_for_instances(&mut status, json).await;
 
     if json {

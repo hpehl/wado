@@ -50,13 +50,15 @@ pub fn prepare_instances<T>(
 
 /// Starts multiple containers in parallel with progress bars.
 ///
-/// Returns the status of each container operation along with the start time
-/// for summary reporting. When `json` is true, progress bars are suppressed.
+/// Returns the status and progress bars of each container operation along with
+/// the start time for summary reporting. Progress bars for successfully started
+/// containers are kept alive so [`wait_for_instances`] can reuse them for health
+/// checks. When `json` is true, progress bars are suppressed.
 pub async fn run_instances<T, F>(
     instances: &[T],
     build_command: F,
     json: bool,
-) -> anyhow::Result<(Vec<CommandStatus>, Instant)>
+) -> anyhow::Result<(Vec<(CommandStatus, Progress)>, Instant)>
 where
     T: ContainerConfig,
     F: Fn(&T) -> Command,
@@ -89,7 +91,8 @@ where
         let progress_clone = progress.clone();
         commands.spawn(async move {
             let output = child.wait_with_output().await;
-            progress.finish(output, Some(&name))
+            let status = progress.finish_keep_alive(output, Some(&name));
+            (status, progress)
         });
         if !json {
             tokio::spawn(async move {
@@ -98,23 +101,20 @@ where
         }
     }
 
-    let status = commands.join_all().await;
-    Ok((status, instant))
+    let results = commands.join_all().await;
+    Ok((results, instant))
 }
 
 /// Polls management interfaces in parallel for all successfully started containers.
 ///
-/// Updates each [`CommandStatus`] based on whether the health check succeeded
-/// or timed out. Containers that failed to start are skipped.
-pub async fn wait_for_instances(status: &mut [CommandStatus], json: bool) {
-    let multi_progress = if json {
-        None
-    } else {
-        Some(MultiProgress::new())
-    };
+/// Reuses the progress bars from [`run_instances`] so the health check status
+/// appears on the same terminal line as the container start. Updates each
+/// [`CommandStatus`] based on whether the health check succeeded or timed out.
+/// Containers that failed to start are skipped.
+pub async fn wait_for_instances(status: &mut [(CommandStatus, Progress)], _json: bool) {
     let mut health_checks = JoinSet::new();
 
-    for s in status.iter() {
+    for (s, progress) in status.iter() {
         if !s.success {
             continue;
         }
@@ -122,12 +122,12 @@ pub async fn wait_for_instances(status: &mut [CommandStatus], json: bool) {
             Some(port) => port,
             None => continue,
         };
-        let progress = create_progress(&multi_progress, &s.identifier, &s.identifier);
         let identifier = s.identifier.clone();
+        let progress = progress.clone();
         health_checks.spawn(async move {
             let healthy = wait_for_healthy(mgmt_port, &progress).await;
             if healthy {
-                progress.finish_healthy();
+                progress.finish_healthy(&identifier);
             } else {
                 progress.finish_unhealthy();
             }
@@ -137,7 +137,7 @@ pub async fn wait_for_instances(status: &mut [CommandStatus], json: bool) {
 
     let results = health_checks.join_all().await;
     for (identifier, healthy) in results {
-        if let Some(s) = status.iter_mut().find(|s| s.identifier == identifier)
+        if let Some((s, _)) = status.iter_mut().find(|(s, _)| s.identifier == identifier)
             && !healthy
         {
             *s = s.clone().with_health_failure();
@@ -147,16 +147,16 @@ pub async fn wait_for_instances(status: &mut [CommandStatus], json: bool) {
 
 /// Applies port information to command statuses by matching container names.
 pub fn apply_ports(
-    status: Vec<CommandStatus>,
+    status: Vec<(CommandStatus, Progress)>,
     port_map: &[(String, u16, u16)],
-) -> Vec<CommandStatus> {
+) -> Vec<(CommandStatus, Progress)> {
     status
         .into_iter()
-        .map(|s| {
+        .map(|(s, p)| {
             if let Some((_, http, mgmt)) = port_map.iter().find(|(n, _, _)| *n == s.identifier) {
-                s.with_ports(*http, *mgmt)
+                (s.with_ports(*http, *mgmt), p)
             } else {
-                s
+                (s, p)
             }
         })
         .collect()
@@ -168,7 +168,7 @@ pub fn stop_containers_by_server_type(
     matches: &ArgMatches,
     registry: &WildFlyImageRegistry,
     json: bool,
-) -> anyhow::Result<Vec<CommandStatus>> {
+) -> anyhow::Result<Vec<(CommandStatus, Progress)>> {
     verify_container_command()?;
     let wildfly_images = matches.get_one::<Vec<WildFlyImage>>("wildfly-version");
     let name = matches.get_one::<String>("name").map(|s| s.as_str());
@@ -205,15 +205,18 @@ pub fn stop_containers_by_server_type(
 
             commands.spawn(async move {
                 let output = child.wait_with_output().await;
-                progress.finish(output, Some(&instance.name))
+                let status = progress.finish(output, Some(&instance.name));
+                (status, progress)
             });
         }
 
-        let status = commands.join_all().await;
+        let results = commands.join_all().await;
         if !json {
-            summary("Stopped", "container", count, instant, status.clone());
+            let statuses: Vec<CommandStatus> =
+                results.iter().map(|(s, _)| s.clone()).collect();
+            summary("Stopped", "container", count, instant, statuses);
         }
-        Ok(status)
+        Ok(results)
     })
 }
 
@@ -221,7 +224,7 @@ pub fn stop_containers_by_server_type(
 pub async fn stop_containers_by_name(
     names: &[String],
     json: bool,
-) -> anyhow::Result<Vec<CommandStatus>> {
+) -> anyhow::Result<Vec<(CommandStatus, Progress)>> {
     let count = names.len();
     let instant = Instant::now();
     let multi_progress = if json {
@@ -242,23 +245,25 @@ pub async fn stop_containers_by_name(
         let name = name.clone();
         commands.spawn(async move {
             let output = child.wait_with_output().await;
-            progress.finish(output, Some(&name))
+            let status = progress.finish(output, Some(&name));
+            (status, progress)
         });
     }
 
-    let status = commands.join_all().await;
+    let results = commands.join_all().await;
     if !json {
-        summary("Stopped", "container", count, instant, status.clone());
+        let statuses: Vec<CommandStatus> = results.iter().map(|(s, _)| s.clone()).collect();
+        summary("Stopped", "container", count, instant, statuses);
     }
-    Ok(status)
+    Ok(results)
 }
 
 // ------------------------------------------------------ json helpers
 
-fn status_to_json(status: &[CommandStatus]) -> Vec<CommandResult> {
+fn status_to_json(status: &[(CommandStatus, Progress)]) -> Vec<CommandResult> {
     status
         .iter()
-        .map(|s| {
+        .map(|(s, _)| {
             if s.success {
                 CommandResult::success(&s.identifier, s.http, s.management)
             } else {
@@ -268,7 +273,7 @@ fn status_to_json(status: &[CommandStatus]) -> Vec<CommandResult> {
         .collect()
 }
 
-pub fn print_json_results(status: &[CommandStatus]) {
+pub fn print_json_results(status: &[(CommandStatus, Progress)]) {
     let results = status_to_json(status);
     println!("{}", serde_json::to_string(&results).unwrap_or_default());
 }

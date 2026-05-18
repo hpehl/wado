@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Consolidate health check progress into a single terminal line per container, reusing the start progress bar instead of creating a second one
+
 ## [0.6.0] - 2026-05-18
 
 ### Added

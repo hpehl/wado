@@ -21,10 +21,10 @@ pub async fn wait_for_healthy(management_port: u16, progress: &Progress) -> bool
     let management_url = format!("http://localhost:{}/management", management_port);
     let deadline = Instant::now() + DEFAULT_TIMEOUT;
     let mut use_fallback = false;
-
-    progress.show_progress("Waiting for server...");
+    let start = Instant::now();
 
     while Instant::now() < deadline {
+        progress.show_progress(&format!("Waiting for server... ({}s)", start.elapsed().as_secs()));
         let healthy = if use_fallback {
             check_management(&client, &management_url).await
         } else {

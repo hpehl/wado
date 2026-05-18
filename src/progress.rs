@@ -222,6 +222,48 @@ impl Progress {
         }
     }
 
+    /// Like [`finish`], but keeps the spinner alive on success so it can be
+    /// reused for health-check progress. On failure, the spinner is abandoned
+    /// immediately.
+    pub fn finish_keep_alive(
+        &self,
+        output: std::io::Result<Output>,
+        identifier: Option<&str>,
+    ) -> CommandStatus {
+        let id = identifier.unwrap_or(self.image_name.as_str());
+        match output {
+            Ok(output) => {
+                if output.status.success() {
+                    self.show_progress("Waiting for server...");
+                    CommandStatus::success(id)
+                } else {
+                    self.error(
+                        format!("Command failed with code {}", output.status.code().unwrap())
+                            .as_str(),
+                    );
+                    CommandStatus::error(
+                        id,
+                        String::from_utf8_lossy(&output.stderr)
+                            .replace('\n', " ")
+                            .as_str(),
+                    )
+                }
+            }
+            Err(e) => {
+                self.error(format!("Command failed: {}", e).as_str());
+                CommandStatus::error(id, e.to_string().as_str())
+            }
+        }
+    }
+
+    /// Finishes all progress bars that are still alive (not yet finished).
+    /// Used for containers that don't get health-checked.
+    pub fn finish_if_alive(&self, identifier: Option<&str>) {
+        if !self.bar.is_finished() {
+            self.success(identifier);
+        }
+    }
+
     /// Completes the spinner as successful without checking command output.
     pub fn finish_no_output(&self, identifier: Option<&str>) -> CommandStatus {
         let id = identifier.unwrap_or(self.image_name.as_str());
@@ -229,8 +271,8 @@ impl Progress {
         CommandStatus::success(id)
     }
 
-    pub fn finish_healthy(&self) {
-        self.success(Some("healthy"));
+    pub fn finish_healthy(&self, container_name: &str) {
+        self.success(Some(container_name));
     }
 
     pub fn finish_unhealthy(&self) {
