@@ -212,8 +212,7 @@ pub fn stop_containers_by_server_type(
 
         let results = commands.join_all().await;
         if !json {
-            let statuses: Vec<CommandStatus> =
-                results.iter().map(|(s, _)| s.clone()).collect();
+            let statuses: Vec<CommandStatus> = results.iter().map(|(s, _)| s.clone()).collect();
             summary("Stopped", "container", count, instant, statuses);
         }
         Ok(results)
