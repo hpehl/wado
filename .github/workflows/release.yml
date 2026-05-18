@@ -160,6 +160,5 @@ jobs:
 
           cp "extracted/${BINARY}" "${PKG_DIR}/bin/${BINARY}"
           chmod +x "${PKG_DIR}/bin/${BINARY}"
-          sed -i "s/\"version\": \".*\"/\"version\": \"${VERSION}\"/" "${PKG_DIR}/package.json"
 
           cd "${PKG_DIR}" && npm publish --access public
