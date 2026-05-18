@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix Dockerfile health check fallback matching 404 and other 4xx status codes as healthy; restrict to 2xx, 3xx, 401, and 403 only
+
 ## [0.6.1] - 2026-05-18
 
 ### Changed

@@ -55,7 +55,7 @@ EXPOSE 8080 9990
 
 HEALTHCHECK --interval=5s --timeout=3s --start-period=30s --retries=20 \
     CMD curl -sf http://localhost:9990/health/ready || \
-        curl -s -o /dev/null -w '%{http_code}' http://localhost:9990/management | grep -q '^[2-4]' || \
+        curl -s -o /dev/null -w '%{http_code}' http://localhost:9990/management | grep -qE '^([23]|401|403)' || \
         exit 1
 
 {{#if host-config~}}
