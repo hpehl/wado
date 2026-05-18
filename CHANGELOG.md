@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add health check polling after container start for standalone and domain controller instances
+- Add `Progress::hidden()` constructor for no-op progress bars in JSON mode
+- Add `CommandStatus::with_ports()` and `with_health_failure()` immutable builder methods
+- Add `apply_ports()` helper to deduplicate port-mapping logic across start commands
+
+### Changed
+
+- Replace conditional `MultiProgress` draw-target hiding with `Option<MultiProgress>` pattern
+- Replace direct `CommandStatus` field mutation with immutable builder methods
+- Replace `expect()` with graceful fallback in HTTP client creation for health checks
+
 ## [0.5.2] - 2026-05-05
 
 ### Changed

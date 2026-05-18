@@ -1,5 +1,6 @@
 use super::lifecycle::{
-    prepare_instances, print_json_results, run_instances, stop_containers_by_server_type,
+    apply_ports, prepare_instances, print_json_results, run_instances,
+    stop_containers_by_server_type, wait_for_instances,
 };
 use crate::args::{extract_config, operations_argument, parameters_argument, server_argument};
 use crate::constants::{HOSTNAME_VARIABLE, WILDFLY_ADMIN_CONTAINER};
@@ -47,34 +48,34 @@ async fn start_instances(
         .map(|i| (i.name.clone(), i.ports.http, i.ports.management))
         .collect();
 
-    let mut status = run_instances(&instances, |instance| {
-        let mut command = container_run_cmd(
-            &instance.name,
-            Some(&instance.ports),
-            operations.clone(),
-            instance.admin_image.wildfly_image.is_dev(),
-            None,
-            Some(&config),
-        );
-        command
-            .arg("--network")
-            .arg(WILDFLY_ADMIN_CONTAINER)
-            .arg("--env")
-            .arg(format!("{}={}", HOSTNAME_VARIABLE, instance.name));
-        let mut command = add_servers(command, &instance.name, servers.clone());
-        command
-            .arg(instance.admin_image.image_name())
-            .args(parameters.clone());
-        command
-    }, json)
+    let (status, _instant) = run_instances(
+        &instances,
+        |instance| {
+            let mut command = container_run_cmd(
+                &instance.name,
+                Some(&instance.ports),
+                operations.clone(),
+                instance.admin_image.wildfly_image.is_dev(),
+                None,
+                Some(&config),
+            );
+            command
+                .arg("--network")
+                .arg(WILDFLY_ADMIN_CONTAINER)
+                .arg("--env")
+                .arg(format!("{}={}", HOSTNAME_VARIABLE, instance.name));
+            let mut command = add_servers(command, &instance.name, servers.clone());
+            command
+                .arg(instance.admin_image.image_name())
+                .args(parameters.clone());
+            command
+        },
+        json,
+    )
     .await?;
 
-    for s in &mut status {
-        if let Some((_, http, mgmt)) = port_map.iter().find(|(n, _, _)| *n == s.identifier) {
-            s.http = Some(*http);
-            s.management = Some(*mgmt);
-        }
-    }
+    let mut status = apply_ports(status, &port_map);
+    wait_for_instances(&mut status, json).await;
 
     if json {
         print_json_results(&status);

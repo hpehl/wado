@@ -5,6 +5,7 @@ mod completion;
 mod constants;
 mod container;
 mod error;
+mod healthcheck;
 mod json;
 mod label;
 mod progress;

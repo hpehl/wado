@@ -1,5 +1,6 @@
 use serde::Serialize;
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum WadoErrorCode {
@@ -24,6 +25,7 @@ pub struct WadoError {
     pub message: String,
 }
 
+#[allow(dead_code)]
 impl WadoError {
     pub fn container_runtime_not_found() -> Self {
         Self {

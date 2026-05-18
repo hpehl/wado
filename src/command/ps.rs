@@ -7,11 +7,7 @@ use comfy_table::{Cell, Color, ContentArrangement, Table};
 use futures::executor::block_on;
 use wildfly_meta::WildFlyImageRegistry;
 
-pub fn ps(
-    matches: &ArgMatches,
-    registry: &WildFlyImageRegistry,
-    json: bool,
-) -> anyhow::Result<()> {
+pub fn ps(matches: &ArgMatches, registry: &WildFlyImageRegistry, json: bool) -> anyhow::Result<()> {
     let mut server_types = vec![];
     if matches.get_flag("standalone") {
         server_types.push(Standalone);

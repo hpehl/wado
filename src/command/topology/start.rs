@@ -1,4 +1,4 @@
-use crate::command::lifecycle::{print_json_results, run_instances};
+use crate::command::lifecycle::{apply_ports, print_json_results, run_instances, wait_for_instances};
 use crate::constants::{
     DOMAIN_CONTROLLER_VARIABLE, HOSTNAME_VARIABLE, PASSWORD_VARIABLE, USERNAME_VARIABLE,
     WILDFLY_ADMIN_CONTAINER,
@@ -130,74 +130,80 @@ async fn start_topology(
 
     let topology = topology_name.as_str();
 
-    let dc_port_http = dc.ports.http;
-    let dc_port_mgmt = dc.ports.management;
+    let dc_port_map: Vec<(String, u16, u16)> =
+        vec![(dc.name.clone(), dc.ports.http, dc.ports.management)];
 
-    let mut dc_status = run_instances(std::slice::from_ref(&dc), |instance| {
-        let mut command = container_run_cmd(
-            &instance.name,
-            Some(&instance.ports),
-            vec![],
-            false,
-            Some(topology),
-            Some("domain.xml"),
-        );
-        command
-            .arg("--network")
-            .arg(WILDFLY_ADMIN_CONTAINER)
-            .arg("--env")
-            .arg(format!("{}={}", HOSTNAME_VARIABLE, instance.name));
-        let mut command = add_servers(command, &instance.name, dc_servers.clone());
-        command.arg(instance.admin_image.image_name());
-        command
-    }, json)
-    .await?;
-
-    for s in &mut dc_status {
-        s.http = Some(dc_port_http);
-        s.management = Some(dc_port_mgmt);
-    }
-
-    let mut all_status = dc_status;
-
-    if !hcs.is_empty() {
-        let hc_status = run_instances(&hcs, |instance| {
-            let servers = hc_server_map
-                .get(&instance.name)
-                .cloned()
-                .unwrap_or_default();
+    let (dc_status, _instant) = run_instances(
+        std::slice::from_ref(&dc),
+        |instance| {
             let mut command = container_run_cmd(
                 &instance.name,
-                None,
+                Some(&instance.ports),
                 vec![],
                 false,
                 Some(topology),
                 Some("domain.xml"),
             );
             command
-                .arg(format!(
-                    "--secret=username,type=env,target={}",
-                    USERNAME_VARIABLE
-                ))
-                .arg(format!(
-                    "--secret=password,type=env,target={}",
-                    PASSWORD_VARIABLE
-                ))
                 .arg("--network")
                 .arg(WILDFLY_ADMIN_CONTAINER)
                 .arg("--env")
-                .arg(format!("{}={}", HOSTNAME_VARIABLE, instance.name))
-                .arg("--env")
-                .arg(format!(
-                    "{}={}",
-                    DOMAIN_CONTROLLER_VARIABLE, instance.domain_controller
-                ));
-            let mut command = add_servers(command, &instance.name, servers);
+                .arg(format!("{}={}", HOSTNAME_VARIABLE, instance.name));
+            let mut command = add_servers(command, &instance.name, dc_servers.clone());
+            command.arg(instance.admin_image.image_name());
             command
-                .arg(instance.admin_image.image_name())
-                .arg(format!("--primary-address={}", instance.domain_controller));
-            command
-        }, json)
+        },
+        json,
+    )
+    .await?;
+
+    let mut dc_status = apply_ports(dc_status, &dc_port_map);
+    wait_for_instances(&mut dc_status, json).await;
+
+    let mut all_status = dc_status;
+
+    if !hcs.is_empty() {
+        let (hc_status, _instant) = run_instances(
+            &hcs,
+            |instance| {
+                let servers = hc_server_map
+                    .get(&instance.name)
+                    .cloned()
+                    .unwrap_or_default();
+                let mut command = container_run_cmd(
+                    &instance.name,
+                    None,
+                    vec![],
+                    false,
+                    Some(topology),
+                    Some("domain.xml"),
+                );
+                command
+                    .arg(format!(
+                        "--secret=username,type=env,target={}",
+                        USERNAME_VARIABLE
+                    ))
+                    .arg(format!(
+                        "--secret=password,type=env,target={}",
+                        PASSWORD_VARIABLE
+                    ))
+                    .arg("--network")
+                    .arg(WILDFLY_ADMIN_CONTAINER)
+                    .arg("--env")
+                    .arg(format!("{}={}", HOSTNAME_VARIABLE, instance.name))
+                    .arg("--env")
+                    .arg(format!(
+                        "{}={}",
+                        DOMAIN_CONTROLLER_VARIABLE, instance.domain_controller
+                    ));
+                let mut command = add_servers(command, &instance.name, servers);
+                command
+                    .arg(instance.admin_image.image_name())
+                    .arg(format!("--primary-address={}", instance.domain_controller));
+                command
+            },
+            json,
+        )
         .await?;
 
         all_status.extend(hc_status);

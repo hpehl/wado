@@ -5,6 +5,7 @@
 //! [`indicatif::MultiProgress`] for visual feedback.
 
 use crate::args::{start_spec, validate_multiple_versions, versions_argument};
+use crate::healthcheck::wait_for_healthy;
 use crate::json::CommandResult;
 use crate::progress::{CommandStatus, Progress, stderr_reader, summary};
 use crate::wildfly::{ContainerConfig, ResolvedStart, ServerType};
@@ -49,13 +50,13 @@ pub fn prepare_instances<T>(
 
 /// Starts multiple containers in parallel with progress bars.
 ///
-/// Returns the status of each container operation. When `json` is true,
-/// progress bars and summary output are suppressed.
+/// Returns the status of each container operation along with the start time
+/// for summary reporting. When `json` is true, progress bars are suppressed.
 pub async fn run_instances<T, F>(
     instances: &[T],
     build_command: F,
     json: bool,
-) -> anyhow::Result<Vec<CommandStatus>>
+) -> anyhow::Result<(Vec<CommandStatus>, Instant)>
 where
     T: ContainerConfig,
     F: Fn(&T) -> Command,
@@ -63,25 +64,16 @@ where
     let names: Vec<&str> = instances.iter().map(|i| i.name()).collect();
     check_name_conflicts(&names).await?;
 
-    let count = instances.len();
     let instant = Instant::now();
-    let multi_progress = MultiProgress::new();
-    if json {
-        multi_progress.set_draw_target(indicatif::ProgressDrawTarget::hidden());
-    }
+    let multi_progress = if json { None } else { Some(MultiProgress::new()) };
     let mut commands = JoinSet::new();
 
     for instance in instances {
-        let progress = Progress::new(
+        let progress = create_progress(
+            &multi_progress,
             &instance.admin_image().wildfly_image.short_name(),
             &instance.admin_image().image_name(),
         );
-        multi_progress.add(progress.bar.clone());
-        if json {
-            progress
-                .bar
-                .set_draw_target(indicatif::ProgressDrawTarget::hidden());
-        }
         let mut child = build_command(instance)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -103,10 +95,60 @@ where
     }
 
     let status = commands.join_all().await;
-    if !json {
-        summary("Started", "container", count, instant, status.clone());
+    Ok((status, instant))
+}
+
+/// Polls management interfaces in parallel for all successfully started containers.
+///
+/// Updates each [`CommandStatus`] based on whether the health check succeeded
+/// or timed out. Containers that failed to start are skipped.
+pub async fn wait_for_instances(status: &mut [CommandStatus], json: bool) {
+    let multi_progress = if json { None } else { Some(MultiProgress::new()) };
+    let mut health_checks = JoinSet::new();
+
+    for s in status.iter() {
+        if !s.success {
+            continue;
+        }
+        let mgmt_port = match s.management {
+            Some(port) => port,
+            None => continue,
+        };
+        let progress = create_progress(&multi_progress, &s.identifier, &s.identifier);
+        let identifier = s.identifier.clone();
+        health_checks.spawn(async move {
+            let healthy = wait_for_healthy(mgmt_port, &progress).await;
+            if healthy {
+                progress.finish_healthy();
+            } else {
+                progress.finish_unhealthy();
+            }
+            (identifier, healthy)
+        });
     }
-    Ok(status)
+
+    let results = health_checks.join_all().await;
+    for (identifier, healthy) in results {
+        if let Some(s) = status.iter_mut().find(|s| s.identifier == identifier)
+            && !healthy
+        {
+            *s = s.clone().with_health_failure();
+        }
+    }
+}
+
+/// Applies port information to command statuses by matching container names.
+pub fn apply_ports(status: Vec<CommandStatus>, port_map: &[(String, u16, u16)]) -> Vec<CommandStatus> {
+    status
+        .into_iter()
+        .map(|s| {
+            if let Some((_, http, mgmt)) = port_map.iter().find(|(n, _, _)| *n == s.identifier) {
+                s.with_ports(*http, *mgmt)
+            } else {
+                s
+            }
+        })
+        .collect()
 }
 
 /// Stops containers matching the server type, version, and name from CLI args.
@@ -130,23 +172,15 @@ pub fn stop_containers_by_server_type(
         .await?;
         let count = instances.len();
         let instant = Instant::now();
-        let multi_progress = MultiProgress::new();
-        if json {
-            multi_progress.set_draw_target(indicatif::ProgressDrawTarget::hidden());
-        }
+        let multi_progress = if json { None } else { Some(MultiProgress::new()) };
         let mut commands = JoinSet::new();
 
         for instance in instances {
-            let progress = Progress::new(
+            let progress = create_progress(
+                &multi_progress,
                 &instance.admin_image.wildfly_image.short_name(),
                 &instance.admin_image.image_name(),
             );
-            multi_progress.add(progress.bar.clone());
-            if json {
-                progress
-                    .bar
-                    .set_draw_target(indicatif::ProgressDrawTarget::hidden());
-            }
             let mut command = container_stop_cmd(&instance.name);
             let child = command
                 .stdout(Stdio::piped())
@@ -175,20 +209,11 @@ pub async fn stop_containers_by_name(
 ) -> anyhow::Result<Vec<CommandStatus>> {
     let count = names.len();
     let instant = Instant::now();
-    let multi_progress = MultiProgress::new();
-    if json {
-        multi_progress.set_draw_target(indicatif::ProgressDrawTarget::hidden());
-    }
+    let multi_progress = if json { None } else { Some(MultiProgress::new()) };
     let mut commands = JoinSet::new();
 
     for name in names {
-        let progress = Progress::new(name, name);
-        multi_progress.add(progress.bar.clone());
-        if json {
-            progress
-                .bar
-                .set_draw_target(indicatif::ProgressDrawTarget::hidden());
-        }
+        let progress = create_progress(&multi_progress, name, name);
         let mut command = container_stop_cmd(name);
         let child = command
             .stdout(Stdio::piped())
@@ -230,6 +255,19 @@ pub fn print_json_results(status: &[CommandStatus]) {
 }
 
 // ------------------------------------------------------ internal
+
+/// Creates a progress bar, joining a [`MultiProgress`] group if present,
+/// or returning a hidden no-op progress bar for JSON mode.
+fn create_progress(
+    multi_progress: &Option<MultiProgress>,
+    prefix: &str,
+    image_name: &str,
+) -> Progress {
+    match multi_progress {
+        Some(mp) => Progress::join(mp, prefix, image_name),
+        None => Progress::hidden(prefix, image_name),
+    }
+}
 
 /// Checks for name collisions against all running containers, not just wado-managed ones.
 async fn check_name_conflicts(names: &[&str]) -> anyhow::Result<()> {

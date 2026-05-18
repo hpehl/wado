@@ -16,7 +16,7 @@ pub static DOCKERFILE: &str = r#"{{#if is-dev~}}
 FROM eclipse-temurin:21-ubi9-minimal
 
 RUN microdnf update -y && \
-    microdnf install --best --nodocs -y unzip && \
+    microdnf install --best --nodocs -y unzip curl-minimal && \
     microdnf clean all
 
 RUN groupadd -r jboss -g 1000 && useradd -u 1000 -r -g jboss -m -d /opt/jboss -s /sbin/nologin -c "JBoss user" jboss && \
@@ -52,6 +52,12 @@ ENV LAUNCH_JBOSS_IN_BACKGROUND=true
 USER jboss
 
 EXPOSE 8080 9990
+
+HEALTHCHECK --interval=5s --timeout=3s --start-period=30s --retries=20 \
+    CMD curl -sf http://localhost:9990/health/ready || \
+        curl -s -o /dev/null -w '%{http_code}' http://localhost:9990/management | grep -q '^[2-4]' || \
+        exit 1
+
 {{#if host-config~}}
 ENTRYPOINT ["/opt/jboss/wildfly/bin/{{entrypoint}}", "-b", "0.0.0.0", "-bmanagement", "0.0.0.0", "--host-config", "{{host-config}}"]
 CMD ["-c", "domain.xml"]

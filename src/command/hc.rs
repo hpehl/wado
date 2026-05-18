@@ -101,39 +101,44 @@ async fn start_instances(
         create_secret("password", password)
     )?;
     let config = extract_config(&parameters, "domain.xml");
-    let status = run_instances(&instances, |instance| {
-        let mut command = container_run_cmd(
-            &instance.name,
-            None,
-            operations.clone(),
-            instance.admin_image.wildfly_image.is_dev(),
-            None,
-            Some(&config),
-        );
-        command
-            .arg(format!(
-                "--secret=username,type=env,target={}",
-                USERNAME_VARIABLE
-            ))
-            .arg(format!(
-                "--secret=password,type=env,target={}",
-                PASSWORD_VARIABLE
-            ))
-            .arg("--network")
-            .arg(WILDFLY_ADMIN_CONTAINER)
-            .arg("--env")
-            .arg(format!("{}={}", HOSTNAME_VARIABLE, instance.name))
-            .arg("--env")
-            .arg(format!(
-                "{}={}",
-                DOMAIN_CONTROLLER_VARIABLE, instance.domain_controller
-            ));
-        let mut command = add_servers(command, &instance.name, servers.clone());
-        command
-            .arg(instance.admin_image.image_name())
-            .args(parameters.clone());
-        command
-    }, json)
+    // HC doesn't expose management ports, so no health check or port mapping needed
+    let (status, _instant) = run_instances(
+        &instances,
+        |instance| {
+            let mut command = container_run_cmd(
+                &instance.name,
+                None,
+                operations.clone(),
+                instance.admin_image.wildfly_image.is_dev(),
+                None,
+                Some(&config),
+            );
+            command
+                .arg(format!(
+                    "--secret=username,type=env,target={}",
+                    USERNAME_VARIABLE
+                ))
+                .arg(format!(
+                    "--secret=password,type=env,target={}",
+                    PASSWORD_VARIABLE
+                ))
+                .arg("--network")
+                .arg(WILDFLY_ADMIN_CONTAINER)
+                .arg("--env")
+                .arg(format!("{}={}", HOSTNAME_VARIABLE, instance.name))
+                .arg("--env")
+                .arg(format!(
+                    "{}={}",
+                    DOMAIN_CONTROLLER_VARIABLE, instance.domain_controller
+                ));
+            let mut command = add_servers(command, &instance.name, servers.clone());
+            command
+                .arg(instance.admin_image.image_name())
+                .args(parameters.clone());
+            command
+        },
+        json,
+    )
     .await?;
 
     if json {

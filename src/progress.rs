@@ -46,6 +46,24 @@ impl CommandStatus {
             management: None,
         }
     }
+
+    /// Returns a new status with HTTP and management port information.
+    pub fn with_ports(self, http: u16, management: u16) -> Self {
+        CommandStatus {
+            http: Some(http),
+            management: Some(management),
+            ..self
+        }
+    }
+
+    /// Returns a new status marking a health check timeout failure.
+    pub fn with_health_failure(self) -> Self {
+        CommandStatus {
+            success: false,
+            error_message: "Health check timed out".to_string(),
+            ..self
+        }
+    }
 }
 
 /// Prints a colored summary line showing how many operations succeeded/failed and elapsed time.
@@ -124,6 +142,15 @@ impl Progress {
         progress
     }
 
+    /// Creates a hidden progress bar that produces no terminal output.
+    pub fn hidden(prefix: &str, image_name: &str) -> Progress {
+        Progress {
+            prefix: prefix.to_string(),
+            image_name: image_name.to_string(),
+            bar: ProgressBar::hidden(),
+        }
+    }
+
     fn spinner(prefix: &str) -> ProgressBar {
         ProgressBar::new_spinner()
             .with_style(
@@ -161,19 +188,27 @@ impl Progress {
     }
 
     /// Completes the spinner based on the command output, returning a [`CommandStatus`].
-    pub fn finish(&self, output: std::io::Result<Output>, status: Option<&str>) -> CommandStatus {
+    ///
+    /// When `identifier` is provided, it is used as the [`CommandStatus`] identifier
+    /// (e.g. the container name). Otherwise the image name is used.
+    pub fn finish(
+        &self,
+        output: std::io::Result<Output>,
+        identifier: Option<&str>,
+    ) -> CommandStatus {
+        let id = identifier.unwrap_or(self.image_name.as_str());
         match output {
             Ok(output) => {
                 if output.status.success() {
-                    self.success(status);
-                    CommandStatus::success(self.image_name.as_str())
+                    self.success(identifier);
+                    CommandStatus::success(id)
                 } else {
                     self.error(
                         format!("Command failed with code {}", output.status.code().unwrap())
                             .as_str(),
                     );
                     CommandStatus::error(
-                        self.image_name.as_str(),
+                        id,
                         String::from_utf8_lossy(&output.stderr)
                             .replace('\n', " ")
                             .as_str(),
@@ -182,15 +217,24 @@ impl Progress {
             }
             Err(e) => {
                 self.error(format!("Command failed: {}", e).as_str());
-                CommandStatus::error(self.image_name.as_str(), e.to_string().as_str())
+                CommandStatus::error(id, e.to_string().as_str())
             }
         }
     }
 
     /// Completes the spinner as successful without checking command output.
-    pub fn finish_no_output(&self, status: Option<&str>) -> CommandStatus {
-        self.success(status);
-        CommandStatus::success(self.image_name.as_str())
+    pub fn finish_no_output(&self, identifier: Option<&str>) -> CommandStatus {
+        let id = identifier.unwrap_or(self.image_name.as_str());
+        self.success(identifier);
+        CommandStatus::success(id)
+    }
+
+    pub fn finish_healthy(&self) {
+        self.success(Some("healthy"));
+    }
+
+    pub fn finish_unhealthy(&self) {
+        self.error("health check timed out");
     }
 
     fn success(&self, status: Option<&str>) {
