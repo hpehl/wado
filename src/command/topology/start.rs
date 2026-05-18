@@ -1,4 +1,6 @@
-use crate::command::lifecycle::{apply_ports, print_json_results, run_instances, wait_for_instances};
+use crate::command::lifecycle::{
+    apply_ports, print_json_results, run_instances, wait_for_instances,
+};
 use crate::constants::{
     DOMAIN_CONTROLLER_VARIABLE, HOSTNAME_VARIABLE, PASSWORD_VARIABLE, USERNAME_VARIABLE,
     WILDFLY_ADMIN_CONTAINER,

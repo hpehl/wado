@@ -65,7 +65,11 @@ where
     check_name_conflicts(&names).await?;
 
     let instant = Instant::now();
-    let multi_progress = if json { None } else { Some(MultiProgress::new()) };
+    let multi_progress = if json {
+        None
+    } else {
+        Some(MultiProgress::new())
+    };
     let mut commands = JoinSet::new();
 
     for instance in instances {
@@ -103,7 +107,11 @@ where
 /// Updates each [`CommandStatus`] based on whether the health check succeeded
 /// or timed out. Containers that failed to start are skipped.
 pub async fn wait_for_instances(status: &mut [CommandStatus], json: bool) {
-    let multi_progress = if json { None } else { Some(MultiProgress::new()) };
+    let multi_progress = if json {
+        None
+    } else {
+        Some(MultiProgress::new())
+    };
     let mut health_checks = JoinSet::new();
 
     for s in status.iter() {
@@ -138,7 +146,10 @@ pub async fn wait_for_instances(status: &mut [CommandStatus], json: bool) {
 }
 
 /// Applies port information to command statuses by matching container names.
-pub fn apply_ports(status: Vec<CommandStatus>, port_map: &[(String, u16, u16)]) -> Vec<CommandStatus> {
+pub fn apply_ports(
+    status: Vec<CommandStatus>,
+    port_map: &[(String, u16, u16)],
+) -> Vec<CommandStatus> {
     status
         .into_iter()
         .map(|s| {
@@ -172,7 +183,11 @@ pub fn stop_containers_by_server_type(
         .await?;
         let count = instances.len();
         let instant = Instant::now();
-        let multi_progress = if json { None } else { Some(MultiProgress::new()) };
+        let multi_progress = if json {
+            None
+        } else {
+            Some(MultiProgress::new())
+        };
         let mut commands = JoinSet::new();
 
         for instance in instances {
@@ -209,7 +224,11 @@ pub async fn stop_containers_by_name(
 ) -> anyhow::Result<Vec<CommandStatus>> {
     let count = names.len();
     let instant = Instant::now();
-    let multi_progress = if json { None } else { Some(MultiProgress::new()) };
+    let multi_progress = if json {
+        None
+    } else {
+        Some(MultiProgress::new())
+    };
     let mut commands = JoinSet::new();
 
     for name in names {
