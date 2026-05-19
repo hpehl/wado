@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix multi-platform builds failing on repeat runs when image name already exists as a regular image; remove existing image before manifest creation
+
 ## [0.6.2] - 2026-05-18
 
 ### Fixed

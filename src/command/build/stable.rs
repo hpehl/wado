@@ -1,6 +1,6 @@
 use super::common::{
-    container_build_commands, dockerfile_data, render_dockerfile, run_builds_verbose,
-    run_preconditions, write_entrypoint,
+    container_build_commands, dockerfile_data, remove_existing_image, render_dockerfile,
+    run_builds_verbose, run_preconditions, write_entrypoint,
 };
 use crate::args::username_password_argument;
 use crate::progress::{CommandStatus, Progress, stdout_reader, summary};
@@ -81,6 +81,7 @@ async fn start_builds(
         );
 
         let temp_dir = tempdir()?;
+        remove_existing_image(&admin_image.image_name()).await;
         let mut child = run_preconditions(podman_build(
             &admin_image,
             temp_dir.as_ref(),

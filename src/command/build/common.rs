@@ -133,6 +133,19 @@ pub(super) fn container_build_commands(
     }
 }
 
+pub(super) async fn remove_existing_image(image_name: &str) {
+    if let Ok(mut cmd) = container_command() {
+        let _ = cmd
+            .arg("rmi")
+            .arg("-f")
+            .arg(image_name)
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status()
+            .await;
+    }
+}
+
 pub(super) async fn run_preconditions(mut commands: Vec<Command>) -> anyhow::Result<Command> {
     let last = commands
         .pop()
@@ -161,6 +174,7 @@ pub(super) async fn run_builds_verbose(
         println!("\n--- {} ---", image_name);
 
         let temp_dir = tempdir()?;
+        remove_existing_image(&image_name).await;
         let status = run_preconditions(build_fn(admin_image, temp_dir.as_ref())?)
             .await?
             .stdout(Stdio::inherit())
