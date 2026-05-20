@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Switch NPM package publishing to OIDC authentication in release workflow
+
 ## [0.6.3] - 2026-05-19
 
 ### Fixed
