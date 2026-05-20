@@ -3,6 +3,7 @@ name: Release
 permissions:
   # TODO: once `releases: write` is supported, use it instead.
   contents: write
+  id-token: write
 
 on:
   push:
@@ -127,15 +128,14 @@ jobs:
             target: x86_64-pc-windows-msvc
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: '22'
           registry-url: 'https://registry.npmjs.org'
+      - run: npm install -g npm@latest
       - id: get-version
         uses: battila7/get-version-action@v2.3.0
       - name: Download, extract, and publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           VERSION="${{ steps.get-version.outputs.version-without-v }}"
           TAG="${{ steps.get-version.outputs.version }}"
