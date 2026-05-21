@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.6] - 2026-05-21
+
 ### Fixed
 
 - Fix Dockerfile HEALTHCHECK being silently dropped from container images; podman defaults to OCI image format which does not support HEALTHCHECK, so builds now use Docker format to preserve it
@@ -492,7 +494,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - First release 🎉
 
-[Unreleased]: https://github.com/hpehl/wado/compare/v0.6.5...HEAD
+[Unreleased]: https://github.com/hpehl/wado/compare/v0.6.6...HEAD
+[0.6.6]: https://github.com/hpehl/wado/compare/v0.6.5...v0.6.6
 [0.6.5]: https://github.com/hpehl/wado/compare/v0.6.4...v0.6.5
 
 [0.6.4]: https://github.com/hpehl/wado/compare/v0.6.3...v0.6.4
