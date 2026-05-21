@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix Dockerfile HEALTHCHECK being silently dropped from container images; podman defaults to OCI image format which does not support HEALTHCHECK, so builds now use Docker format to preserve it
+
 ## [0.6.5] - 2026-05-20
 
 ### Fixed

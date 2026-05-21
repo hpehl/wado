@@ -100,6 +100,8 @@ pub(super) fn container_build_commands(
         let mut command = container_command()?;
         command
             .arg("build")
+            .arg("--format")
+            .arg("docker")
             .arg("--secret")
             .arg(format!("id=username,src={}", username_path.display()))
             .arg("--secret")
@@ -119,6 +121,8 @@ pub(super) fn container_build_commands(
         let mut build_cmd = container_command()?;
         build_cmd
             .arg("build")
+            .arg("--format")
+            .arg("docker")
             .arg("--platform")
             .arg(platforms.join(","))
             .arg("--secret")
