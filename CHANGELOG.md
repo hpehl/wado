@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Migrate YAML parsing from deprecated `serde_yml` to `serde-saphyr`, a maintained pure-Rust YAML library (resolves RUSTSEC-2025-0068)
+- Update all dependencies to latest compatible versions
 
 ## [0.6.6] - 2026-05-21
 
