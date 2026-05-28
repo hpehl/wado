@@ -125,6 +125,10 @@ impl<'de> de::Visitor<'de> for VersionVisitor {
         formatter.write_str("a version number (e.g. 34, 26.1) or 'dev'")
     }
 
+    fn visit_i64<E: de::Error>(self, v: i64) -> Result<String, E> {
+        Ok(v.to_string())
+    }
+
     fn visit_u64<E: de::Error>(self, v: u64) -> Result<String, E> {
         Ok(v.to_string())
     }
