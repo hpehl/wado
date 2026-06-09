@@ -31,7 +31,7 @@ thiserror = "2"
 tempfile = "3.27.0"
 tokio = { version = "1.52.3", features = ["full"] }
 webbrowser = "1.2.0"
-which = "8.0.2"
+which = "8.0.3"
 wildfly_meta = "0.7.1"
 
 # use LTO for smaller binaries (that take longer to build)
