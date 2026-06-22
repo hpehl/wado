@@ -359,13 +359,19 @@ async fn extract_from_volume(
         .arg(format!("{}:/build:ro", volume_name))
         .arg(build_image)
         .arg("true");
-    let status = create_cmd
+    let output = create_cmd
         .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .status()
+        .stderr(Stdio::piped())
+        .output()
         .await?;
-    if !status.success() {
-        anyhow::bail!("Failed to create extraction container");
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let detail = stderr.trim();
+        if detail.is_empty() {
+            anyhow::bail!("Failed to create extraction container");
+        } else {
+            anyhow::bail!("Failed to create extraction container\n{}", detail);
+        }
     }
 
     // Copy artifact to host

@@ -214,30 +214,42 @@ async fn run_dev_build_inner(
 async fn create_volume(name: &str) -> anyhow::Result<()> {
     let mut cmd = container_command()?;
     cmd.arg("volume").arg("create").arg(name);
-    let status = cmd
+    let output = cmd
         .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .status()
+        .stderr(Stdio::piped())
+        .output()
         .await?;
-    if !status.success() {
-        anyhow::bail!("Failed to create volume {}", name);
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let detail = stderr.trim();
+        if detail.is_empty() {
+            anyhow::bail!("Failed to create volume {}", name);
+        } else {
+            anyhow::bail!("Failed to create volume {}\n{}", name, detail);
+        }
     }
     Ok(())
 }
 
 async fn remove_volume(name: &str) -> anyhow::Result<()> {
     let mut cmd = container_command()?;
-    let status = cmd
+    let output = cmd
         .arg("volume")
         .arg("rm")
         .arg("-f")
         .arg(name)
         .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .status()
+        .stderr(Stdio::piped())
+        .output()
         .await?;
-    if !status.success() {
-        anyhow::bail!("volume rm exited with {}", status);
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let detail = stderr.trim();
+        if detail.is_empty() {
+            anyhow::bail!("Failed to remove volume {}", name);
+        } else {
+            anyhow::bail!("Failed to remove volume {}\n{}", name, detail);
+        }
     }
     Ok(())
 }

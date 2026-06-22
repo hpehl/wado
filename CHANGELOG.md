@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Migrate YAML parsing from deprecated `serde_yml` to `serde-saphyr`, a maintained pure-Rust YAML library (resolves RUSTSEC-2025-0068)
 - Update all dependencies to latest compatible versions
 
+### Fixed
+
+- Surface container runtime stderr in error messages instead of silently discarding it for build preconditions, volume creation/removal, and extraction container operations
+
 ## [0.6.6] - 2026-05-21
 
 ### Fixed

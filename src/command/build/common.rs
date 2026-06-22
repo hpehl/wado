@@ -155,13 +155,19 @@ pub(super) async fn run_preconditions(mut commands: Vec<Command>) -> anyhow::Res
         .pop()
         .ok_or_else(|| anyhow::anyhow!("no build commands"))?;
     for mut cmd in commands {
-        let status = cmd
+        let output = cmd
             .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .status()
+            .stderr(Stdio::piped())
+            .output()
             .await?;
-        if !status.success() {
-            anyhow::bail!("Build preparation failed with {}", status);
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            let detail = stderr.trim();
+            if detail.is_empty() {
+                anyhow::bail!("Build preparation failed with {}", output.status);
+            } else {
+                anyhow::bail!("Build preparation failed with {}\n{}", output.status, detail);
+            }
         }
     }
     Ok(last)
