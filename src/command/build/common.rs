@@ -166,7 +166,11 @@ pub(super) async fn run_preconditions(mut commands: Vec<Command>) -> anyhow::Res
             if detail.is_empty() {
                 anyhow::bail!("Build preparation failed with {}", output.status);
             } else {
-                anyhow::bail!("Build preparation failed with {}\n{}", output.status, detail);
+                anyhow::bail!(
+                    "Build preparation failed with {}\n{}",
+                    output.status,
+                    detail
+                );
             }
         }
     }
