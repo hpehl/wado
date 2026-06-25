@@ -40,9 +40,9 @@ impl Label {
         format!("{}={}", self.key(), value)
     }
 
-    /// For `podman ps --format '{{index .Labels "<key>"}}'`
+    /// For `podman ps --format '{{.Label "<key>"}}'`
     pub fn format_expr(&self) -> String {
-        format!("{{{{index .Labels \"{}\"}}}}", self.key())
+        format!("{{{{.Label \"{}\"}}}}", self.key())
     }
 
     /// Parse a raw label value from `podman ps` output.
@@ -93,7 +93,7 @@ mod tests {
     fn format_expr_produces_go_template() {
         assert_eq!(
             Label::Id.format_expr(),
-            "{{index .Labels \"org.wildfly.wado.id\"}}"
+            "{{.Label \"org.wildfly.wado.id\"}}"
         );
     }
 

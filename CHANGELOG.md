@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix `wado ps` and `wado stop` failing silently on podman 6 due to `{{index .Labels "key"}}` format no longer working; use `{{.Label "key"}}` method syntax compatible with podman 5+
 - Surface container runtime stderr in error messages instead of silently discarding it for build preconditions, volume creation/removal, and extraction container operations
 
 ## [0.6.6] - 2026-05-21
