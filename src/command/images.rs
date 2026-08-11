@@ -27,7 +27,7 @@ pub fn images(registry: &WildFlyImageRegistry) -> anyhow::Result<()> {
 
     let mut table = Table::new();
     table
-        .load_preset(UTF8_BORDERS_ONLY)
+        .load_style(UTF8_BORDERS_ONLY)
         .set_content_arrangement(ContentArrangement::Dynamic)
         .set_header(vec!["Version", "Type", "Image"]);
     for image in &image_values {
