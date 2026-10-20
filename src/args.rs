@@ -223,7 +223,10 @@ mod tests {
 
     #[test]
     fn split_single_operation() {
-        assert_eq!(split_operations("/subsystem=logging:read-resource"), vec!["/subsystem=logging:read-resource"]);
+        assert_eq!(
+            split_operations("/subsystem=logging:read-resource"),
+            vec!["/subsystem=logging:read-resource"]
+        );
     }
 
     #[test]
@@ -236,7 +239,8 @@ mod tests {
 
     #[test]
     fn split_preserves_commas_inside_parentheses() {
-        let input = "/subsystem=logging/console-handler=CONSOLE:write-attribute(name=level,value=DEBUG)";
+        let input =
+            "/subsystem=logging/console-handler=CONSOLE:write-attribute(name=level,value=DEBUG)";
         assert_eq!(split_operations(input), vec![input]);
     }
 
