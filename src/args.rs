@@ -41,12 +41,8 @@ pub fn operations_argument(matches: &ArgMatches) -> Vec<String> {
     let mut operations = matches
         .get_many::<String>("operations")
         .unwrap_or_default()
-        .flat_map(|operation| {
-            operation
-                .split(',')
-                .map(|s| s.to_string())
-                .collect::<Vec<String>>()
-        })
+        .flat_map(|operation| split_operations(operation))
+        .map(|s| s.to_string())
         .filter(|op| {
             if is_valid_cli_operation(op) {
                 true
@@ -196,4 +192,69 @@ pub fn extract_config(parameters: &[String], default: &str) -> String {
 fn is_valid_cli_operation(operation: &str) -> bool {
     let trimmed = operation.trim();
     trimmed.starts_with('/') || trimmed.starts_with(':')
+}
+
+fn split_operations(input: &str) -> Vec<&str> {
+    let mut parts = Vec::new();
+    let mut start = 0;
+    let mut depth = 0;
+    for (i, c) in input.char_indices() {
+        match c {
+            '(' => depth += 1,
+            ')' => {
+                if depth > 0 {
+                    depth -= 1;
+                }
+            }
+            ',' if depth == 0 => {
+                parts.push(&input[start..i]);
+                start = i + 1;
+            }
+            _ => {}
+        }
+    }
+    parts.push(&input[start..]);
+    parts
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn split_single_operation() {
+        assert_eq!(split_operations("/subsystem=logging:read-resource"), vec!["/subsystem=logging:read-resource"]);
+    }
+
+    #[test]
+    fn split_comma_separated_operations() {
+        assert_eq!(
+            split_operations("/a=b:read-resource,/c=d:read-resource"),
+            vec!["/a=b:read-resource", "/c=d:read-resource"]
+        );
+    }
+
+    #[test]
+    fn split_preserves_commas_inside_parentheses() {
+        let input = "/subsystem=logging/console-handler=CONSOLE:write-attribute(name=level,value=DEBUG)";
+        assert_eq!(split_operations(input), vec![input]);
+    }
+
+    #[test]
+    fn split_multiple_operations_with_parentheses() {
+        let input = "/a=b:op(x=1,y=2),/c=d:op(a=3,b=4)";
+        assert_eq!(
+            split_operations(input),
+            vec!["/a=b:op(x=1,y=2)", "/c=d:op(a=3,b=4)"]
+        );
+    }
+
+    #[test]
+    fn split_nested_parentheses() {
+        let input = "/a=b:op(x=(\"foo\",\"bar\"),y=2),/c=d:read";
+        assert_eq!(
+            split_operations(input),
+            vec!["/a=b:op(x=(\"foo\",\"bar\"),y=2)", "/c=d:read"]
+        );
+    }
 }

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix `--operations` flag splitting on commas inside DMR operation parentheses, causing operations like `write-attribute(name=level,value=DEBUG)` to be incorrectly rejected
+
 ## [0.6.7] - 2026-06-25
 
 ### Changed
