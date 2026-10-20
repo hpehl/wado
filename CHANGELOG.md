@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix release workflow NPM publish failing due to Node 25 incompatibility with npm@latest; pin to Node 22 LTS
+- Fix release workflow Homebrew formula push failing due to lost authentication on git push
+
 ## [0.6.8] - 2026-10-20
 
 ### Fixed
