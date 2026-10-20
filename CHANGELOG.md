@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix release workflow npm publish failing due to missing OIDC authentication after `setup-node` v6 to v7 upgrade; restore `registry-url` and `npm@latest` install required for tokenless OIDC publishing
+
 ## [0.6.9] - 2026-10-20
 
 ### Fixed

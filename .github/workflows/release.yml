@@ -131,7 +131,8 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 22
-      - run: corepack enable
+          registry-url: https://registry.npmjs.org
+      - run: npm install -g npm@latest
       - id: get-version
         uses: battila7/get-version-action@v2.3.0
       - name: Download, extract, and publish
