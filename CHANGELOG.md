@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.10] - 2026-10-20
+
 ### Fixed
 
 - Fix release workflow npm publish failing due to missing OIDC authentication after `setup-node` v6 to v7 upgrade; restore `registry-url` and `npm@latest` install required for tokenless OIDC publishing
@@ -523,7 +525,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - First release 🎉
 
-[Unreleased]: https://github.com/hpehl/wado/compare/v0.6.9...HEAD
+[Unreleased]: https://github.com/hpehl/wado/compare/v0.6.10...HEAD
+[0.6.10]: https://github.com/hpehl/wado/compare/v0.6.9...v0.6.10
 [0.6.9]: https://github.com/hpehl/wado/compare/v0.6.8...v0.6.9
 [0.6.8]: https://github.com/hpehl/wado/compare/v0.6.7...v0.6.8
 [0.6.7]: https://github.com/hpehl/wado/compare/v0.6.6...v0.6.7
