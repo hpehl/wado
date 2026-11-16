@@ -176,7 +176,11 @@ mod tests {
         let registry = test_registry();
         let img = wimg("42");
         let client = ManagementClient::default_port(&img, &registry);
-        assert!(client.cli_config_url.contains("core-feature-pack/galleon-common/"));
+        assert!(
+            client
+                .cli_config_url
+                .contains("core-feature-pack/galleon-common/")
+        );
     }
 
     #[test]
