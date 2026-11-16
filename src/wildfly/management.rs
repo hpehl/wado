@@ -81,14 +81,24 @@ impl ManagementClient {
         } else {
             core_release_version.to_string()
         };
+        let core_major = effective_version
+            .split('.')
+            .next()
+            .and_then(|s| s.parse::<u32>().ok())
+            .unwrap_or(0);
+        let cli_config_path = if core_major >= 34 {
+            "core-feature-pack/galleon-common/src/main/resources/packages/core-tools/content/bin/jboss-cli.xml"
+        } else {
+            "core-feature-pack/common/src/main/resources/content/bin/jboss-cli.xml"
+        };
         (
             format!(
                 "https://repo1.maven.org/maven2/org/wildfly/core/wildfly-cli/{v}/wildfly-cli-{v}-client.jar",
                 v = effective_version
             ),
             format!(
-                "https://raw.githubusercontent.com/wildfly/wildfly-core/refs/tags/{}/core-feature-pack/common/src/main/resources/content/bin/jboss-cli.xml",
-                effective_version
+                "https://raw.githubusercontent.com/wildfly/wildfly-core/refs/tags/{}/{}",
+                effective_version, cli_config_path
             ),
         )
     }
@@ -151,6 +161,22 @@ mod tests {
         assert!(!client.cli_jar_url.contains("0.0.0"));
         let latest = registry.last().unwrap();
         assert!(client.cli_jar_url.contains(&latest.core_release_version));
+    }
+
+    #[test]
+    fn cli_config_url_uses_old_path_for_core_before_34() {
+        let registry = test_registry();
+        let img = wimg("39");
+        let client = ManagementClient::default_port(&img, &registry);
+        assert!(client.cli_config_url.contains("core-feature-pack/common/"));
+    }
+
+    #[test]
+    fn cli_config_url_uses_new_path_for_core_34_and_later() {
+        let registry = test_registry();
+        let img = wimg("42");
+        let client = ManagementClient::default_port(&img, &registry);
+        assert!(client.cli_config_url.contains("core-feature-pack/galleon-common/"));
     }
 
     #[test]

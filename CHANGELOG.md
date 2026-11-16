@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix `wado cli` failing with 404 for WildFly 42+ because the `jboss-cli.xml` config file moved to a new path in wildfly-core 34; detect core major version and use the correct GitHub raw URL
+
 ## [0.6.10] - 2026-10-20
 
 ### Fixed

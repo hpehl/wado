@@ -65,3 +65,14 @@ core_release_version = "31.0.3.Final"
 image_tag = "39.0.1.Final-2-jdk21"
 repository = "quay.io/wildfly/wildfly"
 platforms = ["linux/amd64", "linux/arm64", "linux/s390x", "linux/ppc64le"]
+
+[[wildfly_images]]
+major = 42
+minor = 0
+version = "42.0.0"
+release_version = "42.0.0.Final"
+core_version = "34.0.0"
+core_release_version = "34.0.0.Final"
+image_tag = "42.0.0.Final-jdk25"
+repository = "quay.io/wildfly/wildfly"
+platforms = ["linux/amd64", "linux/arm64", "linux/s390x", "linux/ppc64le"]
