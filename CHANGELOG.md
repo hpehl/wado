@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.12] - 2026-11-26
+
 ### Changed
 
 - Attach standalone servers to the shared `wado` network, like domain and host controllers, so they can reach other containers on that network by name (e.g. a database)
@@ -544,7 +546,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - First release 🎉
 
-[Unreleased]: https://github.com/hpehl/wado/compare/v0.6.11...HEAD
+[Unreleased]: https://github.com/hpehl/wado/compare/v0.6.12...HEAD
+[0.6.12]: https://github.com/hpehl/wado/compare/v0.6.11...v0.6.12
 [0.6.11]: https://github.com/hpehl/wado/compare/v0.6.10...v0.6.11
 [0.6.10]: https://github.com/hpehl/wado/compare/v0.6.9...v0.6.10
 [0.6.9]: https://github.com/hpehl/wado/compare/v0.6.8...v0.6.9
