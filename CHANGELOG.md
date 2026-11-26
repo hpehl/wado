@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Attach standalone servers to the shared `wado` network, like domain and host controllers, so they can reach other containers on that network by name (e.g. a database)
+- Update dependencies: anyhow 1.0.105, clap 4.6.9, clap_complete 4.6.12, regex 1.13.2, serde-saphyr 2.2.0
+
+### Fixed
+
+- Create the `wado` network with docker, too: drop the podman-only `--ignore` flag and report an error if the network can't be created instead of silently ignoring it
+
 ## [0.6.11] - 2026-11-16
 
 ### Fixed

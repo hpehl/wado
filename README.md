@@ -211,10 +211,31 @@ wado start 26.1,28..30,2x32,3x35,dev
 | 35      | wado-sa-350-2 | 8352 | 9352       |
 | dev     | wado-sa-dev   | 8000 | 9000       |
 
+## Network
+
+All containers (standalone servers, domain controllers, and host controllers) are attached to a shared container
+network called `wado`. The network is created automatically when you start a container, if it doesn't already exist.
+
+Containers on the `wado` network can reach each other by container name. Host controllers use this to connect to
+their domain controller. You can also put your own containers, like a database or a message broker, on the network
+and access them by name from WildFly:
+
+```shell
+podman run -d --name postgres --network wado \
+  -e POSTGRES_USER=wildfly -e POSTGRES_PASSWORD=wildfly -e POSTGRES_DB=wildfly \
+  docker.io/library/postgres:19
+wado start 42
+```
+
+A datasource in `wado-sa-420` can then use the connection URL `jdbc:postgresql://postgres:5432/wildfly`.
+If you use docker, replace `podman` with `docker`. The flags are the same.
+
 # Commands
 
 > [!IMPORTANT]
 > Most commands require `podman` to be present with `docker` as a fallback.
+> Starting host controllers (`wado hc start` and `wado topology start`) requires `podman`, because the management
+> credentials are passed as podman secrets.
 > The `console` command opens the default web browser and the `cli` command requires a JVM.
 
 ## Build

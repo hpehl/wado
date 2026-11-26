@@ -5,7 +5,6 @@ use crate::args::{
 };
 use crate::constants::{
     DOMAIN_CONTROLLER_VARIABLE, HOSTNAME_VARIABLE, PASSWORD_VARIABLE, USERNAME_VARIABLE,
-    WILDFLY_ADMIN_CONTAINER,
 };
 use crate::container::{
     add_servers, container_network_cmd, container_run_cmd, create_secret, resolve_start_specs,
@@ -121,8 +120,6 @@ async fn start_instances(
                     "--secret=password,type=env,target={}",
                     PASSWORD_VARIABLE
                 ))
-                .arg("--network")
-                .arg(WILDFLY_ADMIN_CONTAINER)
                 .arg("--env")
                 .arg(format!("{}={}", HOSTNAME_VARIABLE, instance.name))
                 .arg("--env")

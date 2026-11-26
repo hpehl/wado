@@ -15,7 +15,7 @@ use crate::error::WadoError;
 use crate::label::Label;
 use crate::wildfly::Server;
 use anyhow::Error;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Stdio;
 use tokio::io::AsyncWriteExt;
 use tokio::process::Command;
@@ -55,24 +55,51 @@ pub fn container_images_cmd() -> Command {
     command
 }
 
-/// Creates the shared `wado` container network (idempotent).
+/// Creates the shared `wado` container network unless it already exists.
+///
+/// Works with both podman and docker: instead of podman's `network create --ignore`
+/// (which docker doesn't support), it checks for the network with `network inspect` first.
 pub async fn container_network_cmd() -> anyhow::Result<()> {
-    let mut network_command = container_command()?;
-    network_command
+    ensure_network(&detect_runtime()?).await
+}
+
+async fn ensure_network(runtime: &Path) -> anyhow::Result<()> {
+    if network_exists(runtime).await? {
+        return Ok(());
+    }
+    let output = Command::new(runtime)
         .arg("network")
         .arg("create")
-        .arg("--ignore")
-        .arg(WILDFLY_ADMIN_CONTAINER);
-    let network_child = network_command
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .expect("Unable to run podman-network.");
-    network_child.wait_with_output().await?;
-    Ok(())
+        .arg(WILDFLY_ADMIN_CONTAINER)
+        .output()
+        .await?;
+    // Another wado process may have created the network in the meantime.
+    if output.status.success() || network_exists(runtime).await? {
+        return Ok(());
+    }
+    Err(WadoError::container_command_failed(
+        &format!("Failed to create network {WILDFLY_ADMIN_CONTAINER}"),
+        String::from_utf8_lossy(&output.stderr).trim(),
+    )
+    .into())
+}
+
+async fn network_exists(runtime: &Path) -> anyhow::Result<bool> {
+    let status = Command::new(runtime)
+        .arg("network")
+        .arg("inspect")
+        .arg(WILDFLY_ADMIN_CONTAINER)
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()
+        .await?;
+    Ok(status.success())
 }
 
 /// Builds a `podman run` / `docker run` command with the given container configuration.
+///
+/// Every container is attached to the shared `wado` network (see [`container_network_cmd`]),
+/// so wado containers can reach each other and other containers on that network by name.
 ///
 /// The command is constructed but not executed — callers typically add the image name
 /// and any additional arguments before spawning.
@@ -85,38 +112,61 @@ pub fn container_run_cmd(
     config: Option<&str>,
 ) -> Command {
     let mut command = container_command().expect("Unable to run docker run/podman run.");
+    command.args(run_args(
+        name,
+        ports,
+        operations,
+        dev,
+        topology_name,
+        config,
+    ));
     command
-        .arg("run")
-        .arg("--rm")
-        .arg("--detach")
-        .arg("--name")
-        .arg(name);
+}
+
+/// Builds the arguments for [`container_run_cmd`], independent of the container runtime.
+fn run_args(
+    name: &str,
+    ports: Option<&crate::wildfly::Ports>,
+    operations: Vec<String>,
+    dev: bool,
+    topology_name: Option<&str>,
+    config: Option<&str>,
+) -> Vec<String> {
+    let mut args: Vec<String> = [
+        "run",
+        "--rm",
+        "--detach",
+        "--name",
+        name,
+        "--network",
+        WILDFLY_ADMIN_CONTAINER,
+    ]
+    .map(String::from)
+    .to_vec();
     if dev {
-        command.arg("--pull=always");
+        args.push("--pull=always".into());
     }
     if let Some(ports) = ports {
-        command
-            .arg("--publish")
-            .arg(format!("{}:8080", ports.http))
-            .arg("--publish")
-            .arg(format!("{}:9990", ports.management));
+        args.extend([
+            "--publish".into(),
+            format!("{}:8080", ports.http),
+            "--publish".into(),
+            format!("{}:9990", ports.management),
+        ]);
     }
     if !operations.is_empty() {
-        command.arg("--env").arg(format!(
-            "{}={}",
-            BOOTSTRAP_OPERATIONS_VARIABLE,
-            operations.join(",")
-        ));
+        args.extend([
+            "--env".into(),
+            format!("{}={}", BOOTSTRAP_OPERATIONS_VARIABLE, operations.join(",")),
+        ]);
     }
     if let Some(topology) = topology_name {
-        command
-            .arg("--label")
-            .arg(Label::Topology.run_arg(topology));
+        args.extend(["--label".into(), Label::Topology.run_arg(topology)]);
     }
     if let Some(config) = config {
-        command.arg("--label").arg(Label::Config.run_arg(config));
+        args.extend(["--label".into(), Label::Config.run_arg(config)]);
     }
-    command
+    args
 }
 
 /// Builds a `podman stop` / `docker stop` command for the given container name.
@@ -159,4 +209,60 @@ pub async fn create_secret(secret_name: &str, secret_value: &str) -> anyhow::Res
     }
     podman_secret.wait().await?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const INSTALLED_RUNTIMES: [&str; 2] = ["podman", "docker"];
+
+    #[test]
+    fn run_args_attach_container_to_wado_network() {
+        // Act
+        let args = run_args("wado-sa-420", None, vec![], false, None, None);
+
+        // Assert
+        let network = args
+            .iter()
+            .position(|arg| arg == "--network")
+            .and_then(|index| args.get(index + 1));
+        assert_eq!(network.map(String::as_str), Some(WILDFLY_ADMIN_CONTAINER));
+    }
+
+    #[test]
+    fn run_args_start_with_detached_named_run() {
+        // Act
+        let args = run_args("wado-sa-420", None, vec![], false, None, None);
+
+        // Assert
+        assert_eq!(
+            args[..5],
+            ["run", "--rm", "--detach", "--name", "wado-sa-420"]
+        );
+    }
+
+    #[tokio::test]
+    #[ignore = "requires podman and/or docker; run with `cargo test -- --ignored`"]
+    async fn ensure_network_is_idempotent_for_each_installed_runtime() {
+        // Arrange
+        let runtimes: Vec<PathBuf> = INSTALLED_RUNTIMES
+            .iter()
+            .filter_map(|name| which::which(name).ok())
+            .collect();
+        assert!(!runtimes.is_empty(), "neither podman nor docker found");
+
+        for runtime in runtimes {
+            // Act: the second call must succeed although the network already exists
+            ensure_network(&runtime).await.unwrap();
+            ensure_network(&runtime).await.unwrap();
+
+            // Assert
+            assert!(
+                network_exists(&runtime).await.unwrap(),
+                "network missing for {}",
+                runtime.display()
+            );
+        }
+    }
 }

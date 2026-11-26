@@ -3,7 +3,7 @@ use super::lifecycle::{
     stop_containers_by_server_type, wait_for_instances,
 };
 use crate::args::{extract_config, operations_argument, parameters_argument, server_argument};
-use crate::constants::{HOSTNAME_VARIABLE, WILDFLY_ADMIN_CONTAINER};
+use crate::constants::HOSTNAME_VARIABLE;
 use crate::container::{add_servers, container_network_cmd, container_run_cmd};
 use crate::wildfly::{DomainController, Server, ServerType};
 use clap::ArgMatches;
@@ -60,8 +60,6 @@ async fn start_instances(
                 Some(&config),
             );
             command
-                .arg("--network")
-                .arg(WILDFLY_ADMIN_CONTAINER)
                 .arg("--env")
                 .arg(format!("{}={}", HOSTNAME_VARIABLE, instance.name));
             let mut command = add_servers(command, &instance.name, servers.clone());

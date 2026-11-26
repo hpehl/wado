@@ -17,3 +17,5 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo build --verbose
       - run: cargo test --verbose
+      - name: Run container runtime tests (podman and docker)
+        run: cargo test --verbose -- --ignored
